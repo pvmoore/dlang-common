@@ -1,0 +1,31 @@
+name "common"
+platforms "windows"
+	
+buildType "debug" {
+	buildOptions "debugMode" "debugInfo" "alwaysStackFrame" "stackStomping" "warningsAsErrors"
+}
+buildType "release" {
+	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"
+}
+
+configuration "test" {
+	#mainSourceFile "src/test.d"
+	targetType "executable"
+	targetName "bin-test"
+	excludedSourceFiles "src/bench.d"
+}
+configuration "bench" {
+	#mainSourceFile "src/bench.d"
+	targetType "executable"
+	targetName "bin-bench"
+	excludedSourceFiles "src/test.d"
+	excludedSourceFiles "src/test_async.d"
+}
+configuration "library" {
+	#targetType "library"
+	excludedSourceFiles "src/test.d"
+	excludedSourceFiles "src/test_async.d"
+	excludedSourceFiles "src/bench.d"
+}
+
+

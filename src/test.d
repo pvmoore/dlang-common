@@ -1,0 +1,1168 @@
+
+import std.stdio;
+import common;
+import core.stdc.stdlib : malloc, calloc;
+import core.atomic      : atomicLoad, atomicStore, atomicOp;
+import core.time        : dur;
+import core.thread      : Thread, thread_joinAll;
+import std.datetime.stopwatch : benchmark, StopWatch;
+import std.random   : randomShuffle,uniform, Mt19937, unpredictableSeed;
+import std.format   : format;
+import std.conv : to;
+import std.algorithm.iteration : permutations, map, sum, each;
+import std.algorithm.sorting   : sort;
+import std.algorithm.mutation : reverse;
+import std.typecons : Tuple,tuple;
+import std.range    : array,stride,join,iota;
+import std.parallelism : parallel, task;
+import std.file : tempDir, remove;
+import std.array : join;
+
+import test_async;
+
+const RUN_SUBSET = false;
+
+void main() {
+    version(assert) {
+        runTests();
+        static if(!RUN_SUBSET) {
+            runAsyncTests();
+        }
+    } else {
+        writefln("Not running test in release mode");
+    }
+}
+void runTests() {
+    writefln("Running tests");
+    scope(failure) writefln("-- FAIL");
+    scope(success) writeln("-- OK - All standard tests finished");
+
+    static if(RUN_SUBSET) {
+
+    } else {
+        testPDH();
+        testQueue();
+        testAllocator();
+        testTreeList();
+        testStructCache();
+        testList();
+        testSet();
+        testArray();
+        testUtilities();
+        testStructCache();
+        testObjectCache();
+        testBool3();
+        testStack();
+        testByteReader();
+        testBitWriter();
+        testBitReader();
+        testBitReaderAndWriter();
+        testArrayUtils();
+        testStringUtils();
+        testStringBuffer();
+        testVelocity();
+    }
+}
+
+void testAllocator() {
+    writefln("--== Testing Allocator ==--");
+
+    struct Regn { uint offset, size; }
+    // 0 represents free, 1 represents used
+    ubyte[10_000] data;
+    Regn[] allocked;
+
+    auto at = new Allocator(data.length);
+    //writefln("offset=%s", at.alloc(77,4));
+    //writefln("offset=%s", at.alloc(8,1));
+    //writefln("offset=%s", at.alloc(10,4));
+    //writefln("offset=%s", at.alloc(11,1));
+    //writefln("offset=%s", at.alloc(6, 4));
+//    writefln("offset=%s", at.alloc(100));
+
+//    writefln("offset=%s", at.alloc(10000));
+//    at.free(0,1000);
+//
+//    writefln("------------");
+//   at.free(1100,100);
+   //at.free(10000-100,100);
+   //at.free(10000-300,200);
+    //at.free(300,100);
+//    at.free(300,100);
+//    at.free(400,100);
+//
+//    writefln("%s", at);
+//    flushConsole();
+//     writefln("freeBytes = %s", at.numBytesFree);
+//     writefln("%s", at.allRegions.map!(it=>
+//        "%s - %s %s".format(it[0],it[0]+it[1],it[2]?"F":"U")));
+     //writefln("%s", at.getFreeRegionsByOffset);
+     //writefln("%s", at.getFreeRegionsBySize);
+//    assert(at.regionCache.length==at.allRegions.length);
+//
+//    float f = 0.4;
+//    if(f<1) return;
+
+
+    int findFree(int start) {
+        int offset = 0;
+        while(offset<data.length && data[offset]==1) offset++;
+        return offset==data.length ? -1 : offset;
+    }
+    bool use(int size) {
+        int offset = 0;
+        while((offset = findFree(offset))!=-1) {
+            if(data.length-offset<size) return false;
+            int i = 0;
+            for(; i<size; i++) if(data[offset+i]==1) break;
+            if(i==size) {
+                //writefln("use %s bytes at offset %s", size, offset);
+                data[offset..offset+size] = 1;
+                allocked ~= Regn(offset,size);
+                return true;
+            } else {
+                offset++;
+            }
+        }
+        return false;
+    }
+    void free(long offset, long size) {
+        //writefln("free(%s,%s)",offset,size);
+        data[offset..offset+size] = 0;
+    }
+    void check() {
+        //writefln("Free regions should be:");
+        int i = 0;
+        int value = data[0];
+        int offset = 0;
+        int size = 0;
+        int freeIndex = 0;
+        auto freeRegions = at.getFreeRegionsByOffset();
+        assert(at.getFreeRegionsBySize.length==freeRegions.length);
+        long freeBytes = 0;
+
+        while(i<data.length) {
+            if(data[i]==0) freeBytes++;
+            if(value!=data[i]) {
+                // change
+                if(value==0) {
+                    // free region
+                    //writefln("[%s] %s bytes",offset, size);
+                    auto region = freeRegions[freeIndex];
+                    if(region[0]!=offset || region[1]!=size) {
+                        throw new Error("Ker-wrong @ %s (found %s,%s insead of %s,%s)".format(
+                            freeIndex, region[0], region[1], offset, size));
+                    }
+                    freeIndex++;
+                }
+                offset = i;
+                size = 0;
+                value = data[i];
+            }
+            size++;
+            i++;
+        }
+        if(value==0) {
+            //writefln("[%s] %s bytes",offset, size);
+            auto region = freeRegions[freeIndex];
+            if(region[0]!=offset || region[1]!=size) {
+                throw new Error("Ker-wrong @ %s (found %s,%s insead of %s,%s)".format(
+                    freeIndex, region[0], region[1], offset, size));
+            }
+        }
+        //writefln("free = %s, used = %s", freeBytes, data.length-freeBytes);
+        if(at.numBytesFree!=freeBytes) throw new Error("freeBytes is wrong (%s. should be %s)".format(at.numBytesFree,freeBytes));
+
+        ulong lastSize = 0;
+        foreach(fr; at.getFreeRegionsBySize) {
+            if(fr[1] < lastSize) {
+                writefln("at=%s", at);
+                throw new Error("poopy");
+            }
+            lastSize = fr[1];
+        }
+
+        //writefln("Check PASSED");
+    }
+
+    Mt19937 rng;
+    for(auto j=0; j<100; j++) {
+        auto seed = unpredictableSeed;
+        //seed = 1172126497;
+        rng.seed(seed);
+        writefln("seed is %s", seed);
+
+        data[] = 0;
+        allocked.length = 0;
+        at.freeAll();
+
+        // allocate as much as possible
+        while(true) {
+            int size = uniform(1, 20, rng);
+            if(!use(size)) break;
+            if(at.alloc(size)==-1) throw new Error("Offset was -1");
+        }
+        //writefln("%s", at); flushConsole();
+        //writefln("freeBytes=%s", at.numBytesFree);
+        check();
+        //writefln("freeing"); flushConsole();
+
+        allocked.randomShuffle(rng);
+
+        foreach(i, a; allocked) {
+            if(false && i==4) {
+                writefln("checking");
+                check();
+                writefln("%s", at);
+                flushConsole();
+                break;
+            }
+            //writefln("[%s] freeing %s %s", i, a.offset, a.size); flushConsole();
+            free(a.offset,a.size);
+
+            static if(__traits(compiles,at.free(f[0]))) {
+                at.free(a.offset);
+            } else {
+                at.free(a.offset,a.size);
+            }
+            //writefln("%s", at); flushConsole();
+            //check();
+        }
+        //writefln("%s", at); flushConsole();
+        check();
+        //writefln("%s", at);
+    }
+
+    {   // basic properties
+        auto a = new Allocator(100);
+
+        assert(a.numBytesFree==100);
+        assert(a.numBytesUsed==0);
+        assert(a.numFreeRegions==1);
+        assert(a.freeRegions[0]==tuple(0,100));
+    }
+
+    {   // resize
+        auto a = new Allocator(100);
+        a.alloc(10);
+
+        // expand where there is a free region at the end
+        a.resize(200);
+
+        assert(a.numBytesFree==190);
+        assert(a.numBytesUsed==10);
+        assert(a.numFreeRegions==1);
+        assert(a.freeRegions[0]==tuple(10,190));
+
+        a.freeAll();
+        assert(a.numBytesFree==200);
+        assert(a.numBytesUsed==0);
+        assert(a.numFreeRegions==1);
+        assert(a.freeRegions[0]==tuple(0,200));
+
+        // expand where end of alloc memory is in use
+        a.alloc(100);
+        a.alloc(100);
+        a.free(0, 100);
+        assert(a.numBytesFree==100);
+        assert(a.numBytesUsed==100);
+        assert(a.numFreeRegions==1);
+        assert(a.freeRegions[0]==tuple(0,100));
+
+        a.resize(300);
+        assert(a.numBytesFree==200);
+        assert(a.numBytesUsed==100);
+        assert(a.numFreeRegions==2);
+        assert(a.freeRegions==[tuple(0,100), tuple(200,100)]);
+        a.freeAll();
+
+        // reduce where there is a free region at the end
+        // | 50 used | 250 free | (size=300)
+        a.alloc(50);
+        assert(a.freeRegions==[tuple(50,250)]);
+        assert(a.length==300);
+
+        a.resize(250);
+        // | 50 used | 200 free | (size=250)
+        assert(a.length==250);
+        assert(a.numBytesFree==200);
+        assert(a.numBytesUsed==50);
+        assert(a.numFreeRegions==1);
+        assert(a.freeRegions==[tuple(50,200)]);
+
+        // reduce so that the last free region is removed
+        a.resize(50);
+        // | 50 used | (size=50)
+        assert(a.length==50);
+        assert(a.numBytesFree==0);
+        assert(a.numBytesUsed==50);
+        assert(a.numFreeRegions==0);
+        assert(a.freeRegions==[]);
+
+        // attempt to reduce where end of alloc memory is in use
+        a.resize(45);
+        assert(a.length==50);
+
+        writefln("%s", a);
+    }
+
+}
+void testUtilities() {
+    writefln("========--\nTesting utilities\n==--");
+
+    // bitcast
+    double d = 37.554;
+    ulong l  = d.bitcast!ulong;
+    double d2 = l.bitcast!double;
+    writefln("d=%s, l=%s, d2=%s", d,l,d2);
+
+    assert(bitcast!ulong(37.554).bitcast!double==37.554);
+
+    // isObject
+    class MyClass {}
+    writefln("%s", isObject!MyClass);
+
+    // as
+    class A {}
+    interface I {}
+    class B : A,I {}
+
+    auto o0 = new A;
+    auto o1 = new B;
+    I o2 = o1;
+
+    assert(o0.as!A !is null);
+    assert(o1.as!A !is null);
+    assert(o2.as!A !is null);
+
+    assert(o0.as!B is null);
+    assert(o1.as!B !is null);
+    assert(o2.as!B !is null);
+
+    assert(o0.as!I is null);
+    assert(o1.as!I !is null);
+    assert(o2.as!I !is null);
+
+    assert(3.14.as!int == 3);
+
+    { // isA
+        class AA {}
+        interface II {}
+        class BB : II {}
+        auto a = new AA;
+        auto b = new BB;
+        II i = b;
+        assert(a.isA!AA);
+        assert(b.isA!BB);
+        assert(i.isA!II);
+        assert(i.isA!BB);
+        assert(! i.isA!AA);
+    }
+
+    // firstNotNull
+    {
+        auto a = new Object;
+        Object b = null;
+        assert(firstNotNull!Object(null, b, a) is a);
+    }
+
+    // visit
+    bool visitedA, visitedB;
+    class Visited {
+        void visit(A a) { visitedA=true; }
+        void visit(B b) { visitedB=true; }
+    }
+    auto a = new A;
+    auto b = new B;
+    auto v = new Visited();
+
+    a.visit(v);
+    assert(visitedA && !visitedB);
+    visitedA = visitedB = false;
+
+    b.visit(v);
+    assert(!visitedA && visitedB);
+
+    writeln("testUtilities ran OK");
+}
+void testList() {
+    writefln("--== Testing List ==--");
+
+    auto a = new List!int;
+    assert(a.empty && a.length==0);
+
+    // add
+    for(auto i=0; i<5; i++) a.add(i);
+    assert(a.length==5 && !a.empty && a==[0,1,2,3,4]);
+    a.add(5);
+    assert(a.length==6 && a[5]==5);
+
+    // remove
+    assert(a.remove(0)==0 && a.length==5);
+    assert(a==[1,2,3,4,5]);
+
+    assert(a.remove(2)==3 && a.length==4);
+    assert(a==[1,2,4,5]);
+
+    assert(a.remove(3)==5 && a.length==3);
+    assert(a==[1,2,4]);
+
+    assert(a.remove(2)==4 && a.length==2);
+    assert(a==[1,2]);
+
+    assert(a.remove(1)==2 && a.length==1);
+    assert(a==[1]);
+
+    assert(a.remove(0)==1 && a.length==0);
+    assert(a==[]);
+
+    // insert
+    a.clear();
+    a.add(0).add(1).add(2);
+    a.insert(99, 0);
+    assert(a.length==4 && a==[99,0,1,2]);
+    a.insert(55, 1);
+    assert(a.length==5 && a==[99,55,0,1,2]);
+    a.insert(33, 4);
+    assert(a.length==6 && a==[99,55,0,1,33,2]);
+    a.insert(11, 6);
+    assert(a.length==7 && a==[99,55,0,1,33,2,11]);
+}
+void testArray() {
+    writefln("==-- Testing Array --==");
+    auto a = new Array!int;
+    assert(a.empty && a.length==0);
+
+    // add
+    for(auto i=0; i<5; i++) a.add(i);
+    assert(a.length==5 && !a.empty && a==[0,1,2,3,4]);
+    a.add(5);
+    assert(a.length==6 && a[5]==5);
+    // removeAt
+    assert(a.removeAt(0)==0 && a.length==5);
+    assert(a==[1,2,3,4,5]);
+
+    assert(a.removeAt(2)==3 && a.length==4);
+    assert(a==[1,2,4,5]);
+
+    assert(a.removeAt(3)==5 && a.length==3);
+    assert(a==[1,2,4]);
+
+    // removeAt array
+    a.clear(); a.add([0,1,2,3,4]);
+    a.removeAt(0, 2);
+    assert(a==[2,3,4]);
+    a.removeAt(1,2);
+    assert(a==[2]);
+    a.removeAt(0,1);
+    assert(a==[]);
+    a.add([0,1,2,3,4]);
+    a.removeAt(0,5);
+    assert(a==[]);
+    a.add([1,2,3]);
+    a.removeAt(0,0);
+    assert(a==[1,2,3]);
+    a.removeAt(1, 1000);
+    assert(a==[1] && a.length==1);
+
+    {   // remove
+        a.clear(); a.add([0,1,2,3,4]);
+        assert(a.remove(2)==2 && a.length==4 && a==[0,1,3,4]);
+        assert(a.remove(7)==0 && a.length==4 && a==[0,1,3,4]);
+        assert(a.remove(0)==0 && a.length==3 && a==[1,3,4]);
+        assert(a.remove(4)==4 && a.length==2 && a==[1,3]);
+    }
+
+    // add array
+    a.clear(); a.add([1,2,4]);
+    a.add([10,11,12]);
+    assert(a.length==6 && a==[1,2,4,10,11,12]);
+
+    a.add([13,14,15,16]);
+    assert(a.length==10 && a==[1,2,4,10,11,12,13,14,15,16]);
+
+    // insertAt
+    a.clear();
+    a.add(0).add(1).add(2);
+    a.insertAt(99, 0);
+    assert(a.length==4 && a==[99,0,1,2]);
+    a.insertAt(55, 1);
+    assert(a.length==5 && a==[99,55,0,1,2]);
+    a.insertAt(33, 4);
+    assert(a.length==6 && a==[99,55,0,1,33,2]);
+    a.insertAt(11, 6);
+    assert(a.length==7 && a==[99,55,0,1,33,2,11]);
+
+    // insertAt array
+    a.clear(); a.add([0,1,2,3,4]);
+    a.insertAt([8,9], 0);
+    assert(a==[8,9,0,1,2,3,4] && a.length==7);
+    a.insertAt([],0);
+    assert(a==[8,9,0,1,2,3,4] && a.length==7);
+    a.insertAt([90], 2);
+    assert(a==[8,9,90,0,1,2,3,4] && a.length==8);
+    a.insertAt([100],7);
+    assert(a==[8,9,90,0,1,2,3,100,4] && a.length==9);
+    a.insertAt([200], 9);
+    assert(a==[8,9,90,0,1,2,3,100,4,200] && a.length==10);
+
+    // opIndex(), opSlice and opDollar
+    a.clear();
+    a.add([1,2,3]);
+    assert(a[]==[1,2,3]);
+    assert(a[0..2]==[1,2] && a[0..1]==[1]);
+    assert(a[0..$]==[1,2,3]);
+
+    // move (forwards)
+    a.clear();
+    a.add([0,1,2,3,4]);
+    a.move(2,0);
+    assert(a==[2,0,1,3,4]);
+    a.move(4,3);
+    assert(a==[2,0,1,4,3]);
+    a.move(4,4);
+    assert(a==[2,0,1,4,3]);
+    a.move(4,0);
+    assert(a==[3,2,0,1,4]);
+    // move (backwards)
+    a.clear();
+    a.add([0,1,2,3,4]);
+    a.move(1,3);
+    assert(a==[0,2,3,1,4]);
+    a.move(0,4);
+    assert(a==[2,3,1,4,0]);
+
+    { // opCatAssign
+        auto array = new Array!char;
+        array ~= 'a';
+        assert(array.length==1 && array[0]=='a');
+        array ~= ['b','c'];
+        assert(array.length==3 && array==['a','b','c']);
+    }
+
+    {// opApply
+        auto array = new Array!int;
+        array.add([1,5,7]);
+        int total = 0;
+        foreach(v; array) {
+            total += v;
+        }
+        assert(total==13);
+
+        total = 0;
+        foreach(i, v; array) {
+            total += i;
+            total += v;
+        }
+        assert(total==13+3);
+    }
+}
+void testStructCache() {
+    writefln("--== Testing StructCache ==--");
+
+    align(1) struct A {int[3] a; ubyte b;} // 13 bytes
+    struct B {ubyte a;}
+
+    auto cache = new StructCache!A(4, 1);
+
+    A* a1 = cache.take();
+    writefln("a1=%s", cast(ulong)a1);
+    assert(a1 && cache.length==1);
+    cache.release(a1);
+    assert(cache.length==0);
+
+    A* a2 = cache.take();
+    writefln("a2=%s", cast(ulong)a2);
+    cache.release(a2);
+
+    writefln("---");
+
+    A* a3 = cache.take();
+    A* a4 = cache.take();
+    A* a5 = cache.take();
+    A* a6 = cache.take();
+    writefln("%s %s %s %s",
+        cast(ulong)a3,
+        cast(ulong)a4,
+        cast(ulong)a5,
+        cast(ulong)a6
+    );
+
+
+    A* a7 = cache.take();
+    writefln("a7=%s", cast(ulong)a7);
+    assert(cache.length==5);
+
+    cache.release(a6);
+    assert(cache.length==4);
+
+    cache.release(a7);
+    assert(cache.length==3);
+
+    A* a8 = cache.take();
+    A* a9 = cache.take();
+    A* a10 = cache.take();
+    A* a11 = cache.take();
+    A* a12 = cache.take();
+    A* a13 = cache.take();
+    A* a14 = cache.take();
+    A* a15 = cache.take();
+    A* a16 = cache.take();
+
+    A* a17 = cache.take();
+
+    cache.release(a17);
+
+    cache.release(a8);
+    cache.release(a4);
+    cache.release(a3);
+    cache.release(a5);
+    writefln("%s", cache);
+
+    cache.take();
+    writefln("%s", cache);
+
+}
+void testObjectCache() {
+    writefln("--== Testing ObjectCache ==--");
+
+    static class Thingy { this(int a) {} }
+    auto cache = new ObjectCache!Thingy;
+
+    cache.release(new Thingy(1));
+    cache.release(new Thingy(2));
+    assert(cache.numAvailable==2);
+
+    auto t1 = cache.take();
+    auto t2 = cache.take();
+    cache.release(t1);
+    cache.release(t2);
+    assert(cache.numAvailable==2);
+
+    auto t3 = cache.take();
+    assert(cache.numAvailable==1);
+}
+void testBool3() {
+    writefln("--== Testing Bool3 ==--");
+    bool3 b0;
+    bool3 b1 = true;
+    bool3 b2 = false;
+    bool3 b3 = bool3.unknown;
+    assert(b0.isUnknown);
+    assert(b1);
+    assert(!b2);
+    assert(b3.isUnknown);
+}
+void testTreeList() {
+    writefln("--== Testing TreeList ==--");
+
+    static class A {
+        int a;
+        this(int a) { this.a = a; }
+        alias opCmp = Object.opCmp;
+        int opCmp(A o) { return o.a==a ? 0 : o.a<a ? 1 : -1; }
+        override bool opEquals(Object o) {
+            return a==(cast(A)o).a;
+        }
+        override string toString() { return "%s".format(a); }
+    }
+    auto tree = new TreeList!A;
+    //writefln("tree=%s", tree);
+
+    assert(tree.empty && tree.length==0);
+
+    tree.add(new A(10));
+    assert(!tree.empty && tree.length==1 && tree==[new A(10)]);
+
+    tree.add(new A(30));
+    assert(tree.remove(new A(30)));
+    assert(false==tree.remove(new A(30)));
+
+    auto tree2 = new TreeList!int;
+    tree2.add(20);
+    tree2.add(5);
+    tree2.add(7);
+    tree2.add(15);
+    tree2.add(17);
+    tree2.add(30);
+    tree2.add(2);
+    assert(tree2.length==7);
+    assert(tree2==[2,5,7,15,17,20,30]);
+
+    auto tree3 = new TreeList!int;
+    tree3.add(20);
+    tree3.add(5);
+    tree3.add(7);
+    tree3.add(15);
+    tree3.add(17);
+    tree3.add(30);
+    tree3.add(2);
+    assert(tree3.length==7);
+    assert(tree3==[2,5,7,15,17,20,30]);
+    writefln("%s", tree2);
+    writefln("%s", tree3);
+    assert(tree3==tree2);
+
+
+    writefln("tree=%s", tree2);
+}
+void testQueue() {
+    writefln("--== Testing Queue ==--");
+
+    auto q = new Queue!int(1024);
+    assert(q.length==0 && q.empty);
+
+    q.push(1);
+    assert(q.length==1 && !q.empty);
+
+    q.push(2).push(3);
+    assert(q.length==3);
+
+    assert(q.pop()==1 && q.length==2);
+    assert(q.pop()==2 && q.length==1);
+    assert(q.pop()==3 && q.length==0 && q.empty);
+
+    q.push(30);
+    q.clear();
+    assert(q.length==0 && q.empty);
+
+    // drain
+    int[] temp = new int[4];
+    q.clear();
+    q.push(1).push(3).push(7);
+    assert(q.drain(temp)==3 && temp[0..3]==[1,3,7]);
+
+    q.push(1).push(3).push(7).push(11).push(13);
+    assert(q.drain(temp)==4 && temp[0..4]==[1,3,7,11]);
+
+    assert(q.drain(temp)==1 && temp[0]==13);
+
+    assert(q.drain(temp)==0);
+
+    /// valuesDup
+    {
+        auto queue = new Queue!int(1024);
+        queue.push(1).push(2).push(3);
+        assert(queue.valuesDup() == [1,2,3]);
+        queue.pop();
+        assert(queue.valuesDup() == [2,3]);
+    }
+    /// pushToFront
+    {
+        auto queue = new Queue!int(1024);
+        queue.push(1).push(2).push(3);
+        queue.pushToFront(4);
+        assert(queue.valuesDup() == [4,1,2,3]);
+        queue.pop();
+        assert(queue.valuesDup() == [1,2,3]);
+    }
+}
+void testPDH() {
+    writefln("--== Testing CPUUsage ==--");
+
+    auto pdh = new PDH();
+    scope(exit) pdh.destroy();
+
+    pdh.dumpPaths("\\Process(*)\\*"w);
+
+    for(auto i=0; i<2; i++) {
+        Thread.sleep(dur!"msecs"(500));
+        double total = pdh.getCPUTotalPercentage();
+        double[] cores = pdh.getCPUPercentagesByCore();
+
+        writefln("{");
+        writefln("  Total : %5.2f %s", total, "*".repeat(cast(int)(total/5)));
+        foreach(n, d; cores) {
+            writefln("  Core %s : %5.2f %s", n, d, "*".repeat(cast(int)(d/5)));
+        }
+        writefln("}");
+        flushConsole();
+    }
+}
+void testSet() {
+    writefln("--== Testing Set ==--");
+
+    auto s = new Set!int;
+    assert(s.empty && s.length==0);
+
+    s.add(2).add(4);
+    assert(!s.empty && s.length==2);
+    assert(s.contains(2) && s.contains(4));
+
+    s.add(2).add(3);
+    assert(!s.empty && s.length==3);
+    assert(s.contains(2) && s.contains(3) && s.contains(4));
+
+    assert(s.remove(2)==true);
+    assert(s.length==2);
+
+    assert(s.remove(1)==false);
+    assert(s.length==2);
+
+    assert(s.values==[3,4] || s.values==[4,3]);
+}
+void testStack() {
+    writefln("--== Testing Stack ==--");
+    auto stack = new Stack!uint(10);
+    assert(stack==[] && stack.length==0 && stack.empty);
+    writefln("%s", stack);
+
+    stack.push(13);
+    assert(stack==[13] && stack.length==1 && !stack.empty);
+    writefln("%s", stack);
+
+    stack.push(17);
+    assert(stack==[13,17] && stack.length==2 && !stack.empty);
+    assert(stack[]==[13,17]);
+    writefln("%s", stack);
+
+    assert(stack.pop()==17);
+    assert(stack==[13] && stack.length==1 && !stack.empty);
+    writefln("%s", stack);
+
+    assert(stack.pop()==13 && stack.length==0 && stack.empty);
+    assert(stack[]==[]);
+}
+void testByteReader() {
+    writefln("--== Testing ByteReader ==--");
+
+    string dir = tempDir();
+    string filename = dir~uniform(0,100).to!string~"file.bin";
+    scope f = File(filename, "wb");
+    scope(exit) { f.close(); remove(filename); }
+    ubyte[256] data;
+
+    void writeTestData() {
+        for(auto i=0; i<data.length; i++) {
+            data[i] = cast(ubyte)uniform(0,255);
+        }
+        f.rawWrite(data);
+    }
+    writeTestData();
+
+    // read
+    auto r = new ByteReader(filename, 8);
+    scope(exit) r.close();
+
+    assert(r.length==256);
+    assert(r.position==0);
+
+    auto b1 = r.read!ubyte();
+    assert(b1==data[0]);
+    assert(r.position==1);
+
+    auto s1 = r.read!ushort();
+    assert(s1==(data[1] | data[2]<<8));
+    assert(r.position==3);
+
+    auto i1 = r.read!uint();
+    assert(i1==(data[3] | (data[4]<<8) | (data[5]<<16) | (data[6]<<24)));
+    assert(r.position==7);
+
+    auto l1 = r.read!ulong();
+    assert(l1==(
+        cast(ulong)data[7] | (cast(ulong)data[8]<<8) | (cast(ulong)data[9]<<16) | (cast(ulong)data[10]<<24) |
+        (cast(ulong)data[11]<<32) | (cast(ulong)data[12]<<40) | (cast(ulong)data[13]<<48) | (cast(ulong)data[14]<<56)
+    ));
+    assert(r.position==15);
+
+    auto b2 = r.read!ubyte();
+    assert(b2==data[15]);
+    assert(r.position==16);
+
+    auto s2 = r.read!ushort;
+    assert(s2==(data[16] | (data[17]<<8)));
+    assert(r.position==18);
+
+    auto s3 = r.read!ushort;
+    assert(s3==(data[18] | (data[19]<<8)));
+    assert(r.position==20);
+
+    auto i2 = r.read!uint;
+    assert(i2==(data[20] | (data[21]<<8) | (data[22]<<16) | (data[23]<<24)));
+    assert(r.position==24);
+
+    // readArray
+    auto a1 = r.readArray!ubyte(2);
+    assert(a1==data[24..24+2]);
+    assert(r.position==26);
+
+    auto a2 = r.readArray!ubyte(5);
+    assert(a2==data[26..26+5]);
+    assert(r.position==31);
+
+    auto a3 = r.readArray!ubyte(12);
+    assert(a3==data[31..31+12]);
+    assert(r.position==43);
+
+    // skip
+    auto b3 = r.read!ubyte;
+    assert(b3==data[43]);
+    assert(r.position==44);
+
+    r.skip(2);
+    assert(r.position==46);
+
+    r.skip(9);
+    assert(r.position==55);
+    r.close();
+}
+void testBitWriter() {
+    writefln("--== Testing BitWriter ==--");
+
+    ubyte[] received;
+
+    void receiver(ubyte b) {
+        writefln("%08b %02x", b, b);
+        received ~= b;
+    }
+
+    auto writer = new BitWriter(&receiver);
+
+    writer.write(0b11111111, 8);
+    assert(received==[0xff]);
+
+    writer.write(0b00001111, 4);
+    assert(received==[0xff]);
+    writer.write(0b00001111, 4);
+    assert(received==[0xff, 0xff]);
+
+    received.length = 0;
+    writer.write(0b00001001, 4);
+    assert(received==[]);
+    writer.write(0b00001111, 4);
+    assert(received==[0b11111001]);
+
+    received.length = 0;
+    writer.write(0b11111111, 7);
+    assert(received==[]);
+    writer.write(0b11111111, 1);
+    assert(received==[0xff]);
+
+    received.length = 0;
+    writer.write(0b01, 2);
+    writer.write(0b10, 2);
+    writer.write(0b11, 2);
+    writer.write(0b00, 2);
+    assert(received==[0b00111001]);
+
+    received.length = 0;
+    writer.write(0xffffffff, 5);
+    writer.flush();
+    assert(received==[0b11111]);
+
+    received.length = 0;
+    writer.write(0xffffffff, 3);
+    writer.write(0, 2);
+    writer.write(0xffffffff, 2);
+    writer.flush();
+    assert(received==[0b1100111]);
+
+    received.length = 0;
+    writer.write(0xffffffff, 9);
+    writer.write(0x01, 2);
+    writer.flush();
+    assert(received==[0xff, 0b011]);
+}
+void testBitReader() {
+    writefln("--== Testing BitReader==--");
+
+    ubyte[] bytes = [
+        0b11111111,
+        0b11110000,
+        0b00001111,
+        0b00110011,
+        0b01010101,
+        0b00100101
+    ];
+    uint ptr;
+
+    void reset() { ptr = 0; }
+    ubyte byteProvider() {
+        writefln("%08b %02x", bytes[ptr], bytes[ptr]);
+        return bytes[ptr++];
+    }
+
+    auto r = new BitReader(&byteProvider);
+
+    assert(0b11111111==r.read(8));
+    assert(0b11110000==r.read(8));
+    assert(0b00001111==r.read(8));
+
+    assert(0b0011==r.read(4));
+    assert(0b0011==r.read(4));
+
+    assert(0b01==r.read(2));
+    assert(0b01==r.read(2));
+    assert(0b01==r.read(2));
+    assert(0b01==r.read(2));
+
+    assert(0b1==r.read(1));
+    assert(0b10==r.read(2));
+    assert(0b100==r.read(3));
+    assert(0b00==r.read(2));
+}
+void testBitReaderAndWriter() {
+    writefln("--== Testing BitReader ==--");
+
+    Mt19937 rng;
+    rng.seed(unpredictableSeed);
+    //rng.seed(1);
+    uint[] bitValues;
+    uint[] bitLengths;
+    uint length = 1000;
+    for(auto i=0; i<length; i++) {
+        uint bl = uniform(0, 8, rng);
+        uint bv = uniform(0, 1<<bl, rng);
+        bitValues  ~= bv;
+        bitLengths ~= bl;
+    }
+    writefln("bitValues  = %s", bitValues.map!(it=>"%2u".format(it)).join(", "));
+    writefln("bitLengths = %s", bitLengths.map!(it=>"%2u".format(it)).join(", "));
+
+    uint ptr;
+    ubyte[] bytesWritten;
+    ubyte getNextByte() {
+        return bytesWritten[ptr++];
+    }
+    void byteWritten(ubyte b) {
+        bytesWritten ~= b;
+    }
+
+    auto r = new BitReader(&getNextByte);
+    auto w = new BitWriter(&byteWritten);
+
+    for(auto i=0; i<length; i++) {
+        w.write(bitValues[i], bitLengths[i]);
+    }
+    w.flush();
+
+    writefln("bytesWritten = %s", bytesWritten);
+
+    uint[] valuesRead;
+    for(auto i=0; i<length; i++) {
+        valuesRead ~= r.read(bitLengths[i]);
+    }
+    writefln("values     = %s", valuesRead.map!(it=>"%2u".format(it)).join(", "));
+
+    assert(valuesRead==bitValues);
+}
+void testArrayUtils() {
+    writefln("--== Testing array_utils ==--");
+
+}
+void testStringUtils() {
+    writefln("--== Testing string_utils ==--");
+
+    string s1 = "hello";
+    auto r1   = s1.removeChars('l');
+    assert(s1=="hello");
+    assert(r1=="heo");
+
+    char[] s2 = ['h','e','l','l','o'];
+    auto r2   = s2.removeChars('l');
+    assert(s2==['h','e','l','l','o']);
+    assert(r2==['h','e', 'o']);
+
+    const(char)[] s3 = ['h','e','l','l','o'];
+    auto r3          = s3.removeChars('l');
+    assert(s3==['h','e','l','l','o']);
+    assert(r3==['h','e', 'o']);
+}
+void testVelocity() {
+    writefln("--== Testing velocity ==--");
+
+    string templ1 =
+        "<html>" ~
+        "$LOOP $ITEMS $it" ~
+        "$IF $bool " ~
+        "<p>$key1 $it.a $it.b</p>" ~
+        "$END" ~
+        "$END" ~
+        "</html>" ~
+        "";
+
+    auto v = Velocity.fromString(templ1);
+    v.set("bool", "true");
+    v.set("key1", "hello");
+    v.set("ITEMS", [    // 2 iterations
+        ["a":"1"],
+        ["a":"2"]
+    ]);
+    auto output1 = v.process();
+
+    v.set("bool", cast(string)null);
+    auto output2 = v.process();
+
+    writefln("output1=\n%s", output1);
+    writefln("output2=\n%s", output2);
+
+    assert(output1=="<html> <p>hello 1 </p> <p>hello 2 </p></html>");
+    assert(output2=="<html></html>");
+
+}
+void testStringBuffer() {
+    writefln("--== Testing StringBuffer ==--");
+    { // add, ~=, length and empty
+        auto buf = new StringBuffer;
+        assert(buf.length==0 && buf.empty);
+        buf.add('a')
+           .add("bc");
+        buf ~= 'd';
+        buf ~= "ef";
+        assert(buf=="abcdef" && buf.length==6 && !buf.empty);
+    }
+    { // equality
+        auto buf  = new StringBuffer("abcd");
+        auto buf2 = new StringBuffer("abcd");
+        auto buf3 = new StringBuffer("abc");
+        assert(buf=="abcd");
+        assert(buf!="bbcd");
+        assert(buf!="abc");
+        assert(buf==buf2);
+        assert(buf!=buf3);
+    }
+    { // indexing and slicing
+        auto buf = new StringBuffer("abcd");
+        auto a = buf[];
+        auto b = buf[0];
+        auto c = buf[0..$];
+        auto d = buf[1..3];
+        assert(a=="abcd");
+        assert(b=='a');
+        assert(c=="abcd");
+        assert(d=="bc");
+    }
+    {   // clear
+        auto buf = new StringBuffer("abcd");
+        assert(buf.clear()=="");
+    }
+    { // indexOf and contains
+        auto buf = new StringBuffer("abcdef");
+        assert(buf.indexOf('a')==0);
+        assert(buf.indexOf('z')==-1);
+        assert(buf.indexOf('f')==5);
+        assert(buf.indexOf("a")==0);
+        assert(buf.indexOf("ac")==-1);
+        assert(buf.indexOf("cde")==2);
+
+        assert(buf.contains('d'));
+        assert(!buf.contains('D'));
+        assert(buf.contains("de"));
+        assert(!buf.contains("df"));
+    }
+    {   // insert
+        auto buf = new StringBuffer("abcdef");
+        buf.insert('.', 0);
+        assert(buf==".abcdef");
+        buf.insert('.', 7);
+        assert(buf==".abcdef.");
+    }
+    {   // remove
+        auto buf = new StringBuffer("abcdef");
+        buf.remove(0);
+        assert(buf=="bcdef");
+        buf.remove(4);
+        assert(buf=="bcde");
+    }
+}
