@@ -822,6 +822,19 @@ void testStack() {
 
     assert(stack.pop()==13 && stack.length==0 && stack.empty);
     assert(stack[]==[]);
+
+    { // peek
+        auto s = new Stack!int;
+        assert(s.peek()==0);
+        s.push(1);
+        assert(s.peek()==1);
+        s.push(2);
+        assert(s.peek()==2);
+        s.pop();
+        assert(s.peek()==1);
+        s.pop();
+        assert(s.peek()==0);
+    }
 }
 void testByteReader() {
     writefln("--== Testing ByteReader ==--");

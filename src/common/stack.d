@@ -35,9 +35,9 @@ public:
         if(pos==0) return T.init;
         return array[--pos];
     }
-    T peek(uint i) {
-        if(i>=pos) return T.init;
-        return array[i];
+    T peek() {
+        if(pos==0) return T.init;
+        return array[pos-1];
     }
     auto clear() {
         pos = 0;
