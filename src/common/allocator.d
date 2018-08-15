@@ -2,56 +2,58 @@ module common.allocator;
 
 import common.all;
 
-final class Allocator {
+alias Allocator = Allocator_t!ulong;
+
+final class Allocator_t(T) {
 private:
-    ulong sizeBytes;
-    ulong freeBytes;
+    T sizeBytes;
+    T freeBytes;
     uint _numAllocs;
     uint _numFrees;
     Array!FreeRegion array;
 
     static final struct FreeRegion {
-        ulong offset;
-        ulong size;
+        T offset;
+        T size;
         pragma(inline,true)
-        ulong end() const { return offset+size; }
+        T end() const { return offset+size; }
         string toString() { return "%s - %s".format(offset,end); }
     }
     static assert(FreeRegion.sizeof==16);
 public:
-    ulong numBytesFree() { return freeBytes; }
-    ulong numBytesUsed() { return sizeBytes-freeBytes; }
-    ulong length() { return sizeBytes; }
+    T numBytesFree() { return freeBytes; }
+    T numBytesUsed() { return sizeBytes-freeBytes; }
+    T length() { return sizeBytes; }
     uint numAllocs() const { return _numAllocs; }
     uint numFrees() const { return _numFrees; }
     uint numFreeRegions() {
         return cast(uint)freeRegions().length;
     }
-    Tuple!(ulong,ulong)[] getFreeRegionsByOffset() {
+    Tuple!(T,T)[] getFreeRegionsByOffset() {
         return freeRegions()
             .map!(it=>tuple(it[0], it[1]))
             .array;
     }
-    Tuple!(ulong,ulong)[] getFreeRegionsBySize() {
+    Tuple!(T,T)[] getFreeRegionsBySize() {
         return freeRegions()
             .sort!((x,y) => x[1] < y[1])
             .map!(it=>tuple(it[0], it[1]))
             .array;
     }
-    Tuple!(ulong,ulong)[] freeRegions() {
-        auto buf = appender!(Tuple!(ulong,ulong)[]);
+    Tuple!(T,T)[] freeRegions() {
+        auto buf = appender!(Tuple!(T,T)[]);
         foreach(ref b; array) {
             buf ~= tuple(b.offset, b.size);
         }
         return buf.data;
     }
 
-    this(ulong sizeBytes) {
+    this(T sizeBytes) {
         this.sizeBytes = sizeBytes;
         this.array     = new Array!FreeRegion;
         freeAll();
     }
-    long alloc(ulong size, uint alignment=1) {
+    long alloc(T size, uint alignment=1) {
         _numAllocs++;
         foreach_reverse(i, ref b; array) {
             if(b.size==size) {
@@ -61,10 +63,10 @@ public:
                 freeBytes -= size;
                 return offset;
             } else if(b.size > size) {
-                ulong offset = b.offset;
-                ulong rem;
+                T offset = b.offset;
+                T rem;
                 if(alignment>1 && (rem=offset%alignment)!=0) {
-                    ulong inc = alignment-rem;
+                    T inc = alignment-rem;
                     if(b.size-inc==size) {
                         // we can just reuse the free block as the inc block
                         // |+++++++++++free++++++++++|   before
@@ -92,9 +94,9 @@ public:
         }
         return -1;
     }
-    void free(ulong offset, ulong size) {
+    void free(T offset, T size) {
         _numFrees++;
-        ulong end = offset+size;
+        T end = offset+size;
 
         int i = findRegion(offset);
         //writefln("i=%s", i); flushStdErrOut();
@@ -169,13 +171,13 @@ public:
      *  smaller size will only reduce down to the end of the last
      *  allocated region.
      */
-    void resize(ulong newSize) {
+    void resize(T newSize) {
         bool thereIsAnEmptyRegionAtEnd() {
             return array.length>0 && array.last.end==sizeBytes;
         }
 
         if(newSize > sizeBytes) {
-            ulong difference = newSize-sizeBytes;
+            T difference = newSize-sizeBytes;
 
             if(thereIsAnEmptyRegionAtEnd()) {
                 // expand end free region
@@ -187,10 +189,10 @@ public:
             freeBytes += difference;
             sizeBytes += difference;
         } else {
-            ulong difference = sizeBytes-newSize;
+            T difference = sizeBytes-newSize;
 
             if(thereIsAnEmptyRegionAtEnd()) {
-                ulong regionSize = array.last.size;
+                T regionSize = array.last.size;
 
                 if(regionSize<=difference) {
                     // Delete the whole last free region
@@ -226,7 +228,7 @@ public:
         return buf.data.join("\n");
     }
 private:
-    int findRegion(ulong offset) {
+    int findRegion(T offset) {
         if(array.length==0) return -1;
         if(array.length==1) return 0;
         uint min = 0;
