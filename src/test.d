@@ -67,6 +67,42 @@ void runTests() {
 void testAllocator() {
     writefln("--== Testing Allocator ==--");
 
+
+    void testEmptyAllocator() {
+        auto a = new Allocator_t!uint(0);
+        assert(a.length==0);
+        assert(a.numBytesFree==0);
+        assert(a.numBytesUsed==0);
+        assert(a.numFreeRegions==1);
+        auto fr = a.freeRegions;
+        assert(fr.length==1);
+        assert(fr[0][0]==0 && fr[0][1]==0);
+
+        assert(-1 == a.alloc(10));
+
+        a.resize(100);
+        assert(a.length==100);
+        assert(a.numBytesFree==100);
+        assert(a.numBytesUsed==0);
+        assert(a.numFreeRegions==1);
+        fr = a.freeRegions;
+        assert(fr.length==1);
+        assert(fr[0][0]==0 && fr[0][1]==100);
+
+        assert(0 == a.alloc(10));
+        assert(a.length==100);
+        assert(a.numBytesFree==90);
+        assert(a.numBytesUsed==10);
+        assert(a.numFreeRegions==1);
+        fr = a.freeRegions;
+        assert(fr.length==1);
+        assert(fr[0][0]==10 && fr[0][1]==90);
+
+        writefln("Empty Allocator OK");
+    }
+    testEmptyAllocator();
+
+
     struct Regn { uint offset, size; }
     // 0 represents free, 1 represents used
     ubyte[10_000] data;
