@@ -1,10 +1,12 @@
 module common.allocator;
 
 import common.all;
+import std.traits : isUnsigned, Signed;
 
 alias Allocator = Allocator_t!ulong;
 
 final class Allocator_t(T) {
+    static assert(isUnsigned!T);
 private:
     T sizeBytes;
     T freeBytes;
@@ -15,11 +17,12 @@ private:
     static final struct FreeRegion {
         T offset;
         T size;
+
         pragma(inline,true)
         T end() const { return offset+size; }
         string toString() { return "%s - %s".format(offset,end); }
     }
-    static assert(FreeRegion.sizeof==16);
+    static assert(FreeRegion.sizeof==T.sizeof*2);
 public:
     T numBytesFree() { return freeBytes; }
     T numBytesUsed() { return sizeBytes-freeBytes; }
@@ -53,7 +56,7 @@ public:
         this.array     = new Array!FreeRegion;
         freeAll();
     }
-    long alloc(T size, uint alignment=1) {
+    Signed!T alloc(T size, uint alignment=1) {
         _numAllocs++;
         foreach_reverse(i, ref b; array) {
             if(b.size==size) {
