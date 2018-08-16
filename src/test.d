@@ -100,7 +100,24 @@ void testAllocator() {
 
         writefln("Empty Allocator OK");
     }
+    void testFreeing() {
+        auto a = new Allocator_t!uint(100);
+        assert(0==a.alloc(50));
+        assert(a.numFreeRegions==1);
+        // |xxxxx.....|
+
+        a.free(10, 20);
+        // |x..xx.....|
+        assert(a.numBytesFree==70);
+        assert(a.getFreeRegionsByOffset==[tuple(10,20), tuple(50,50)]);
+
+        a.free(40,10);
+        // |x..x......|
+        assert(a.numBytesFree==80);
+        assert(a.getFreeRegionsByOffset==[tuple(10,20), tuple(40,60)]);
+    }
     testEmptyAllocator();
+    testFreeing();
 
 
     struct Regn { uint offset, size; }

@@ -97,6 +97,10 @@ public:
         }
         return -1;
     }
+    /// Free part of or all of an allocated region.
+    /// Note that this is assumed to not overlap free regions.
+    /// Freeing within an allocated region to create new free regions is ok.
+    ///
     void free(T offset, T size) {
         _numFrees++;
         T end = offset+size;
