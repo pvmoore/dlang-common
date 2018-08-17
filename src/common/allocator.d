@@ -4,7 +4,12 @@ import common.all;
 import std.traits : isUnsigned, Signed;
 
 alias Allocator = Allocator_t!ulong;
-
+///
+/// TODO - Create another class that defragments the memory.
+///        This defrag needs to have the ability to move memory
+///        around in the client.
+///        Call it _AllocatorDefrag_ or similar.
+///
 final class Allocator_t(T) {
     static assert(isUnsigned!T);
 private:
@@ -58,7 +63,9 @@ public:
     }
     Signed!T alloc(T size, uint alignment=1) {
         _numAllocs++;
-        foreach_reverse(i, ref b; array) {
+        /// Iterate through free regions from offset 0
+        /// to find a region with enough space for _size_.
+        foreach(i, ref b; array) {
             if(b.size==size) {
                 auto offset = b.offset;
                 if(alignment>1 && (offset%alignment)!=0) continue;
@@ -71,16 +78,16 @@ public:
                 if(alignment>1 && (rem=offset%alignment)!=0) {
                     T inc = alignment-rem;
                     if(b.size-inc==size) {
-                        // we can just reuse the free block as the inc block
-                        // |+++++++++++free++++++++++|   before
-                        // |++inc++| ----- used ------   after
+                        /// we can just reuse the free block as the inc block
+                        /// |+++++++++++free++++++++++|   before
+                        /// |++inc++| ----- used -----|   after
                         b.size = inc;
                     } else if(b.size-inc<size) {
                         continue;
                     } else {
-                        // we need to create an extra small free block for inc
-                        // |++++++++++free+++++++++|    before
-                        // |+inc+|--used--|++free++|    after
+                        /// we need to create an extra small free block for inc
+                        /// |++++++++++free+++++++++|    before
+                        /// |+inc+|--used--|++free++|    after
                         b.offset  += (inc + size);
                         b.size    -= (inc + size);
                         array.insertAt(FreeRegion(offset,inc), i);
@@ -88,7 +95,7 @@ public:
                     freeBytes -= size;
                     return offset + inc;
                 }
-                // shrink this free block
+                /// shrink this free block
                 b.offset  += size;
                 b.size    -= size;
                 freeBytes -= size;
@@ -164,20 +171,20 @@ public:
         }
         freeBytes += size;
     }
-    /**
-     *  Free all allocations.
-     */
+    ///
+    /// Free all allocations.
+    ///
     void freeAll() {
         array.clear();
         freeBytes = sizeBytes;
 
         array.add(FreeRegion(0,sizeBytes));
     }
-    /**
-     *  Set a new size. Setting a larger size always works. Setting a
-     *  smaller size will only reduce down to the end of the last
-     *  allocated region.
-     */
+    ///
+    /// Set a new size. Setting a larger size always works. Setting a
+    /// smaller size will only reduce down to the end of the last
+    /// allocated region.
+    ///
     void resize(T newSize) {
         bool thereIsAnEmptyRegionAtEnd() {
             return array.length>0 && array.last.end==sizeBytes;
@@ -238,6 +245,7 @@ private:
     int findRegion(T offset) {
         if(array.length==0) return -1;
         if(array.length==1) return 0;
+
         uint min = 0;
         uint max = cast(uint)array.length;
         while(min<max) {
