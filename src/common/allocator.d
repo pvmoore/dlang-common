@@ -235,7 +235,7 @@ public:
            array.length);
 
         foreach(r; freeRegions()) {
-            buf ~= "  %s - %s".format(r[0],r[0]+r[1]);
+            buf ~= "  %s - %s (%s)".format(r[0],r[0]+r[1], r[1]);
         }
 
         buf ~= "}";
