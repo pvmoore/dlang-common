@@ -70,51 +70,64 @@ void testAllocator() {
 
     void testEmptyAllocator() {
         auto a = new Allocator_t!uint(0);
-        assert(a.length==0);
-        assert(a.numBytesFree==0);
-        assert(a.numBytesUsed==0);
-        assert(a.numFreeRegions==1);
+        expect(a.empty);
+        expect(a.length==0);
+        expect(a.numBytesFree==0);
+        expect(a.numBytesUsed==0);
+        expect(a.numFreeRegions==1);
         auto fr = a.freeRegions;
-        assert(fr.length==1);
-        assert(fr[0][0]==0 && fr[0][1]==0);
+        expect(fr.length==1);
+        expect(fr[0][0]==0 && fr[0][1]==0);
+        expect(a.offsetOfLastAllocatedByte()==0);
 
-        assert(-1 == a.alloc(10));
+        /// try to allocate 10
+        expect(-1 == a.alloc(10));
 
+        /// resize
         a.resize(100);
-        assert(a.length==100);
-        assert(a.numBytesFree==100);
-        assert(a.numBytesUsed==0);
-        assert(a.numFreeRegions==1);
+        expect(a.empty);
+        expect(a.length==100);
+        expect(a.numBytesFree==100);
+        expect(a.numBytesUsed==0);
+        expect(a.numFreeRegions==1);
         fr = a.freeRegions;
-        assert(fr.length==1);
-        assert(fr[0][0]==0 && fr[0][1]==100);
+        expect(fr.length==1);
+        expect(fr[0][0]==0 && fr[0][1]==100);
+        expect(a.offsetOfLastAllocatedByte()==0);
 
-        assert(0 == a.alloc(10));
-        assert(a.length==100);
-        assert(a.numBytesFree==90);
-        assert(a.numBytesUsed==10);
-        assert(a.numFreeRegions==1);
+        /// Allocate 10
+        expect(0 == a.alloc(10));
+
+        expect(!a.empty);
+        expect(a.length==100);
+        expect(a.numBytesFree==90);
+        expect(a.numBytesUsed==10);
+        expect(a.numFreeRegions==1);
         fr = a.freeRegions;
-        assert(fr.length==1);
-        assert(fr[0][0]==10 && fr[0][1]==90);
+        expect(fr.length==1);
+        expect(fr[0][0]==10 && fr[0][1]==90);
+        expect(a.offsetOfLastAllocatedByte()==9);
 
         writefln("Empty Allocator OK");
     }
     void testFreeing() {
         auto a = new Allocator_t!uint(100);
-        assert(0==a.alloc(50));
-        assert(a.numFreeRegions==1);
+        expect(0==a.alloc(50));
+        expect(a.numFreeRegions==1);
+        expect(a.offsetOfLastAllocatedByte()==49);
         // |xxxxx.....|
 
         a.free(10, 20);
         // |x..xx.....|
-        assert(a.numBytesFree==70);
-        assert(a.getFreeRegionsByOffset==[tuple(10,20), tuple(50,50)]);
+        expect(a.numBytesFree==70);
+        expect(a.getFreeRegionsByOffset==[tuple(10,20), tuple(50,50)]);
+        expect(a.offsetOfLastAllocatedByte()==49);
 
         a.free(40,10);
         // |x..x......|
-        assert(a.numBytesFree==80);
-        assert(a.getFreeRegionsByOffset==[tuple(10,20), tuple(40,60)]);
+        expect(a.numBytesFree==80);
+        expect(a.getFreeRegionsByOffset==[tuple(10,20), tuple(40,60)]);
+        expect(a.offsetOfLastAllocatedByte()==39);
     }
     testEmptyAllocator();
     testFreeing();
@@ -230,7 +243,7 @@ void testAllocator() {
         foreach(fr; at.getFreeRegionsBySize) {
             if(fr[1] < lastSize) {
                 writefln("at=%s", at);
-                throw new Error("poopy");
+                throw new Error("wrong");
             }
             lastSize = fr[1];
         }
@@ -289,10 +302,10 @@ void testAllocator() {
     {   // basic properties
         auto a = new Allocator(100);
 
-        assert(a.numBytesFree==100);
-        assert(a.numBytesUsed==0);
-        assert(a.numFreeRegions==1);
-        assert(a.freeRegions[0]==tuple(0,100));
+        expect(a.numBytesFree==100);
+        expect(a.numBytesUsed==0);
+        expect(a.numFreeRegions==1);
+        expect(a.freeRegions[0]==tuple(0,100));
     }
 
     {   // resize
@@ -302,59 +315,59 @@ void testAllocator() {
         // expand where there is a free region at the end
         a.resize(200);
 
-        assert(a.numBytesFree==190);
-        assert(a.numBytesUsed==10);
-        assert(a.numFreeRegions==1);
-        assert(a.freeRegions[0]==tuple(10,190));
+        expect(a.numBytesFree==190);
+        expect(a.numBytesUsed==10);
+        expect(a.numFreeRegions==1);
+        expect(a.freeRegions[0]==tuple(10,190));
 
         a.freeAll();
-        assert(a.numBytesFree==200);
-        assert(a.numBytesUsed==0);
-        assert(a.numFreeRegions==1);
-        assert(a.freeRegions[0]==tuple(0,200));
+        expect(a.numBytesFree==200);
+        expect(a.numBytesUsed==0);
+        expect(a.numFreeRegions==1);
+        expect(a.freeRegions[0]==tuple(0,200));
 
         // expand where end of alloc memory is in use
         a.alloc(100);
         a.alloc(100);
         a.free(0, 100);
-        assert(a.numBytesFree==100);
-        assert(a.numBytesUsed==100);
-        assert(a.numFreeRegions==1);
-        assert(a.freeRegions[0]==tuple(0,100));
+        expect(a.numBytesFree==100);
+        expect(a.numBytesUsed==100);
+        expect(a.numFreeRegions==1);
+        expect(a.freeRegions[0]==tuple(0,100));
 
         a.resize(300);
-        assert(a.numBytesFree==200);
-        assert(a.numBytesUsed==100);
-        assert(a.numFreeRegions==2);
-        assert(a.freeRegions==[tuple(0,100), tuple(200,100)]);
+        expect(a.numBytesFree==200);
+        expect(a.numBytesUsed==100);
+        expect(a.numFreeRegions==2);
+        expect(a.freeRegions==[tuple(0,100), tuple(200,100)]);
         a.freeAll();
 
         // reduce where there is a free region at the end
         // | 50 used | 250 free | (size=300)
         a.alloc(50);
-        assert(a.freeRegions==[tuple(50,250)]);
-        assert(a.length==300);
+        expect(a.freeRegions==[tuple(50,250)]);
+        expect(a.length==300);
 
         a.resize(250);
         // | 50 used | 200 free | (size=250)
-        assert(a.length==250);
-        assert(a.numBytesFree==200);
-        assert(a.numBytesUsed==50);
-        assert(a.numFreeRegions==1);
-        assert(a.freeRegions==[tuple(50,200)]);
+        expect(a.length==250);
+        expect(a.numBytesFree==200);
+        expect(a.numBytesUsed==50);
+        expect(a.numFreeRegions==1);
+        expect(a.freeRegions==[tuple(50,200)]);
 
         // reduce so that the last free region is removed
         a.resize(50);
         // | 50 used | (size=50)
-        assert(a.length==50);
-        assert(a.numBytesFree==0);
-        assert(a.numBytesUsed==50);
-        assert(a.numFreeRegions==0);
-        assert(a.freeRegions==[]);
+        expect(a.length==50);
+        expect(a.numBytesFree==0);
+        expect(a.numBytesUsed==50);
+        expect(a.numFreeRegions==0);
+        expect(a.freeRegions==[]);
 
         // attempt to reduce where end of alloc memory is in use
         a.resize(45);
-        assert(a.length==50);
+        expect(a.length==50);
 
         writefln("%s", a);
     }

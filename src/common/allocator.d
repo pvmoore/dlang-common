@@ -29,9 +29,10 @@ private:
     }
     static assert(FreeRegion.sizeof==T.sizeof*2);
 public:
-    T numBytesFree() { return freeBytes; }
-    T numBytesUsed() { return sizeBytes-freeBytes; }
-    T length() { return sizeBytes; }
+    T numBytesFree() const { return freeBytes; }
+    T numBytesUsed() const { return sizeBytes-freeBytes; }
+    T length() const { return sizeBytes; }
+    bool empty() const { return freeBytes==sizeBytes; }
     uint numAllocs() const { return _numAllocs; }
     uint numFrees() const { return _numFrees; }
     uint numFreeRegions() {
@@ -54,6 +55,15 @@ public:
             buf ~= tuple(b.offset, b.size);
         }
         return buf.data;
+    }
+    /// Returns 0 if there are no allocations
+    T offsetOfLastAllocatedByte() {
+        if(empty()) return 0;
+        if(array.empty) return sizeBytes-1;
+
+        auto lastFreeRegion = array.last();
+        if(lastFreeRegion.end()==sizeBytes) return lastFreeRegion.offset-1;
+        return sizeBytes-1;
     }
 
     this(T sizeBytes) {
@@ -235,7 +245,7 @@ public:
            array.length);
 
         foreach(r; freeRegions()) {
-            buf ~= "  %s - %s (%s)".format(r[0],r[0]+r[1], r[1]);
+            buf ~= "  %s - %s (%s bytes)".format(r[0],r[0]+r[1]-1, r[1]);
         }
 
         buf ~= "}";
