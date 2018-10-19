@@ -892,9 +892,25 @@ void testStack() {
     { // peek
         auto s = new Stack!int;
         assert(s.peek()==0);
+        assert(s.peek(-1)==0);
+        assert(s.peek(1)==0);
+
         s.push(1);
         assert(s.peek()==1);
+        assert(s.peek(0)==1);
+
         s.push(2);
+        assert(s.peek()==2);
+        assert(s.peek(0)==2);
+        assert(s.peek(1)==1);
+
+        s.push(3);
+        assert(s.peek()==3);
+        assert(s.peek(0)==3);
+        assert(s.peek(1)==2);
+        assert(s.peek(2)==1);
+
+        s.pop();
         assert(s.peek()==2);
         s.pop();
         assert(s.peek()==1);

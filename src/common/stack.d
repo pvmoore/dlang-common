@@ -5,7 +5,7 @@ import common.all;
 final class Stack(T) {
 private:
     T[] array;
-    uint pos;
+    int pos;
 public:
     override string toString() {
         return "%s".format(array[0..pos]);
@@ -35,9 +35,10 @@ public:
         if(pos==0) return T.init;
         return array[--pos];
     }
-    T peek() {
-        if(pos==0) return T.init;
-        return array[pos-1];
+    T peek(int offset = 0) {
+        int i = pos-(offset+1);
+        if(i < 0 || i >= array.length) return T.init;
+        return array[i];
     }
     auto clear() {
         pos = 0;

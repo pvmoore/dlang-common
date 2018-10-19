@@ -141,6 +141,10 @@ T as(T,I)(I o) { return cast(T)o; }
 pragma(inline, true)
 bool isA(T,I)(I o) if(isObject!T && isObject!I) { return cast(T)o !is null; }
 
+template FQN(string moduleName) {
+    mixin("import FQN = " ~ moduleName ~ ";");
+}
+
 pragma(inline, true)
 T firstNotNull(T)(T[] array...) if(isObject!T) {
     foreach(t; array) {
@@ -163,7 +167,7 @@ T firstNotNull(T)(T[] array...) if(isObject!T) {
  *      Thing thing;
  *      thing.visit!A(a)
  */
-void visit(T)(Object o, T to) {
+void visit(T)(Object o, T instance) {
     import std.traits : Parameters, fullyQualifiedName;
 	const fqn = typeid(o).name;
 
@@ -174,11 +178,60 @@ void visit(T)(Object o, T to) {
 	        //alias FQN = fullyQualifiedName!(Parameters!ov[0]);
 
             mixin("case "~fullyQualifiedName!(Parameters!ov[0]).stringof~" : " ~
-                  "    to.visit(cast(Parameters!ov[0])o);" ~
+                  "    instance.visit(cast(Parameters!ov[0])o);" ~
                   "    return;");
         }
         default : throw new Error("visit(%s) not implemented".format(fqn));
 	}
+}
+///
+/// Accepts multiple extra arguments and
+/// calls the defaultAction if the function is not found.
+///
+void dynamicDispatch(string FUNCNAME="visit", O, T, ARGS...)
+                    (O o, T instance, void delegate(O) defaultAction, ARGS args)
+{
+    import std.traits : Parameters, fullyQualifiedName;
+    const fqn = typeid(o).name;
+
+    const NUM_ARGS = 1+args.length;
+
+    // use a string switch to select the correct function to call
+    switch(fqn) {
+
+        static foreach(ov; __traits(getOverloads, T, FUNCNAME)) {
+            static if (Parameters!ov.length==NUM_ARGS) {
+                mixin("case "~fullyQualifiedName!(Parameters!ov[0]).stringof~" : " ~
+                      "    instance.%s(cast(Parameters!ov[0])o, args);".format(FUNCNAME) ~
+                      "    return;");
+        }
+        }
+        default :
+            defaultAction(o);
+            break;
+    }
+}
+R dynamicDispatchRet(string FUNCNAME="visit", O, R, T, ARGS...)
+                    (O o, T instance, void delegate(O) defaultAction, ARGS args)
+{
+    import std.traits : Parameters, fullyQualifiedName;
+    const fqn = typeid(o).name;
+
+    const NUM_ARGS = 1+args.length;
+
+    // use a string switch to select the correct function to call
+    switch(fqn) {
+
+        static foreach(ov; __traits(getOverloads, T, FUNCNAME)) {
+            static if (Parameters!ov.length==NUM_ARGS) {
+                mixin("case "~fullyQualifiedName!(Parameters!ov[0]).stringof~" : " ~
+                "    return instance.%s(cast(Parameters!ov[0])o, args);".format(FUNCNAME));
+            }
+        }
+        default :
+            defaultAction(o);
+            return R.init;
+    }
 }
 //void visit(T)(Object o, T to) {
 //    import std.traits : ParameterTypeTuple;
