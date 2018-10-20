@@ -100,7 +100,7 @@ public:
         return std.string.indexOf(array[], str) != -1;
     }
     auto insert(T ch, ulong index) {
-        array.insertAt(ch, index);
+        array.insertAt(index, ch);
         return this;
     }
     auto remove(ulong index) {

@@ -159,7 +159,7 @@ public:
         len -= count;
 	    return this;
 	}
-	auto insertAt(T value, ulong index) {
+	auto insertAt(ulong index, T value) {
 	    expand(1);
 
         static if(__traits(isPOD,T)) {
@@ -176,7 +176,7 @@ public:
         len++;
 	    return this;
 	}
-	auto insertAt(T[] values, ulong index) {
+	auto insertAt(ulong index, T[] values) {
 	    auto count = values.length;
 	    if(count==0) return this;
         expand(count);

@@ -550,26 +550,26 @@ void testArray() {
     // insertAt
     a.clear();
     a.add(0).add(1).add(2);
-    a.insertAt(99, 0);
+    a.insertAt(0, 99);
     assert(a.length==4 && a==[99,0,1,2]);
-    a.insertAt(55, 1);
+    a.insertAt(1, 55);
     assert(a.length==5 && a==[99,55,0,1,2]);
-    a.insertAt(33, 4);
+    a.insertAt(4, 33);
     assert(a.length==6 && a==[99,55,0,1,33,2]);
-    a.insertAt(11, 6);
+    a.insertAt(6, 11);
     assert(a.length==7 && a==[99,55,0,1,33,2,11]);
 
     // insertAt array
     a.clear(); a.add([0,1,2,3,4]);
-    a.insertAt([8,9], 0);
+    a.insertAt(0, [8,9]);
     assert(a==[8,9,0,1,2,3,4] && a.length==7);
-    a.insertAt([],0);
+    a.insertAt(0, []);
     assert(a==[8,9,0,1,2,3,4] && a.length==7);
-    a.insertAt([90], 2);
+    a.insertAt(2, [90]);
     assert(a==[8,9,90,0,1,2,3,4] && a.length==8);
-    a.insertAt([100],7);
+    a.insertAt(7, [100]);
     assert(a==[8,9,90,0,1,2,3,100,4] && a.length==9);
-    a.insertAt([200], 9);
+    a.insertAt(9, [200]);
     assert(a==[8,9,90,0,1,2,3,100,4,200] && a.length==10);
 
     // opIndex(), opSlice and opDollar

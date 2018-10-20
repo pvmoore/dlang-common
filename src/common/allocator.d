@@ -100,7 +100,7 @@ public:
                         /// |+inc+|--used--|++free++|    after
                         b.offset  += (inc + size);
                         b.size    -= (inc + size);
-                        array.insertAt(FreeRegion(offset,inc), i);
+                        array.insertAt(i, FreeRegion(offset,inc));
                     }
                     freeBytes -= size;
                     return offset + inc;
@@ -161,23 +161,23 @@ public:
                 next.offset -= size;
                 next.size   += size;
             } else {
-                array.insertAt(FreeRegion(offset,size), i+1);
+                array.insertAt(i+1, FreeRegion(offset,size));
             }
         } else if(prev) {
             if(offset==prev.end) {
                 prev.size += size;
             } else {
-                array.insertAt(FreeRegion(offset,size), i+1);
+                array.insertAt(i+1, FreeRegion(offset,size));
             }
         } else if(next) {
             if(next.offset==end) {
                 next.offset -= size;
                 next.size   += size;
             } else {
-                array.insertAt(FreeRegion(offset,size), i);
+                array.insertAt(i, FreeRegion(offset,size));
             }
         } else {
-            array.insertAt(FreeRegion(offset,size), 0);
+            array.insertAt(0, FreeRegion(offset,size));
         }
         freeBytes += size;
     }
