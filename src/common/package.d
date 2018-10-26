@@ -11,6 +11,7 @@ import common.attributes;
 import common.bool3;
 import common.pdh;
 import common.list;
+import common.hasher;
 import common.intrinsics;
 import common.objectcache;
 import common.pinned_array;

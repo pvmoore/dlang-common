@@ -35,7 +35,7 @@ void main() {
 void runTests() {
     writefln("Running tests");
     scope(failure) writefln("-- FAIL");
-    scope(success) writeln("-- OK - All standard tests finished");
+    scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
 
@@ -61,6 +61,7 @@ void runTests() {
         testStringUtils();
         testStringBuffer();
         testVelocity();
+        testHasher();
     }
 }
 
@@ -1259,5 +1260,22 @@ void testStringBuffer() {
         assert(buf=="bcdef");
         buf.remove(4);
         assert(buf=="bcde");
+    }
+}
+void testHasher() {
+    writefln("--== Testing Hasher ==--");
+    {
+        auto m1 = Hasher.murmur("abcdefgh");
+        auto m2 = Hasher.murmur("abcdefgh");
+        writefln("murmurhash = %s", m1);
+        assert(m1==m2);
+
+        auto s1 = Hasher.sha1("abcdefgh");
+        auto s2 = Hasher.sha1("abcdefgh");
+        auto s3 = Hasher.sha1("");
+        writefln("sha1       = %s", s1);
+        writefln("sha1       = %s", s3);
+        assert(s1==s2);
+        assert(s1!=s3);
     }
 }
