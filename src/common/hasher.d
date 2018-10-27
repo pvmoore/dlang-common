@@ -25,4 +25,7 @@ public:
     string toString() {
         return toHexString!(LetterCase.lower)(hash.dup);
     }
+    bool isValid() {
+        return !onlyContains(hash.ptr, L, 0);
+    }
 }

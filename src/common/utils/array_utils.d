@@ -71,3 +71,10 @@ T pop(T)(ref T[] array) {
 	array.length = array.length - 1;
 	return value;
 }
+/// returns true if the entire array only contains values
+bool onlyContains(T)(T[] array, T value) nothrow {
+	foreach(v; array) {
+        if(v!=value) return false;
+    }
+	return true;
+}

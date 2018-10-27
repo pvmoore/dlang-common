@@ -426,6 +426,28 @@ void testUtilities() {
         assert(! i.isA!AA);
     }
 
+    {   /// onlyContains
+        ubyte[] b0 = [];
+        assert(false == onlyContains(b0.ptr, b0.length, 0));
+        assert(false == onlyContains(b0.ptr, b0.length, 1));
+
+        ubyte[] b1 = [0];
+        assert(false == onlyContains(b1.ptr, b1.length, 1));
+        assert(true  == onlyContains(b1.ptr, b1.length, 0));
+
+        ubyte[] b2 = [0,0,0,0,0,0,0,0];
+        assert(true  == onlyContains(b2.ptr, b2.length, 0));
+        assert(false == onlyContains(b2.ptr, b2.length, 1));
+
+        ubyte[] b3 = [0,0,0,1,0,0,0,0];
+        assert(false == onlyContains(b3.ptr, b3.length, 0));
+
+        ubyte[] b4 = [0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,0];
+        ubyte[] b5 = [0,0,0,0,0,0,0,0,  0,0,0,0,0,0,0,1];
+        assert(true  == onlyContains(b4.ptr, b4.length, 0));
+        assert(false == onlyContains(b5.ptr, b5.length, 0));
+    }
+
     // firstNotNull
     {
         auto a = new Object;
@@ -1277,5 +1299,10 @@ void testHasher() {
         writefln("sha1       = %s", s3);
         assert(s1==s2);
         assert(s1!=s3);
+
+        /// isValid
+        assert(m1.isValid && m2.isValid && s1.isValid && s2.isValid && s3.isValid);
+        Hash!20 h;
+        assert(!h.isValid);
     }
 }

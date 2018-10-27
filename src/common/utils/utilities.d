@@ -45,15 +45,18 @@ void swap(T)(ref T a, ref T b) pure nothrow {
 	b = temp;
 }
 /// returns true if the entire array only contains values
-bool onlyContains(void* ptr, ulong numBytes, ubyte value) nothrow {
+bool onlyContains(void* ptr, ulong numBytes, ubyte value)  {
+    if(numBytes==0) return false;
     if(numBytes>=8) {
         auto len8    = numBytes>>>3;
         ulong value8 = 0x01010101_01010101 * cast(ulong)value;
         ulong* p  = cast(ulong*)ptr;
+
         for(auto i=0; i<len8; i++) {
             if((*p++)!=value8) return false;
         }
-        ptr += (numBytes&~7);
+
+        ptr      += (numBytes&~7);
         numBytes &= 7;
         if(numBytes==0) return true;
     }
