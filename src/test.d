@@ -1302,6 +1302,10 @@ void testHasher() {
 
         /// isValid
         assert(m1.isValid && m2.isValid && s1.isValid && s2.isValid && s3.isValid);
+
+        m1.invalidate();
+        assert(!m1.isValid);
+
         Hash!20 h;
         assert(!h.isValid);
     }

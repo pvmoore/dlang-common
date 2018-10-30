@@ -28,4 +28,7 @@ public:
     bool isValid() {
         return !onlyContains(hash.ptr, L, 0);
     }
+    void invalidate() {
+        hash[] = 0;
+    }
 }
