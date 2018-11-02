@@ -147,6 +147,9 @@ bool isA(T,I)(I o) if(isObject!T && isObject!I) { return cast(T)o !is null; }
 template FQN(string moduleName) {
     mixin("import FQN = " ~ moduleName ~ ";");
 }
+template From(string moduleName) {
+    mixin("import From = " ~ moduleName ~ ";");
+}
 
 pragma(inline, true)
 T firstNotNull(T)(T[] array...) if(isObject!T) {

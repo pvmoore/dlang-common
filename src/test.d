@@ -1230,6 +1230,12 @@ void testStringBuffer() {
         buf ~= "ef";
         assert(buf=="abcdef" && buf.length==6 && !buf.empty);
     }
+    { // add(format)
+        auto buf = new StringBuffer;
+        buf.add("%s %s", 10, true);
+        writefln("%s", buf.toString());
+        assert(buf=="10 true");
+    }
     { // equality
         auto buf  = new StringBuffer("abcd");
         auto buf2 = new StringBuffer("abcd");

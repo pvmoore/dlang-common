@@ -69,6 +69,11 @@ public:
         array.add(cast(T[])str);
         return this;
     }
+    auto add(A...)(inout(T)[] fmt, A args) {
+        add(format(fmt, args));
+        return this;
+    }
+
     T opIndex(ulong i) const {
         return array[i];
     }
