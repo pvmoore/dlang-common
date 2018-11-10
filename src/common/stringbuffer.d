@@ -24,7 +24,7 @@ public:
         add(str);
     }
     override string toString() const {
-        return cast(string)array[0..array.length];
+        return cast(string)array[0..array.length].idup;
     }
     bool opEquals(inout(T)[] o) const {
         return array[] == o;
