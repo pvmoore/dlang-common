@@ -31,4 +31,16 @@ public:
         map.clear();
         return this;
     }
+    /// This is a semi-expensive process
+    override bool opEquals(Object o) const {
+        Set other = cast(Set!T)o;
+        if(other is null) return false;
+
+        if(length!=other.length) return false;
+
+        foreach(k; other.map.keys) {
+            if(!k in map) return false;
+        }
+        return true;
+    }
 }

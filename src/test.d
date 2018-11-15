@@ -871,24 +871,45 @@ void testPDH() {
 void testSet() {
     writefln("--== Testing Set ==--");
 
-    auto s = new Set!int;
-    assert(s.empty && s.length==0);
+    {
+        auto s = new Set!int;
+        assert(s.empty && s.length==0);
 
-    s.add(2).add(4);
-    assert(!s.empty && s.length==2);
-    assert(s.contains(2) && s.contains(4));
+        s.add(2).add(4);
+        assert(!s.empty && s.length==2);
+        assert(s.contains(2) && s.contains(4));
 
-    s.add(2).add(3);
-    assert(!s.empty && s.length==3);
-    assert(s.contains(2) && s.contains(3) && s.contains(4));
+        s.add(2).add(3);
+        assert(!s.empty && s.length==3);
+        assert(s.contains(2) && s.contains(3) && s.contains(4));
 
-    assert(s.remove(2)==true);
-    assert(s.length==2);
+        assert(s.remove(2)==true);
+        assert(s.length==2);
 
-    assert(s.remove(1)==false);
-    assert(s.length==2);
+        assert(s.remove(1)==false);
+        assert(s.length==2);
 
-    assert(s.values==[3,4] || s.values==[4,3]);
+        assert(s.values==[3,4] || s.values==[4,3]);
+    }
+
+    { // ==
+        auto s1 = new Set!int;
+        auto s2 = new Set!int;
+        auto s3 = new Set!float;
+
+        assert(s1==s2);
+        assert(s1!=s3);
+
+        s1.add([1,20,30,40,500]);
+        s2.add([500,40,30,20,1]);
+        writefln("s1 = %s", s1.values);
+        writefln("s2 = %s", s2.values);
+        assert(s1==s2);
+        s1.add(2);
+        assert(s1!=s2);
+        s2.add(2);
+        assert(s1==s2);
+    }
 }
 void testStack() {
     writefln("--== Testing Stack ==--");
