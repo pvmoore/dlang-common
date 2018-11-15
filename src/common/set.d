@@ -39,7 +39,7 @@ public:
         if(length!=other.length) return false;
 
         foreach(k; other.map.keys) {
-            if(!k in map) return false;
+            if(!(k in map)) return false;
         }
         return true;
     }
