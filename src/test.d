@@ -65,6 +65,10 @@ void runTests() {
     }
 }
 
+void let(T)(T receiver, void delegate(T thing) func) {
+    func(receiver);
+}
+
 void testAllocator() {
     writefln("--== Testing Allocator ==--");
 
@@ -410,7 +414,7 @@ void testUtilities() {
     assert(o1.as!I !is null);
     assert(o2.as!I !is null);
 
-    assert(3.14.as!int == 3);
+    assert((3.14).as!int == 3);
 
     { // isA
         class AA {}

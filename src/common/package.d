@@ -5,6 +5,7 @@ version(Win64) {} else { pragma(msg,"Windows 64 bit required"); static assert(fa
 public:
 
 import common.allocator;
+import common.archive;
 import common.boxing;
 import common.array;
 import common.attributes;
