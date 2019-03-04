@@ -41,6 +41,15 @@ private:
     }
 }
 //-----------------------------------------------------------------
+/**
+ * ubyte[] received;
+ * void receiver(ubyte b) {
+ *     received ~= b;
+ * }
+ * auto writer = new BitWriter(&receiver);
+ *
+ * writer.write(0b11111111, 8);
+ */
 final class BitWriter {
 private:
 	ulong bits;
@@ -50,6 +59,8 @@ public:
     this(void delegate(ubyte) receiver) {
         this.receiver = receiver;
     }
+    uint bitsWritten;
+    uint bytesWritten;
     /**
      *  Write 0 to 32 bits of value to the stream.
      */
@@ -60,18 +71,23 @@ public:
         ulong a = value & (0xffff_ffffu >>> (32-numBits));
         ulong b = a << bitpos;
 
-        bits   |= b;
-        bitpos += numBits;
+        bits        |= b;
+        bitpos      += numBits;
+        bitsWritten += numBits;
 
         while(bitpos>7) {
             //receiver(cast(ubyte)((bits>>>bitpos-8) & 0xff));
             receiver(cast(ubyte)(bits & 0xff));
             bits >>>=8;
             bitpos -= 8;
+            bytesWritten++;
         }
     }
     void flush() {
         if(bitpos>0) {
+            bytesWritten++;
+            bitsWritten += (8-bitpos);
+
             receiver(cast(ubyte)(bits & 0xff));
             bitpos = 0;
             bits   = 0;

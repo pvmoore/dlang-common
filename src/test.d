@@ -1064,23 +1064,40 @@ void testBitWriter() {
 
     writer.write(0b11111111, 8);
     assert(received==[0xff]);
+    assert(writer.bitsWritten==8);
+    assert(writer.bytesWritten==1);
 
     writer.write(0b00001111, 4);
     assert(received==[0xff]);
+    assert(writer.bitsWritten==12);
+    assert(writer.bytesWritten==1);
+
     writer.write(0b00001111, 4);
     assert(received==[0xff, 0xff]);
+    assert(writer.bitsWritten==16);
+    assert(writer.bytesWritten==2);
 
     received.length = 0;
     writer.write(0b00001001, 4);
     assert(received==[]);
+    assert(writer.bitsWritten==20);
+    assert(writer.bytesWritten==2);
+
     writer.write(0b00001111, 4);
     assert(received==[0b11111001]);
+    assert(writer.bitsWritten==24);
+    assert(writer.bytesWritten==3);
 
     received.length = 0;
     writer.write(0b11111111, 7);
     assert(received==[]);
+    assert(writer.bitsWritten==31);
+    assert(writer.bytesWritten==3);
+
     writer.write(0b11111111, 1);
     assert(received==[0xff]);
+    assert(writer.bitsWritten==32);
+    assert(writer.bytesWritten==4);
 
     received.length = 0;
     writer.write(0b01, 2);
@@ -1088,24 +1105,50 @@ void testBitWriter() {
     writer.write(0b11, 2);
     writer.write(0b00, 2);
     assert(received==[0b00111001]);
+    assert(writer.bitsWritten==40);
+    assert(writer.bytesWritten==5);
 
     received.length = 0;
     writer.write(0xffffffff, 5);
-    writer.flush();
+    assert(writer.bitsWritten==45);
+    assert(writer.bytesWritten==5);
+
+    writer.flush();                 // 3 extra bits written
     assert(received==[0b11111]);
+    assert(writer.bitsWritten==48);
+    assert(writer.bytesWritten==6);
 
     received.length = 0;
     writer.write(0xffffffff, 3);
     writer.write(0, 2);
     writer.write(0xffffffff, 2);
-    writer.flush();
+    assert(writer.bitsWritten==55);
+    assert(writer.bytesWritten==6);
+
+    writer.flush();                 // 1 extra bit written
     assert(received==[0b1100111]);
+    assert(writer.bitsWritten==56);
+    assert(writer.bytesWritten==7);
 
     received.length = 0;
     writer.write(0xffffffff, 9);
     writer.write(0x01, 2);
-    writer.flush();
+    assert(writer.bitsWritten==67);
+    assert(writer.bytesWritten==8);
+
+    writer.flush();                 // 5 extra bits written
     assert(received==[0xff, 0b011]);
+    assert(writer.bitsWritten==72);
+    assert(writer.bytesWritten==9);
+
+    writer.flush();                 // no change
+    assert(writer.bitsWritten==72);
+    assert(writer.bytesWritten==9);
+
+    writer.write(0, 1);
+    writer.flush();                 // flush 7 bits
+    assert(writer.bitsWritten==80);
+    assert(writer.bytesWritten==10);
 }
 void testBitReader() {
     writefln("--== Testing BitReader==--");
