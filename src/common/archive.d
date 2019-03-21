@@ -57,7 +57,9 @@ public:
         auto ptr = name in members;
         if(ptr) {
             auto a = *ptr;
-            if(a.expandedData() is null) archive.expand(a);
+            if(a.expandedData() is null) {
+                archive.expand(a);
+            }
             return Member(a.name, a.expandedData(), a.comment);
         }
         return Member(null, null, null);

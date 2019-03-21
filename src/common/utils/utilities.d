@@ -5,12 +5,26 @@ import common.all;
 pragma(inline,true)
 void expect(bool b, string file=__FILE__, int line=__LINE__) {
     if(unlikely(!b)) {
-        throw new Error("%s:%s Expectation failed".format(file,line));
+        import std.stdio : stderr;
+
+        stderr.writefln("Expectation FAILED --> %s Line %s", file, line);
+        flushConsole();
+
+        throw new Error("Expectation FAILED --> %s Line %s".format(file, line));
     }
 }
 pragma(inline,true)
 void expect(A...)(bool b, lazy string fmt, lazy A args) {
-    if(unlikely(!b)) throw new Error("Expectation failed: "~format(fmt, args));
+    if(unlikely(!b)) {
+        import std.stdio : stderr;
+
+        auto msg = format(fmt, args);
+
+        stderr.writefln("Expectation FAILED --> %s", msg);
+        flushConsole();
+
+        throw new Error("Expectation FAILED --> %s".format(msg));
+    }
 }
 
 StopWatch startTiming() {
