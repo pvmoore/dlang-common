@@ -38,7 +38,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-
+        
     } else {
         testPDH();
         testQueue();
@@ -969,86 +969,130 @@ void testStack() {
 void testByteReader() {
     writefln("--== Testing ByteReader ==--");
 
-    string dir = tempDir();
-    string filename = dir~uniform(0,100).to!string~"file.bin";
-    scope f = File(filename, "wb");
-    scope(exit) { f.close(); remove(filename); }
-    ubyte[256] data;
+    {
+        writefln("FileByteReader...");
+        string dir = tempDir();
+        string filename = dir~uniform(0,100).to!string~"file.bin";
+        scope f = File(filename, "wb");
+        scope(exit) { f.close(); remove(filename); }
+        ubyte[256] data;
 
-    void writeTestData() {
-        for(auto i=0; i<data.length; i++) {
-            data[i] = cast(ubyte)uniform(0,255);
+        void writeTestData() {
+            for(auto i=0; i<data.length; i++) {
+                data[i] = cast(ubyte)uniform(0,255);
+            }
+            f.rawWrite(data);
         }
-        f.rawWrite(data);
+        writeTestData();
+
+        // read
+        FileByteReader r = new FileByteReader(filename, 8);
+        scope(exit) r.close();
+
+        assert(r.length==256);
+        assert(r.position==0);
+
+        auto b1 = r.read!ubyte;
+        assert(b1==data[0]);
+        assert(r.position==1);
+
+        auto s1 = r.read!ushort();
+        assert(s1==(data[1] | data[2]<<8));
+        assert(r.position==3);
+
+        auto i1 = r.read!uint();
+        assert(i1==(data[3] | (data[4]<<8) | (data[5]<<16) | (data[6]<<24)));
+        assert(r.position==7);
+
+        auto l1 = r.read!ulong();
+        assert(l1==(
+            cast(ulong)data[7] | (cast(ulong)data[8]<<8) | (cast(ulong)data[9]<<16) | (cast(ulong)data[10]<<24) |
+            (cast(ulong)data[11]<<32) | (cast(ulong)data[12]<<40) | (cast(ulong)data[13]<<48) | (cast(ulong)data[14]<<56)
+        ));
+        assert(r.position==15);
+
+        auto b2 = r.read!ubyte();
+        assert(b2==data[15]);
+        assert(r.position==16);
+
+        auto s2 = r.read!ushort;
+        assert(s2==(data[16] | (data[17]<<8)));
+        assert(r.position==18);
+
+        auto s3 = r.read!ushort;
+        assert(s3==(data[18] | (data[19]<<8)));
+        assert(r.position==20);
+
+        auto i2 = r.read!uint;
+        assert(i2==(data[20] | (data[21]<<8) | (data[22]<<16) | (data[23]<<24)));
+        assert(r.position==24);
+
+        // readArray
+        auto a1 = r.readArray!ubyte(2);
+        assert(a1==data[24..24+2]);
+        assert(r.position==26);
+
+        auto a2 = r.readArray!ubyte(5);
+        assert(a2==data[26..26+5]);
+        assert(r.position==31);
+
+        auto a3 = r.readArray!ubyte(12);
+        assert(a3==data[31..31+12]);
+        assert(r.position==43);
+
+        // skip
+        auto b3 = r.read!ubyte;
+        assert(b3==data[43]);
+        assert(r.position==44);
+
+        r.skip(2);
+        assert(r.position==46);
+
+        r.skip(9);
+        assert(r.position==55);
+        r.close();
     }
-    writeTestData();
 
-    // read
-    auto r = new ByteReader(filename, 8);
-    scope(exit) r.close();
+    {
+        writefln("ByteReader...");
+        ubyte[] b = [cast(ubyte)1,2,3,4,5,6,7,8,9,0];
+        auto reader = new ByteReader(b);
+        assert(reader.length==b.length);
 
-    assert(r.length==256);
-    assert(r.position==0);
+        ubyte[] buf;
 
-    auto b1 = r.read!ubyte();
-    assert(b1==data[0]);
-    assert(r.position==1);
+        while(!reader.eof) {
+            buf ~= reader.read!ubyte;
+        }
+        assert(buf.length==b.length);
+        assert(buf[] == b[]);
 
-    auto s1 = r.read!ushort();
-    assert(s1==(data[1] | data[2]<<8));
-    assert(r.position==3);
 
-    auto i1 = r.read!uint();
-    assert(i1==(data[3] | (data[4]<<8) | (data[5]<<16) | (data[6]<<24)));
-    assert(r.position==7);
+        reader.rewind();
+        assert(reader.position==0);
+        assert(reader.read!ushort==(0x0201).as!ushort && reader.position==2);
+        assert(reader.read!uint==(0x06050403).as!uint && reader.position==6);
+        reader.skip(1);
+        assert(reader.position==7);
+        assert(reader.read!ubyte==(0x08).as!ubyte && reader.position==8);
+        assert(reader.read!uint==(0x00000009).as!uint && reader.position==10 && reader.eof);
 
-    auto l1 = r.read!ulong();
-    assert(l1==(
-        cast(ulong)data[7] | (cast(ulong)data[8]<<8) | (cast(ulong)data[9]<<16) | (cast(ulong)data[10]<<24) |
-        (cast(ulong)data[11]<<32) | (cast(ulong)data[12]<<40) | (cast(ulong)data[13]<<48) | (cast(ulong)data[14]<<56)
-    ));
-    assert(r.position==15);
+        assert(reader.read!ubyte==0); 
 
-    auto b2 = r.read!ubyte();
-    assert(b2==data[15]);
-    assert(r.position==16);
+        reader.rewind();
+        assert(reader.position==0);
 
-    auto s2 = r.read!ushort;
-    assert(s2==(data[16] | (data[17]<<8)));
-    assert(r.position==18);
+        assert(reader.readArray!ubyte(3) == cast(ubyte[])[1,2,3] && reader.position==3);
+        assert(reader.readArray!ushort(2) == cast(ushort[])[0x0504, 0x0706] && reader.position==7);
+        assert(reader.readArray!ubyte(8) == cast(ubyte[])[8,9,0,0,0,0,0,0] && reader.eof);
 
-    auto s3 = r.read!ushort;
-    assert(s3==(data[18] | (data[19]<<8)));
-    assert(r.position==20);
+        reader.rewind();
 
-    auto i2 = r.read!uint;
-    assert(i2==(data[20] | (data[21]<<8) | (data[22]<<16) | (data[23]<<24)));
-    assert(r.position==24);
+        assert(reader.readArray!uint(5) == [0x04030201, 0x08070605, 0x00000009, 0,0]);
 
-    // readArray
-    auto a1 = r.readArray!ubyte(2);
-    assert(a1==data[24..24+2]);
-    assert(r.position==26);
-
-    auto a2 = r.readArray!ubyte(5);
-    assert(a2==data[26..26+5]);
-    assert(r.position==31);
-
-    auto a3 = r.readArray!ubyte(12);
-    assert(a3==data[31..31+12]);
-    assert(r.position==43);
-
-    // skip
-    auto b3 = r.read!ubyte;
-    assert(b3==data[43]);
-    assert(r.position==44);
-
-    r.skip(2);
-    assert(r.position==46);
-
-    r.skip(9);
-    assert(r.position==55);
-    r.close();
+        reader.close();
+        assert(reader.eof);
+    }
 }
 void testBitWriter() {
     writefln("--== Testing BitWriter ==--");
