@@ -26,6 +26,9 @@ void expect(A...)(bool b, lazy string fmt, lazy A args) {
         throw new Error("Expectation FAILED --> %s".format(msg));
     }
 }
+void todo(string msg = "TODO - Not yet implemented") {
+    assert(false, msg);
+}
 
 StopWatch startTiming() {
     StopWatch w;

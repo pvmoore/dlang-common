@@ -3,7 +3,7 @@ module common.io.byte_reader;
  *
  */
 import common.all;
-import std.stdio : File, SEEK_CUR;
+import std.stdio : File, SEEK_SET;
 
 final class FileByteReader : ByteReader {
 private:
@@ -15,6 +15,9 @@ public:
 		this.file          = File(filename, "rb");
         super(file.size, littleEndian);
 		this.buffer.length = bufferSize;
+
+        // Fill up the buffer
+        file.rawRead(buffer);
 	}
     override void close() {
         super.close();
@@ -29,8 +32,7 @@ public:
 
         if(bufpos >= buffer.length) {
             // invalidate our buffer and skip through the actual file
-            auto rem = bufpos - buffer.length;
-            file.seek(rem, SEEK_CUR);
+            file.seek(position, SEEK_SET);
             bufpos = buffer.length;
         }
     }
@@ -61,9 +63,7 @@ protected:
     }
 private:
     void prefetch(uint numBytes) {
-        if(position==0) {
-            file.rawRead(buffer);
-        } else if(bufpos+numBytes >= buffer.length) {
+        if(bufpos+numBytes >= buffer.length) {
             auto rem = buffer.length-bufpos;
             if(rem>0) {
                 buffer[0..rem] = buffer[bufpos..$];
@@ -130,6 +130,12 @@ public:
         this(source.length, littleEndian);
         this.buffer = source.dup;
     }
+    /** 
+     *  Create a BitReader that uses this ByteReader as the byte source.
+     */
+    BitReader getBitReader() {
+        return new BitReader(()=>read!ubyte);
+    }
 	void close() {
 	    position = length;
 	}
@@ -149,20 +155,20 @@ public:
 	        position = length;
 	        return T.init;
         }
-        static if(is(T==ubyte)) return readByte();
-        static if(is(T==ushort)) return readShort();
-        static if(is(T==uint)) return readInt();
-        static if(is(T==ulong)) return readLong();
+        static if(is(T==ubyte) || is(T==byte)) return readByte();
+        static if(is(T==ushort) || is(T==short)) return readShort();
+        static if(is(T==uint) || is(T==int)) return readInt();
+        static if(is(T==ulong) || is(T==long)) return readLong();
         assert(false);
 	}
     T[] readArray(T)(ulong items) {
         if(eof()) {
             return new T[items];
         }
-        static if(is(T==ubyte)) return readByteArray(items);
-        static if(is(T==ushort)) return readShortArray(items);
-        static if(is(T==uint)) return readIntArray(items);
-        static if(is(T==ulong)) return readLongArray(items);
+        static if(is(T==ubyte) || is(T==byte)) return readByteArray(items);
+        static if(is(T==ushort) || is(T==short)) return readShortArray(items);
+        static if(is(T==uint) || is(T==int)) return readIntArray(items);
+        static if(is(T==ulong) || is(T==long)) return readLongArray(items);
         assert(false);
 	}
 protected:

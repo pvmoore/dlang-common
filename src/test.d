@@ -5,18 +5,20 @@ import core.stdc.stdlib : malloc, calloc;
 import core.atomic      : atomicLoad, atomicStore, atomicOp;
 import core.time        : dur;
 import core.thread      : Thread, thread_joinAll;
-import std.datetime.stopwatch : benchmark, StopWatch;
-import std.random   : randomShuffle,uniform, Mt19937, unpredictableSeed;
-import std.format   : format;
-import std.conv : to;
-import std.algorithm.iteration : permutations, map, sum, each;
-import std.algorithm.sorting   : sort;
-import std.algorithm.mutation : reverse;
-import std.typecons : Tuple,tuple;
-import std.range    : array,stride,join,iota;
-import std.parallelism : parallel, task;
-import std.file : tempDir, remove;
-import std.array : join;
+import core.memory      : GC;
+
+import std.random       : randomShuffle,uniform, Mt19937, unpredictableSeed;
+import std.format       : format;
+import std.conv         : to;
+import std.typecons     : Tuple,tuple;
+import std.range        : array,stride,join,iota;
+import std.parallelism  : parallel, task;
+import std.file         : exists, tempDir, remove;
+import std.array        : join;
+import std.datetime.stopwatch   : benchmark, StopWatch;
+import std.algorithm.iteration  : permutations, map, sum, each;
+import std.algorithm.sorting    : sort;
+import std.algorithm.mutation   : reverse;
 
 import test_async;
 
@@ -38,7 +40,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        
+       
     } else {
         testPDH();
         testQueue();
@@ -54,6 +56,7 @@ void runTests() {
         testBool3();
         testStack();
         testByteReader();
+        testByteWriter();
         testBitWriter();
         testBitReader();
         testBitReaderAndWriter();
@@ -974,7 +977,7 @@ void testByteReader() {
         string dir = tempDir();
         string filename = dir~uniform(0,100).to!string~"file.bin";
         scope f = File(filename, "wb");
-        scope(exit) { f.close(); remove(filename); }
+        scope(exit) { remove(filename); }
         ubyte[256] data;
 
         void writeTestData() {
@@ -984,6 +987,7 @@ void testByteReader() {
             f.rawWrite(data);
         }
         writeTestData();
+        f.close();
 
         // read
         FileByteReader r = new FileByteReader(filename, 8);
@@ -1094,6 +1098,81 @@ void testByteReader() {
         assert(reader.eof);
     }
 }
+void testByteWriter() {
+    writefln("Testing ByteWriter...");
+
+    string dir = tempDir();
+    string filename = dir~uniform(0,100).to!string~"file.bin";
+    scope(exit) { if(exists(filename)) remove(filename); }
+
+    {
+        auto w = new FileByteWriter(filename);
+
+        w.write!ubyte(0xfe);
+        assert(w.getBytesWritten==1);
+        w.write!byte(-1);
+        assert(w.getBytesWritten==2);
+        w.write!ushort(0xee11);
+        assert(w.getBytesWritten==4);
+        w.write!uint(0xff);
+        assert(w.getBytesWritten==8);
+        w.write!ulong(0);
+        assert(w.getBytesWritten==16);
+
+        auto bw = w.getBitWriter();
+        bw.write(0b101, 3);
+        bw.flush();         // push the current byte out to the ByteWriter
+
+        w.close();
+    }
+    auto r = new FileByteReader(filename); 
+
+    assert(r.read!ubyte==0xfe);
+    assert(r.read!byte==-1);
+    assert(r.read!ushort==0xee11);
+    assert(r.read!uint==0xff);
+    assert(r.read!ulong==0);
+
+    assert(r.read!ubyte==0b101);
+    r.close();
+}
+void testArrayByteWriter() {
+    writefln("Testing ArrayByteWriter...");
+
+    {
+        auto w = new ArrayByteWriter;
+
+        w.write!ubyte(0x89);
+        assert(w.length==1 && w.getArray==[0x89]);
+
+        w.write!ushort(0xd1d2);
+        assert(w.length==3 && w.getArray==[0x89, 0xd2, 0xd1]);
+
+        w.write!uint(0x01020304);
+        assert(w.length==7 && w.getArray==[0x89, 0xd2, 0xd1, 4,3,2,1]);
+
+        w.write!ulong(0x0102030405060708L);
+        assert(w.length==15 && w.getArray==[0x89, 0xd2, 0xd1, 4,3,2,1, 8,7,6,5,4,3,2,1]);
+
+        w.writeArray!ubyte(cast(ubyte[])[6,7,8]);
+        assert(w.length==18 && w.getArray==[0x89, 0xd2, 0xd1, 4,3,2,1, 8,7,6,5,4,3,2,1, 6,7,8]);
+
+        w.reset();
+        assert(w.length==0);
+
+        w.writeArray!ushort(cast(ushort[])[0x0304, 0x0506]);
+        assert(w.length==4 && w.getArray==[4,3,6,5]);
+
+        w.writeArray!uint([1,2]);
+        assert(w.length==12 && w.getArray==[4,3,6,5, 1,0,0,0, 2,0,0,0]);
+
+        w.pack();
+        assert(w.length==12 && w.getReservedLength==12);
+
+        w.writeArray!ulong([1]);
+        assert(w.length==20 && w.getArray==[4,3,6,5, 1,0,0,0, 2,0,0,0, 1,0,0,0,0,0,0,0]);
+    }
+}
 void testBitWriter() {
     writefln("--== Testing BitWriter ==--");
 
@@ -1198,12 +1277,15 @@ void testBitReader() {
     writefln("--== Testing BitReader==--");
 
     ubyte[] bytes = [
-        0b11111111,
-        0b11110000,
-        0b00001111,
-        0b00110011,
-        0b01010101,
-        0b00100101
+        0b11111111, // [0]
+        0b11110000, // [1]
+        0b00001111, // [2]
+        0b00110011, // [3]
+        0b01010101, // [4]
+        0b00100101, // [5]
+        0b11111111, // [6]
+        0b11111111, // [7]
+        0b00110011  // [8]
     ];
     uint ptr;
 
@@ -1213,24 +1295,105 @@ void testBitReader() {
         return bytes[ptr++];
     }
 
-    auto r = new BitReader(&byteProvider);
+    {   // read 
+        auto r = new BitReader(&byteProvider);
 
-    assert(0b11111111==r.read(8));
-    assert(0b11110000==r.read(8));
-    assert(0b00001111==r.read(8));
+        assert(0b11111111==r.read(8));
+        assert(0b11110000==r.read(8));
+        assert(0b00001111==r.read(8));
+        assert(r.isAtStartOfByte);
 
-    assert(0b0011==r.read(4));
-    assert(0b0011==r.read(4));
+        assert(0b0011==r.read(4) && !r.isAtStartOfByte);
+        assert(0b0011==r.read(4) && r.isAtStartOfByte);
 
-    assert(0b01==r.read(2));
-    assert(0b01==r.read(2));
-    assert(0b01==r.read(2));
-    assert(0b01==r.read(2));
+        assert(0b01==r.read(2) && !r.isAtStartOfByte);
+        assert(0b01==r.read(2) && !r.isAtStartOfByte);
+        assert(0b01==r.read(2) && !r.isAtStartOfByte);
+        assert(0b01==r.read(2) && r.isAtStartOfByte);
 
-    assert(0b1==r.read(1));
-    assert(0b10==r.read(2));
-    assert(0b100==r.read(3));
-    assert(0b00==r.read(2));
+        assert(0b1==r.read(1));
+        assert(0b10==r.read(2));
+        assert(0b100==r.read(3));
+        assert(0b00==r.read(2) && r.isAtStartOfByte);
+    }
+
+    {   // skipToEndOfByte
+        reset();
+        auto r = new BitReader(&byteProvider);
+        
+        // bytes[0] = 0b11111111
+        assert(1 == r.read(1));
+        r.skipToEndOfByte();
+        assert(r.isAtStartOfByte);
+
+        // bytes[1] = 0b11110000
+        assert(0==r.read(2));
+        r.skipToEndOfByte();
+        assert(r.isAtStartOfByte);
+
+        // bytes[2] = 0b00001111
+        assert(7==r.read(3));
+        r.skipToEndOfByte();
+        assert(r.isAtStartOfByte);
+
+        // bytes[3] = 0b00110011
+        assert(3==r.read(4));
+        r.skipToEndOfByte();
+        assert(r.isAtStartOfByte);
+
+        // bytes[4] = 0b01010101
+        assert(21==r.read(5));
+        r.skipToEndOfByte();
+        assert(r.isAtStartOfByte);
+
+        // bytes[5] = 0b00100101
+        assert(37==r.read(6));
+        r.skipToEndOfByte();
+        assert(r.isAtStartOfByte);
+
+        // bytes[6] = 0b11111111
+        assert(127==r.read(7));
+        r.skipToEndOfByte();
+        assert(r.isAtStartOfByte);
+
+        // bytes[7] = 0b11111111
+        assert(255==r.read(8));
+        r.skipToEndOfByte();        // nothing skipped
+        assert(r.isAtStartOfByte);
+
+        // bytes[8] = 0b00110011
+        assert(0b00110011==r.read(8) && r.isAtStartOfByte);
+    }
+
+    {
+        writefln("FileBitReader");
+
+        // create a temp file and write some bits to it
+        string dir = tempDir();
+        string filename = dir~uniform(0,100).to!string~"file.bin";
+        scope f = File(filename, "wb");
+        scope(exit) { f.close(); remove(filename); }
+
+        auto writer = new FileBitWriter(filename);
+        writer.write(0b1000, 4);
+        writer.write(0b0101, 4);
+        writer.write(0b11111, 5);
+        writer.write(0b00111, 5);
+        writer.write(0b11, 2);
+        writer.write(0b010, 3);
+
+        writer.close();
+
+        // test the FileBitReader
+        auto reader = new FileBitReader(filename);
+        assert(reader.read(4)==0b1000);
+        assert(reader.read(4)==0b0101);
+        assert(reader.read(5)==0b11111);
+        assert(reader.read(5)==0b00111);
+        assert(reader.read(2)==0b11);
+        assert(reader.read(3)==0b010);
+        reader.close();
+    }
 }
 void testBitReaderAndWriter() {
     writefln("--== Testing BitReader ==--");
