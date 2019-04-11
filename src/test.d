@@ -40,7 +40,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        
+       
     } else {
         testPDH();
         testQueue();
@@ -1597,7 +1597,7 @@ void testPriorityQueue() {
     writefln("Testing PriorityQueue...");
 
     {
-        auto q = new PriorityQueue!int;
+        auto q = makeHighPriorityQueue!int;
         assert(q.empty && q.length==0);
 
         q.push(5);
@@ -1623,7 +1623,7 @@ void testPriorityQueue() {
 
         assert(q.clear().length == 0 && q.empty && q.asArray==[]);
     }
-    {
+    {   // High priority queue with struct values
         struct S {
             int value;
 
@@ -1634,11 +1634,33 @@ void testPriorityQueue() {
                 return value == other.value;
             }
         }
-        auto q = new PriorityQueue!S;
+        auto q = makeHighPriorityQueue!S;
 
         assert(q.push(S(1)).length==1 && q.asArray==[ S(1) ]);
         assert(q.push(S(3)).length==2 && q.asArray==[ S(1), S(3) ]);
         assert(q.push(S(2)).length==3 && q.asArray==[ S(1), S(2), S(3) ]);
         assert(q.pop() == S(3) && q.length == 2 && q.asArray == [S(1), S(2)]);
+    }
+    {   // Low priority queue
+        auto q = makeLowPriorityQueue!int;
+        assert(q.empty && q.length==0);
+
+        q.push(5);
+        assert(!q.empty && q.length==1 && q.asArray == [5]);
+
+        assert(q.push(3).length==2 && q.asArray == [5, 3]);
+        assert(q.push(7).length==3 && q.asArray == [7, 5, 3]);
+        assert(q.push(1).asArray == [7,5,3,1]);
+        assert(q.push(10).asArray == [10,7,5,3,1]);
+        assert(q.push(10).asArray == [10,10,7,5,3,1]);
+        assert(q.push(9).asArray == [10,10,9,7,5,3,1]);
+
+        assert(q.pop() == 1 && q.length==6 && q.asArray==[10,10,9,7,5,3]);
+        assert(q.pop() == 3 && q.length==5 && q.asArray==[10,10,9,7,5]);
+        assert(q.pop() == 5 && q.length==4 && q.asArray==[10,10,9,7]);
+        assert(q.pop() == 7 && q.length==3 && q.asArray==[10,10,9]);
+        assert(q.pop() == 9 && q.length==2 && q.asArray==[10,10]);
+        assert(q.pop() == 10 && q.length==1 && q.asArray==[10]);
+        assert(q.pop() == 10 && q.length==0 && q.empty && q.asArray==[]);
     }
 }
