@@ -65,6 +65,8 @@ void runTests() {
         testStringBuffer();
         testVelocity();
         testHasher();
+
+        testPriorityQueue();
     }
 }
 
@@ -1589,5 +1591,36 @@ void testHasher() {
 
         Hash!20 h;
         assert(!h.isValid);
+    }
+}
+void testPriorityQueue() {
+    writefln("Testing PriorityQueue...");
+
+    {
+        auto q = new PriorityQueue!int;
+        assert(q.empty && q.length==0);
+
+        q.push(5);
+        assert(!q.empty && q.length==1 && q.asArray == [5]);
+
+        assert(q.push(3).length==2 && q.asArray == [3, 5]);
+        assert(q.push(7).length==3 && q.asArray == [3, 5, 7]);
+        assert(q.push(1).asArray == [1, 3, 5, 7]);
+        assert(q.push(10).asArray == [1, 3, 5, 7, 10]);
+        assert(q.push(10).asArray == [1, 3, 5, 7, 10, 10]);
+        assert(q.push(9).asArray == [1, 3, 5, 7, 9, 10, 10]);
+
+        assert(q.pop() == 10 && q.length==6 && q.asArray==[1, 3, 5, 7, 9, 10]);
+        assert(q.pop() == 10 && q.length==5 && q.asArray==[1, 3, 5, 7, 9]);
+        assert(q.pop() == 9 && q.length==4 && q.asArray==[1, 3, 5, 7]);
+        assert(q.pop() == 7 && q.length==3 && q.asArray==[1, 3, 5]);
+        assert(q.pop() == 5 && q.length==2 && q.asArray==[1, 3]);
+        assert(q.pop() == 3 && q.length==1 && q.asArray==[1]);
+        assert(q.pop() == 1 && q.length==0 && q.empty && q.asArray==[]);
+
+        assert(q.push(10).length==1 && q.asArray==[10]);
+        assert(q.push(0).length==2 && q.asArray==[0, 10]);
+
+        assert(q.clear().length == 0 && q.empty && q.asArray==[]);
     }
 }

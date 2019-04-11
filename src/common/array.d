@@ -12,7 +12,7 @@ public:
     ulong length() const { return len; }
     ulong reservedLength() const { return array.length; }
 
-    override string toString() {
+    override string toString() const {
         return "%s".format(array[0..len]);
     }
 	this(int reserve=8) {

@@ -27,6 +27,8 @@ import common.velocity;
 import common.async.async_array;
 import common.async.async_queue;
 
+import common.containers;
+
 import common.io.byte_reader;
 import common.io.byte_writer;
 import common.io.bit_reader;
