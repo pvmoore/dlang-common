@@ -40,7 +40,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-       
+        
     } else {
         testPDH();
         testQueue();
@@ -1622,5 +1622,23 @@ void testPriorityQueue() {
         assert(q.push(0).length==2 && q.asArray==[0, 10]);
 
         assert(q.clear().length == 0 && q.empty && q.asArray==[]);
+    }
+    {
+        struct S {
+            int value;
+
+            int opCmp(inout S other) const {
+                return value==other.value ? 0 : value < other.value ? -1 : 1;
+            }
+            bool opEquals(inout S other) const  {
+                return value == other.value;
+            }
+        }
+        auto q = new PriorityQueue!S;
+
+        assert(q.push(S(1)).length==1 && q.asArray==[ S(1) ]);
+        assert(q.push(S(3)).length==2 && q.asArray==[ S(1), S(3) ]);
+        assert(q.push(S(2)).length==3 && q.asArray==[ S(1), S(2), S(3) ]);
+        assert(q.pop() == S(3) && q.length == 2 && q.asArray == [S(1), S(2)]);
     }
 }

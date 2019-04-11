@@ -1,11 +1,12 @@
 module common.containers.PriorityQueue;
 
 import common.all;
+import std.traits : isEqualityComparable, isOrderingComparable;
 /**
  *  
  */
 final class PriorityQueue(T) : IQueue!T
-    if(__traits(compiles, T.init < T.init || T.init > T.init || T.init == T.init))  
+    if(isOrderingComparable!T && isEqualityComparable!T)  
 {
 private:
     // Hold values from lowest to highest priority 
