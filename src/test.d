@@ -40,7 +40,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-       
+
     } else {
         testPDH();
         testQueue();
@@ -65,6 +65,7 @@ void runTests() {
         testStringBuffer();
         testVelocity();
         testHasher();
+        testConsole();
 
         testPriorityQueue();
     }
@@ -1663,4 +1664,40 @@ void testPriorityQueue() {
         assert(q.pop() == 10 && q.length==1 && q.asArray==[10]);
         assert(q.pop() == 10 && q.length==0 && q.empty && q.asArray==[]);
     }
+}
+void testConsole() {
+    writefln("Testing console...");
+
+    /// Note: This needs to be run from an actual console not the IDE.
+
+    scope(exit) Console.reset();
+
+    Console.set(Console.Attrib.RED);
+    writefln("red");
+
+    Console.set(Console.Attrib.GREEN);
+    writefln("green");
+    Console.set(Console.Attrib.BLUE);
+    writefln("blue");
+    Console.set(Console.Attrib.YELLOW);
+    writefln("yellow");
+    Console.set(Console.Attrib.MAGENTA);
+    writefln("magenta");
+    Console.set(Console.Attrib.CYAN);
+    writefln("cyan");
+    Console.set(Console.Attrib.WHITE | Console.Attrib.UNDERSCORE);
+    writefln("white");
+
+    Console.set(Console.Attrib.BG_RED);
+    writefln("red background");
+    Console.set(Console.Attrib.BG_GREEN);
+    writefln("green background");
+    Console.set(Console.Attrib.BG_BLUE);
+    writefln("blue background");
+    Console.set(Console.Attrib.BG_YELLOW);
+    writefln("yellow background");
+    Console.set(Console.Attrib.BG_MAGENTA);
+    writefln("magenta background");
+    Console.set(Console.Attrib.BG_CYAN);
+    writefln("cyan background");
 }

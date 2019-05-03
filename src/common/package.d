@@ -33,6 +33,7 @@ import common.io.byte_reader;
 import common.io.byte_writer;
 import common.io.bit_reader;
 import common.io.bit_writer;
+import common.io.console;
 
 import common.utils.array_utils;
 import common.utils.map_utils;

@@ -39,22 +39,6 @@ float millis(ref StopWatch watch) {
     return watch.peek().total!"nsecs"/1_000_000.0;
 }
 
-void flushConsole() {
-    import core.stdc.stdio : fflush, stderr, stdout;
-    fflush(stderr);
-    fflush(stdout);
-}
-/**
- *  Debug console logging. Always flushes console after writing.
- */
-void dbg(int i) {
-    writefln("%s", i);
-    flushConsole();
-}
-void dbg(A...)(string fmt, A args) {
-    writefln(fmt, args);
-    flushConsole();
-}
 pragma(inline, true)
 void swap(T)(ref T a, ref T b) pure nothrow {
 	T temp = a;
