@@ -66,6 +66,7 @@ void runTests() {
         testVelocity();
         testHasher();
         testConsole();
+        testAsyncUtils();
 
         testPriorityQueue();
     }
@@ -1700,4 +1701,38 @@ void testConsole() {
     writefln("magenta background");
     Console.set(Console.Attrib.BG_CYAN);
     writefln("cyan background");
+}
+void testAsyncUtils() {
+    writefln("Testing async_utils ...");
+
+    auto t = new Thread( () {
+        writefln("\tT1 thread ID   = %s", Thread.getThis.id);
+    } );
+    t.start();
+
+    Thread.sleep(dur!"msecs"(500));
+
+    writefln("\tMain thread ID = %s", Thread.getThis.id);
+    writefln("\tChecking ...");
+
+    AssertSingleThreaded ast;
+
+    /// This should be ok
+    ast.check();
+    /// And again
+    ast.check();
+    writefln("\tOK");
+    t.join();
+
+
+    auto t2 = new Thread( () {
+        writefln("\tT2 thread ID   = %s", Thread.getThis.id);
+
+        /// This is bad
+        //ast.check();
+
+    } );
+    t2.start();
+
+    t2.join();
 }
