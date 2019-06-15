@@ -15,3 +15,9 @@ void add(M)(M map, M other) if(isAssociativeArray!M) {
         map[k] = v;
     }
 }
+void putIfAbsent(K,V)( V[K] map, K key, V value) {
+	auto p = key in map;
+	if(!p) {
+		map[key] = value;
+	}
+}
