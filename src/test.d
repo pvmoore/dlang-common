@@ -21,6 +21,8 @@ import std.algorithm.sorting    : sort;
 import std.algorithm.mutation   : reverse;
 
 import test_async;
+import test_betterc;
+import test_wasm;
 
 const RUN_SUBSET = false;
 
@@ -69,6 +71,9 @@ void runTests() {
         testAsyncUtils();
 
         testPriorityQueue();
+
+        testWasm();
+        testBetterc();
     }
 }
 
