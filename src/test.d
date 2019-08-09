@@ -1090,7 +1090,7 @@ void testByteReader() {
         assert(reader.read!ubyte==(0x08).as!ubyte && reader.position==8);
         assert(reader.read!uint==(0x00000009).as!uint && reader.position==10 && reader.eof);
 
-        assert(reader.read!ubyte==0); 
+        assert(reader.read!ubyte==0);
 
         reader.rewind();
         assert(reader.position==0);
@@ -1105,6 +1105,21 @@ void testByteReader() {
 
         reader.close();
         assert(reader.eof);
+    }
+    {   // peek
+        ubyte[] b = [cast(ubyte)1,2,3,4,5,6,7,8,9,0];
+        auto r    = new ByteReader(b);
+
+        assert(r.peek!ubyte    == 1);
+        assert(r.peek!ubyte(1) == 2);
+        assert(r.peek!ubyte(2) == 3);
+        assert(r.peek!ubyte(3) == 4);
+
+        assert(1 == r.read!ubyte);
+
+        assert(r.peek!ubyte(0) == 2);
+        assert(r.peek!ubyte(1) == 3);
+        assert(r.peek!ubyte(2) == 4);
     }
 }
 void testByteWriter() {
@@ -1134,7 +1149,7 @@ void testByteWriter() {
 
         w.close();
     }
-    auto r = new FileByteReader(filename); 
+    auto r = new FileByteReader(filename);
 
     assert(r.read!ubyte==0xfe);
     assert(r.read!byte==-1);
@@ -1304,7 +1319,7 @@ void testBitReader() {
         return bytes[ptr++];
     }
 
-    {   // read 
+    {   // read
         auto r = new BitReader(&byteProvider);
 
         assert(0b11111111==r.read(8));
@@ -1329,7 +1344,7 @@ void testBitReader() {
     {   // skipToEndOfByte
         reset();
         auto r = new BitReader(&byteProvider);
-        
+
         // bytes[0] = 0b11111111
         assert(1 == r.read(1));
         r.skipToEndOfByte();

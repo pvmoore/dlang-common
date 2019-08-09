@@ -16,22 +16,22 @@ public:
         super(file.size, littleEndian);
 		this.buffer.length = bufferSize;
 
-        // Fill up the buffer
-        file.rawRead(buffer);
+        this.bufpos = buffer.length;
 	}
     override void close() {
         super.close();
         file.close();
     }
     override void rewind() {
-        super.rewind();
+        position = 0;
+        bufpos   = buffer.length;
         file.rewind();
     }
     override void skip(ulong numBytes) {
         super.skip(numBytes);
 
         if(bufpos >= buffer.length) {
-            // invalidate our buffer and skip through the actual file
+            /* invalidate our buffer and skip through the actual file */
             file.seek(position, SEEK_SET);
             bufpos = buffer.length;
         }
@@ -85,7 +85,7 @@ private:
 
         //writefln("readArray(%s) numBytes=%s bufpos=%s", items, numBytes, bufpos); flushStdErrOut();
 
-        // we can just copy from buffer
+        /* We have the whole array in buffer - just copy it */
 	    if(bufpos+numBytes < buffer.length) {
             auto i    = bufpos;
             bufpos   += numBytes;
@@ -93,14 +93,15 @@ private:
             T* p = cast(T*)(buffer.ptr+i);
             return p[0..items].dup;
 	    }
-	    // copy what we have in the buffer
+
+	    /* copy what we have in the buffer */
         auto rem = buffer.length - bufpos;
         auto array = new T[items];
         ubyte* p = cast(ubyte*)array.ptr;
         p[0..rem] = buffer[bufpos..$].dup;
 
         if(rem<numBytes) {
-            // read the rest from the file
+            /* read the rest from the file */
             file.rawRead(p[rem..numBytes]);
         }
 
@@ -110,6 +111,8 @@ private:
 	    return array;
     }
 }
+
+//##############################################################################################
 
 class ByteReader {
 protected:
@@ -130,7 +133,7 @@ public:
         this(source.length, littleEndian);
         this.buffer = source.dup;
     }
-    /** 
+    /**
      *  Create a BitReader that uses this ByteReader as the byte source.
      */
     BitReader getBitReader() {
@@ -150,6 +153,22 @@ public:
 	final bool eof() const {
 	    return position >= length;
     }
+    T peek(T)(uint offset = 0) {
+        // Only implemented for the base class
+        assert(cast(FileByteReader)this is null);
+
+        auto savedBufpos   = bufpos;
+        auto savedPosition = position;
+
+        bufpos   += T.sizeof*offset;
+        position += T.sizeof*offset;
+
+        T value = read!T;
+
+        bufpos   = savedBufpos;
+        position = savedPosition;
+        return value;
+    }
 	T read(T)() {
 	    if(eof()) {
 	        position = length;
@@ -159,6 +178,13 @@ public:
         static if(is(T==ushort) || is(T==short)) return readShort();
         static if(is(T==uint) || is(T==int)) return readInt();
         static if(is(T==ulong) || is(T==long)) return readLong();
+
+        static if(isStruct!T) {
+            auto array = readByteArray(T.sizeof);
+            T t        = *cast(T*)array.ptr;
+            return t;
+        }
+
         assert(false);
 	}
     T[] readArray(T)(ulong items) {
@@ -169,6 +195,7 @@ public:
         static if(is(T==ushort) || is(T==short)) return readShortArray(items);
         static if(is(T==uint) || is(T==int)) return readIntArray(items);
         static if(is(T==ulong) || is(T==long)) return readLongArray(items);
+
         assert(false);
 	}
 protected:
