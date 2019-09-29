@@ -99,12 +99,17 @@ public:
         }
         return result;
     }
-    auto opCatAssign(T val) {
-        return add(val);
+    auto opOpAssign(string op)(T val) {
+        static if(op=="~") {
+            return add(val);
+        } else assert(false, "Array!%s %s= %s is not implemented".format(T.stringof, op, T.stringof));
     }
-    auto opCatAssign(T[] vals) {
-        return add(vals);
+    auto opOpAssign(string op)(T[] vals) {
+        static if(op=="~") {
+            return add(vals);
+        } else assert(false, "Array!%s %s= %s[] is not implemented".format(T.stringof, op, T.stringof));
     }
+
 	auto add(T val) {
 	    expand(1);
 		array[len++] = val;

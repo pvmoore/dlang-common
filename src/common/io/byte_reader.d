@@ -153,7 +153,7 @@ public:
 	final bool eof() const {
 	    return position >= length;
     }
-    T peek(T)(uint offset = 0) {
+    T peek(T)(int offset = 0) {
         // Only implemented for the base class
         assert(cast(FileByteReader)this is null);
 
@@ -163,7 +163,12 @@ public:
         bufpos   += T.sizeof*offset;
         position += T.sizeof*offset;
 
-        T value = read!T;
+        T value;
+        if(bufpos >= length) {
+            value = T.init;
+        } else {
+            value = read!T;
+        }
 
         bufpos   = savedBufpos;
         position = savedPosition;

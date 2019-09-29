@@ -24,7 +24,7 @@ import test_async;
 import test_betterc;
 import test_wasm;
 
-const RUN_SUBSET = false;
+const RUN_SUBSET = true;
 
 void main() {
     version(assert) {
@@ -42,7 +42,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-
+        testStaticUtils();
     } else {
         testPDH();
         testQueue();
@@ -74,6 +74,8 @@ void runTests() {
 
         testWasm();
         testBetterc();
+
+        testStaticUtils();
     }
 }
 
@@ -1755,4 +1757,34 @@ void testAsyncUtils() {
     t2.start();
 
     t2.join();
+}
+void testStaticUtils() {
+    writefln("Testing static_utils ...");
+
+    class A {
+        int foo;
+
+        void bar(int a) {}
+        void bar(float a) {}
+        int bar(bool a) { return 0; }
+    }
+
+    assert(hasProperty!(A,"foo"));
+    assert(!hasProperty!(A,"bar"));
+
+    assert(hasProperty!(A,"foo",int));
+    assert(!hasProperty!(A,"foo",bool));
+
+    assert(hasMethodWithName!(A,"bar"));
+    assert(!hasMethodWithName!(A,"foo"));
+
+    assert(hasMethod!(A,"bar", void, int));
+    assert(hasMethod!(A,"bar", void, float));
+    assert(hasMethod!(A,"bar", int, bool));
+
+    assert(!hasMethod!(A,"bar", void, int, int));
+    assert(!hasMethod!(A,"bar", void, bool));
+
+
+    writefln("OK");
 }

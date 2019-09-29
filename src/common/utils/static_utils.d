@@ -7,7 +7,10 @@ import std.traits :
     isUnsigned,
     isSomeFunction,
     isFloatingPoint,
-    isAssociativeArray;
+    isAssociativeArray,
+    Parameters,
+    ReturnType;
+
 
 template isStruct(T) {
 	const bool isStruct = is(T==struct);
@@ -24,13 +27,74 @@ template isPrimitiveType(T) {
         is(T==long)  || is(T==ulong) ||
         is(T==float) || is(T==double) || is(T==real);
 }
-
-bool hasMethod(T,string M)() if(isStruct!T || isObject!T) {
+/**
+ * assert(hasProperty!(A,"foo"));
+ */
+bool hasProperty(T, string prop)() {
+    static if(__traits(hasMember, T, prop)) {
+        return !isSomeFunction!(__traits(getMember, T, prop));
+    } else {
+        return false;
+    }
+}
+/**
+ * assert(hasProperty!(A,"foo",int));
+ */
+bool hasProperty(T, string prop, TYPE)() {
+    static if(__traits(hasMember, T, prop)) {
+        alias member = __traits(getMember, T, prop);
+        static if(!isSomeFunction!(member)) {
+            return is(typeof(member)==TYPE);
+        } else return false;
+    } else {
+        return false;
+    }
+}
+/**
+ * Returns true if the type has a method with the given name regardless of return type or parameters.
+ *
+ * assert(hasMethodWithName!(A,"bar"));
+ */
+bool hasMethodWithName(T,string M)()
+    if(isStruct!T || isObject!T)
+{
     static if(__traits(hasMember, T, M)) {
         return isSomeFunction!(__traits(getMember, T, M));
     } else {
         return false;
     }
+}
+/**
+ * Returns true only if the type has a method with the given name and the given return type and parameters.
+ * Note that the types do not have to explicitly match if they can be converted to the required types.
+ *
+ * assert(hasMethod!(A,"bar", void, float, bool));
+ */
+bool hasMethod(T,string NAME, RET_TYPE, PARAMS...)()
+    if(isStruct!T || isObject!T)
+{
+    bool result = false;
+    bool temp;
+    static if(hasMethodWithName!(T,NAME)) {
+
+        /* Look at all overloads */
+        static foreach(func; __traits(getOverloads, T, NAME)) {
+
+            static if(is(ReturnType!func : RET_TYPE)) {
+                static if(PARAMS.length == Parameters!func.length) {
+                    temp = true;
+
+                    static foreach(i, p; Parameters!func) {
+                        static if(!is(p : PARAMS[i])) {
+                            temp = false;
+                        }
+                    }
+                    result |= temp;
+                }
+            }
+        }
+    }
+    return result;
 }
 
 bool isValidMapKey(T)() {

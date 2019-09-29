@@ -30,6 +30,21 @@ void todo(string msg = "TODO - Not yet implemented") {
     assert(false, msg);
 }
 
+/**
+ * Creates a property with optional public setter and getter.
+ *   eg. mixin(property!(string, "myvariable", true, true));
+ *      private string _myvariable;
+ *      public string myvariable() { return _myvariable; }
+ *      public void myvariable(string v) { this._myvariable = v; }
+ */
+template property(T, string name, bool getter = false, bool setter = false) {
+    const property =
+        "private %s _%s; ".format(T.stringof, name) ~
+         (getter ? "public %s %s() { return _%s; } ".format(T.stringof, name, name) : "") ~
+         (setter ? "public void %s(%s value) { this._%s = value; }".format(name, T.stringof, name) : "")
+        ;
+}
+
 StopWatch startTiming() {
     StopWatch w;
     w.start();
