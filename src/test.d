@@ -24,13 +24,13 @@ import test_async;
 import test_betterc;
 import test_wasm;
 
-const RUN_SUBSET = true;
+const RUN_SUBSET = false;
 
 void main() {
     version(assert) {
         runTests();
         static if(!RUN_SUBSET) {
-            runAsyncTests();
+
         }
     } else {
         writefln("Not running test in release mode");
@@ -42,7 +42,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testStaticUtils();
+
     } else {
         testPDH();
         testQueue();
@@ -1298,6 +1298,60 @@ void testBitWriter() {
     writer.flush();                 // flush 7 bits
     assert(writer.bitsWritten==80);
     assert(writer.bytesWritten==10);
+
+    {
+        auto bbw = new BufferBitWriter();
+        assert(bbw.bitsWritten()==0);
+        assert(bbw.bytesWritten()==0);
+        assert(bbw.length()==0);
+        assert(bbw.flushAndGetBuffer()==[]);
+
+        bbw.write(0b1100, 4);
+        assert(bbw.bitsWritten()==4);
+        assert(bbw.bytesWritten()==0);
+
+        bbw.write(0b0, 1);
+        assert(bbw.bitsWritten()==5);
+        assert(bbw.bytesWritten()==0);
+
+        bbw.write(0b101, 3);
+        assert(bbw.bitsWritten()==8);
+        assert(bbw.bytesWritten()==1);
+        assert(bbw.flushAndGetBuffer()==[0b10101100]);
+        assert(bbw.bitsWritten()==8);
+        assert(bbw.bytesWritten()==1);
+    }
+    {
+        ubyte[] bytes;
+        void receiver2(ubyte b) {
+            bytes ~= b;
+        }
+        auto w = new BitWriter(&receiver2);
+        w.writeOnes(0);
+        assert(w.bitsWritten==0);
+        w.writeOnes(1);
+        assert(w.bitsWritten==1);
+        w.writeOnes(7);
+        assert(w.bitsWritten==8);
+        assert(bytes == [cast(ubyte)0xff]);
+
+        w.writeZeroes(0);
+        assert(w.bitsWritten==8);
+        w.writeZeroes(1);
+        assert(w.bitsWritten==9);
+        w.writeZeroes(7);
+        assert(w.bitsWritten==16);
+        assert(bytes == [cast(ubyte)0xff, 0]);
+
+        w.writeOnes(40);
+        assert(w.bitsWritten == 16+40);
+        assert(bytes == [cast(ubyte)0xff, 0, 0xff,0xff,0xff,0xff,0xff]);
+
+        w.writeZeroes(40);
+        assert(w.bitsWritten == 16+40+40);
+        assert(bytes == [cast(ubyte)0xff, 0, 0xff,0xff,0xff,0xff,0xff, 0,0,0,0,0]);
+
+    }
 }
 void testBitReader() {
     writefln("--== Testing BitReader==--");

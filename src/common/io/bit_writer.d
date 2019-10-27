@@ -21,6 +21,12 @@ final class FileBitWriter {
     void write(uint value, uint numBits) {
         writer.write(value, numBits);
     }
+    void writeOnes(uint count) {
+        writer.writeOnes(count);
+    }
+    void writeZeroes(uint count) {
+        writer.writeZeroes(count);
+    }
 private:
     const BUFFER_LEN = 2048;
     BitWriter writer;
@@ -41,6 +47,44 @@ private:
     }
 }
 //-----------------------------------------------------------------
+
+final class BufferBitWriter {
+private:
+    BitWriter writer;
+    ubyte[] _buffer;
+
+    void writeByte(ubyte b) {
+        _buffer ~= b;
+    }
+public:
+    this(uint reserved = 1024) {
+        this.writer = new BitWriter(&writeByte);
+        this._buffer.reserve(reserved);
+    }
+    void write(uint value, uint numBits) {
+        writer.write(value, numBits);
+    }
+    void writeOnes(uint count) {
+        writer.writeOnes(count);
+    }
+    void writeZeroes(uint count) {
+        writer.writeZeroes(count);
+    }
+    uint bitsWritten() {
+        return writer.bitsWritten;
+    }
+    uint bytesWritten() {
+        return writer.bytesWritten;
+    }
+    uint length() {
+        return _buffer.length.as!uint;
+    }
+    ubyte[] flushAndGetBuffer() {
+        writer.flush();
+        return _buffer;
+    }
+}
+
 /**
  * ubyte[] received;
  * void receiver(ubyte b) {
@@ -82,6 +126,18 @@ public:
             bitpos -= 8;
             bytesWritten++;
         }
+    }
+    void writeOnes(uint count) {
+        if(count==0) return;
+        uint rem = count%32;
+        for(auto i=0; i<count/32; i++) write(0xffff_ffff,32);
+        for(auto i=0; i<rem; i++) write(1,1);
+    }
+    void writeZeroes(uint count) {
+        if(count==0) return;
+        uint rem = count%32;
+        for(auto i=0; i<count/32; i++) write(0,32);
+        for(auto i=0; i<rem; i++) write(0,1);
     }
     void flush() {
         if(bitpos>0) {
