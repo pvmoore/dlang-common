@@ -22,7 +22,7 @@ private:
     T[] array;
     shared Positions pos;
     uint mask;
-    static final struct Positions {
+    static struct Positions {
         int r;
         int w;
     }
@@ -100,7 +100,8 @@ public:
         }
     }
     IQueue!T clear() {
-        atomicStore(pos, Positions(0,0));
+        atomicSet64(cast(void*)&pos, 0L);
+        //atomicStore(pos, Positions(0,0));
         return this;
     }
 private:

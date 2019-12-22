@@ -1,6 +1,7 @@
 module common;
 
 version(Win64) {} else { pragma(msg,"Windows 64 bit required"); static assert(false); }
+version(D_InlineAsm_X86_64) {} else { pragma(msg,"Inline assembler required"); static assert(false); }
 
 public:
 

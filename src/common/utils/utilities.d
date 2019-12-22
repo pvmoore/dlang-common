@@ -167,6 +167,11 @@ template From(string moduleName) {
     mixin("import From = " ~ moduleName ~ ";");
 }
 
+bool isOneOf(T)(T thing, T[] args...) {
+    foreach(a; args) if(a==thing) return true;
+    return false;
+}
+
 pragma(inline, true)
 T firstNotNull(T)(T[] array...) if(isObject!T) {
     foreach(t; array) {

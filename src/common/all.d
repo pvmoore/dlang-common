@@ -5,7 +5,7 @@ public:
 import common;
 
 import core.stdc.string : memmove;
-import core.atomic      : atomicOp, atomicLoad, atomicStore, cas;
+import core.atomic      : atomicOp, atomicLoad, atomicStore, cas, MemoryOrder;
 import core.sync.mutex  : Mutex;
 import core.sync.semaphore : Semaphore;
 import core.thread : Thread;
