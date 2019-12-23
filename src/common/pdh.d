@@ -10,6 +10,8 @@ module common.pdh;
  * \Process(bin-test)\IO Read Bytes/sec
  * \Process(bin-test)\IO Write Bytes/sec
  */
+version(Win64) {
+
 import common.all;
 import std.parallelism : totalCPUs;
 import core.sys.windows.windows;
@@ -233,3 +235,4 @@ __gshared PDH_STATUS function(
           PDH_FMT_COUNTERVALUE_ITEM_W* ItemBuffer
       ) PdhGetFormattedCounterArrayW;
 }
+} // Win64

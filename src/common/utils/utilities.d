@@ -107,6 +107,7 @@ int toFloat(int i) pure nothrow { return cast(float)i; }
 }
 
 wstring[] getCommandLineArgs() {
+    version(Win64) {
     import core.sys.windows.windows :
         CommandLineToArgvW,
         GetCommandLineW;
@@ -119,6 +120,7 @@ wstring[] getCommandLineArgs() {
 		w ~= fromWStringz(argsArray[i]);
 	}
 	return w;
+    } else assert(false);
 }
 
 // finds the next highest power of 2 for a 32 bit int

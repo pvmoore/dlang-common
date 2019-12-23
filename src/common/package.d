@@ -1,6 +1,6 @@
 module common;
 
-version(Win64) {} else { pragma(msg,"Windows 64 bit required"); static assert(false); }
+version(X86_64) {} else { pragma(msg,"64 bit required"); static assert(false); }
 version(D_InlineAsm_X86_64) {} else { pragma(msg,"Inline assembler required"); static assert(false); }
 
 public:
@@ -11,7 +11,6 @@ import common.boxing;
 import common.array;
 import common.attributes;
 import common.bool3;
-import common.pdh;
 import common.list;
 import common.hasher;
 import common.intrinsics;
@@ -24,6 +23,10 @@ import common.stringbuffer;
 import common.structcache;
 import common.tree_list;
 import common.velocity;
+
+version(Win64) {
+    import common.pdh;
+}
 
 import common.async.async_array;
 import common.async.async_queue;
