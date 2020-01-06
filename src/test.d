@@ -867,6 +867,7 @@ void testQueue() {
 void testPDH() {
     writefln("--== Testing CPUUsage ==--");
 
+version(Win64) {
     auto pdh = new PDH();
     scope(exit) pdh.destroy();
 
@@ -885,6 +886,7 @@ void testPDH() {
         writefln("}");
         flushConsole();
     }
+}
 }
 void testSet() {
     writefln("--== Testing Set ==--");
@@ -1744,7 +1746,7 @@ void testPriorityQueue() {
 }
 void testConsole() {
     writefln("Testing console...");
-
+version(Win64) {
     /// Note: This needs to be run from an actual console not the IDE.
 
     scope(exit) Console.reset();
@@ -1778,6 +1780,7 @@ void testConsole() {
     Console.set(Console.Attrib.BG_CYAN);
     writefln("cyan background");
 }
+}
 void testAsyncUtils() {
     writefln("Testing async_utils ...");
 
@@ -1791,16 +1794,6 @@ void testAsyncUtils() {
     writefln("\tMain thread ID = %s", Thread.getThis.id);
     writefln("\tChecking ...");
 
-    AssertSingleThreaded ast;
-
-    /// This should be ok
-    ast.check();
-    /// And again
-    ast.check();
-    writefln("\tOK");
-    t.join();
-
-
     auto t2 = new Thread( () {
         writefln("\tT2 thread ID   = %s", Thread.getThis.id);
 
@@ -1809,8 +1802,8 @@ void testAsyncUtils() {
 
     } );
     t2.start();
-
     t2.join();
+    t.join();
 }
 void testStaticUtils() {
     writefln("Testing static_utils ...");

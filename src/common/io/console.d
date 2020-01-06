@@ -1,6 +1,5 @@
 module common.io.console;
 
-private import core.sys.windows.windows;
 private import std.stdio;
 private import std.format : format;
 private import std.utf    : toUTF16;
@@ -21,6 +20,9 @@ void dbg(A...)(string fmt, A args) {
     writefln(fmt, args);
     flushConsole();
 }
+
+version(Win64) {
+import core.sys.windows.windows;
 
 final class Console {
 public:
@@ -55,3 +57,4 @@ public:
         set(Attrib.NORMAL);
     }
 }
+} // Win64
