@@ -44,6 +44,19 @@ template property(T, string name, bool getter = false, bool setter = false) {
          (setter ? "public void %s(%s value) { this._%s = value; }".format(name, T.stringof, name) : "")
         ;
 }
+/**
+ * eg. mixin(constructor!MyStruct)
+ */
+template constructor(T) {
+
+}
+/**
+ * eg. mixin(addToString!MyStruct)
+ */
+template addToString(T) {
+    // getAllProperties!T
+    const addToString = "";
+}
 
 StopWatch startTiming() {
     StopWatch w;

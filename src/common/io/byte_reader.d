@@ -179,9 +179,9 @@ public:
 	        position = length;
 	        return T.init;
         }
-        static if(is(T==ubyte) || is(T==byte)) return readByte();
-        static if(is(T==ushort) || is(T==short)) return readShort();
-        static if(is(T==uint) || is(T==int)) return readInt();
+        static if(is(T==ubyte) || is(T==byte) || is(T==char)) return cast(T)readByte();
+        static if(is(T==ushort) || is(T==short) || is(T==wchar)) return cast(T)readShort();
+        static if(is(T==uint) || is(T==int) || is(T==dchar)) return cast(T)readInt();
         static if(is(T==ulong) || is(T==long)) return readLong();
 
         static if(isStruct!T) {
@@ -196,9 +196,9 @@ public:
         if(eof()) {
             return new T[items];
         }
-        static if(is(T==ubyte) || is(T==byte)) return readByteArray(items);
-        static if(is(T==ushort) || is(T==short)) return readShortArray(items);
-        static if(is(T==uint) || is(T==int)) return readIntArray(items);
+        static if(is(T==ubyte) || is(T==byte) || is(T==char)) return cast(T[])readByteArray(items);
+        static if(is(T==ushort) || is(T==short) || is(T==wchar)) return cast(T[])readShortArray(items);
+        static if(is(T==uint) || is(T==int) || is(T==dchar)) return cast(T[])readIntArray(items);
         static if(is(T==ulong) || is(T==long)) return readLongArray(items);
 
         assert(false);
