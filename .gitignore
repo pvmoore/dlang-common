@@ -3,6 +3,7 @@ out/
 bin/
 .idea/
 *.iml
+*.lnk
 
 .dub/
 .logs/
