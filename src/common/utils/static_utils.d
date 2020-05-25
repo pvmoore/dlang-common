@@ -27,6 +27,13 @@ template isPrimitiveType(T) {
         is(T==long)  || is(T==ulong) ||
         is(T==float) || is(T==double) || is(T==real);
 }
+template isInteger(T) {
+    const bool isInteger =
+        is(T==byte)  || is(T==ubyte) ||
+        is(T==short) || is(T==ushort) ||
+        is(T==int)   || is(T==uint) ||
+        is(T==long)  || is(T==ulong);
+}
 /**
  * assert(hasProperty!(A,"foo"));
  */

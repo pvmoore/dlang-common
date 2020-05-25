@@ -22,12 +22,13 @@ public:
         super.close();
         file.close();
     }
-    override void rewind() {
+    override FileByteReader rewind() {
         position = 0;
         bufpos   = buffer.length;
         file.rewind();
+        return this;
     }
-    override void skip(ulong numBytes) {
+    override FileByteReader skip(ulong numBytes) {
         super.skip(numBytes);
 
         if(bufpos >= buffer.length) {
@@ -35,6 +36,7 @@ public:
             file.seek(position, SEEK_SET);
             bufpos = buffer.length;
         }
+        return this;
     }
 protected:
     override ubyte readByte() {
@@ -129,6 +131,8 @@ public:
     ulong length;
     ulong position;
 
+    ulong remaining() { return length - position; }
+
     this(ubyte[] source, bool littleEndian=true) {
         this(source.length, littleEndian);
         this.buffer = source.dup;
@@ -142,13 +146,15 @@ public:
 	void close() {
 	    position = length;
 	}
-	void rewind() {
+	ByteReader rewind() {
 	    position = 0;
 	    bufpos   = 0;
+        return this;
 	}
-    void skip(ulong numBytes) {
+    ByteReader skip(ulong numBytes) {
 	    position += numBytes;
         bufpos   += numBytes;
+        return this;
 	}
 	final bool eof() const {
 	    return position >= length;

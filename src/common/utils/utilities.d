@@ -2,7 +2,6 @@ module common.utils.utilities;
 
 import common.all;
 
-pragma(inline,true)
 void expect(bool b, string file=__FILE__, int line=__LINE__) {
     if(unlikely(!b)) {
         import std.stdio : stderr;
@@ -13,7 +12,6 @@ void expect(bool b, string file=__FILE__, int line=__LINE__) {
         throw new Error("Expectation FAILED --> %s Line %s".format(file, line));
     }
 }
-pragma(inline,true)
 void expect(A...)(bool b, lazy string fmt, lazy A args) {
     if(unlikely(!b)) {
         import std.stdio : stderr;
@@ -67,7 +65,6 @@ float millis(ref StopWatch watch) {
     return watch.peek().total!"nsecs"/1_000_000.0;
 }
 
-pragma(inline, true)
 void swap(T)(ref T a, ref T b) pure nothrow {
 	T temp = a;
 	a = b;
@@ -114,10 +111,8 @@ bool isZeroMem(void* ptr, ulong numBytes) nothrow {
     return true;
 }
 
-pragma(inline, true) {
 int toInt(float f) pure nothrow { return cast(int)f; }
 int toFloat(int i) pure nothrow { return cast(float)i; }
-}
 
 wstring[] getCommandLineArgs() {
     version(Win64) {
@@ -148,31 +143,32 @@ uint nextHighestPowerOf2(uint v) pure nothrow {
    return v;
 }
 
-pragma(inline, true)
 bool isPowerOf2(uint v) pure nothrow {
    return !(v & (v - 1)) && v;
 }
-pragma(inline, true)
 bool isPowerOf2(ulong v) pure nothrow {
    return !(v & (v - 1)) && v;
 }
 
-pragma(inline, true)
 T bitcast(T)(double from) {
     T* p =cast(T*)&from;
     return *p;
 }
 
-pragma(inline, true)
 T bitcast(T)(ulong from) {
     T* p =cast(T*)&from;
     return *p;
 }
 
-pragma(inline, true)
+bool isSet(T,E)(T value, E flag) if((is(T==enum) || isInteger!T) && (is(E==enum) || isInteger!E)) {
+    return (value & flag) == flag;
+}
+bool isUnset(T,E)(T value, E flag) if((is(T==enum) || isInteger!T) && (is(E==enum) || isInteger!E)) {
+    return (value & flag) == 0;
+}
+
 T as(T,I)(I o) { return cast(T)o; }
 
-pragma(inline, true)
 bool isA(T,I)(I o) if(isObject!T && isObject!I) { return cast(T)o !is null; }
 
 template FQN(string moduleName) {
@@ -187,7 +183,6 @@ bool isOneOf(T)(T thing, T[] args...) {
     return false;
 }
 
-pragma(inline, true)
 T firstNotNull(T)(T[] array...) if(isObject!T) {
     foreach(t; array) {
         if(t !is null) return t;

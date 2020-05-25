@@ -490,6 +490,20 @@ void testUtilities() {
     b.visit(v);
     assert(!visitedA && visitedB);
 
+    {
+        enum E1 { A, B }
+        enum E2 : uint { A, B }
+
+        assert(1.isSet(1));
+
+        assert(1.isSet(E1.B));
+        assert(1.isSet(E2.B));
+
+        assert(0.isUnset(1));
+        assert(0.isUnset(E1.B));
+        assert(0.isUnset(E2.B));
+    }
+
     writeln("testUtilities ran OK");
 }
 void testList() {
