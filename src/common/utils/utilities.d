@@ -167,6 +167,13 @@ bool isUnset(T,E)(T value, E flag) if((is(T==enum) || isInteger!T) && (is(E==enu
     return (value & flag) == 0;
 }
 
+/**
+ *  auto t = obj.orElse("this");
+ */
+T orElse(T)(T t, T other) if(isObject!T) {
+    return t !is null ? t : other;
+}
+
 T as(T,I)(I o) { return cast(T)o; }
 
 bool isA(T,I)(I o) if(isObject!T && isObject!I) { return cast(T)o !is null; }
