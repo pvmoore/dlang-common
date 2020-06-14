@@ -153,7 +153,7 @@ bool isPowerOf2(ulong v) pure nothrow {
 T bitcast(T)(double from) {
     T* p =cast(T*)&from;
     return *p;
-}
+}   
 
 T bitcast(T)(ulong from) {
     T* p =cast(T*)&from;

@@ -145,9 +145,34 @@ string[] getAllSubTypes(T)() if(isObject!T) {
 }
 
 /*
- *  auto b = toArray!VkImageUsageFlagBits(bits);
+ *  auto b = toArray!VkFormatFeatureFlagBits(bits, "VK_FORMAT_FEATURE_", "_BIT");
  */
-E[] toArray(E)(uint bits) if (is(E == enum)) {
+string toString(E)(uint bits, string removePrefix, string removeSuffix) if (is(E == enum)) {
+    import std.traits : EnumMembers;
+    import std.string : startsWith, endsWith;
+    import std.format : format;
+
+    string buf = "[";
+    foreach(i, e; EnumMembers!E) {
+
+        if(bits & e) {
+            string s = "%s".format(e);
+            if(removePrefix && s.startsWith(removePrefix)) {
+                s = s[removePrefix.length..$];
+            }
+            if(removeSuffix && s.endsWith(removeSuffix)) {
+                s = s[0..$-removeSuffix.length];
+            }
+            buf ~= (buf.length==1 ? "" : ", ") ~ s;
+        }
+    }
+    return buf ~ "]";
+}
+
+/*
+ *  auto b = toArray!VkFormatFeatureFlagBits(bits, "VK_FORMAT_FEATURE_", "_BIT");
+ */
+E[] toArray(E)(uint bits, string removePrefix = null, string removeSuffix = null) if (is(E == enum)) {
     import std.traits : EnumMembers;
     E[] array;
     foreach(e; EnumMembers!E) {
