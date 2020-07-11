@@ -214,7 +214,7 @@ public:
         static if(is(T==uint) || is(T==int) || is(T==dchar)) return cast(T[])readIntArray(items);
         static if(is(T==ulong) || is(T==long)) return readLongArray(items);
         static if(is(T==float)) return readFloatArray(items);
-
+        static if(isStruct!T) return cast(T[])readByteArray(items*T.sizeof);
         assert(false);
 	}
 protected:

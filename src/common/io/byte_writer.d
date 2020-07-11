@@ -23,7 +23,9 @@ public:
         else static if(is(T==uint) || is(T==int)) writeInt(value);
         else static if(is(T==ulong) || is(T==long)) writeLong(value);
         else static if(is(T==float)) writeFloat(value);
+        else static if(isStruct!T) writeBytes((&value).as!(ubyte*), T.sizeof);
         else assert(false);
+
         bytesWritten += T.sizeof;
     }
     void writeArray(T)(T[] items) {
@@ -32,6 +34,7 @@ public:
         else static if(is(T==uint) || is(T==int)) writeIntArray(items);
         else static if(is(T==ulong) || is(T==long)) writeLongArray(items);
         else static if(is(T==float)) writeFloatArray(items);
+        else static if(isStruct!T) writeBytes(items.ptr.as!(ubyte*), (T.sizeof*items.length).as!uint);
         else assert(false);
         bytesWritten += T.sizeof*items.length;
     }
@@ -47,6 +50,8 @@ protected:
     abstract void writeInt(uint value);
     abstract void writeLong(ulong value);
     abstract void writeFloat(float value);
+
+    abstract void writeBytes(ubyte* ptr, uint count);
     abstract void writeByteArray(ubyte[] items);
     abstract void writeShortArray(ushort[] items);
     abstract void writeIntArray(uint[] items);
@@ -96,6 +101,11 @@ protected:
         expand(4);
         *ptr!float() = value;
         length += 4;
+    }
+    override void writeBytes(ubyte* ptr, uint count) {
+        expand(count);
+        array[length..length+count] = ptr[0..count];
+        length += count;
     }
     override void writeByteArray(ubyte[] items) {
         expand(items.length);
@@ -159,6 +169,9 @@ protected:
     }
     override void writeFloat(float value) {
          file.rawWrite([value]);
+    }
+    override void writeBytes(ubyte* ptr, uint count) {
+        file.rawWrite(ptr[0..count]);
     }
     override void writeByteArray(ubyte[] items) {
         file.rawWrite(items);

@@ -42,7 +42,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        
+        testByteReader();
     } else {
         testPDH();
         testQueue();
@@ -1152,6 +1152,18 @@ void testByteReader() {
         assert(r.read!float == 3.14f);
         assert(r.readArray!float(3) == [99f, 60f, 77f]);
     }
+    {   // readArray (of structs)
+        struct S {
+            uint a; uint b;
+        }
+        S[] array = [S(1,2), S(3,4), S(5,6), S(7,8)];
+        ubyte[] b = cast(ubyte[])array;
+
+        auto r = new ByteReader(b);
+
+        assert(r.read!S==S(1,2));
+        assert(r.readArray!S(3) == [S(3,4), S(5,6), S(7,8)]);
+    }
 }
 void testFileByteWriter() {
     writefln("Testing FileByteWriter...");
@@ -1159,6 +1171,8 @@ void testFileByteWriter() {
     string dir = tempDir();
     string filename = dir~uniform(0,100).to!string~"file.bin";
     scope(exit) { if(exists(filename)) remove(filename); }
+
+    struct S { uint a; uint b; }
 
     {
         auto w = new FileByteWriter(filename);
@@ -1175,6 +1189,8 @@ void testFileByteWriter() {
         assert(w.getBytesWritten==16);
         w.write!float(3.14f);
         assert(w.getBytesWritten==20);
+        w.write!S(S(4,5));
+        assert(w.getBytesWritten==28);
 
         auto bw = w.getBitWriter();
         bw.write(0b101, 3);
@@ -1190,6 +1206,7 @@ void testFileByteWriter() {
     assert(r.read!uint==0xff);
     assert(r.read!ulong==0);
     assert(r.read!float==3.14f);
+    assert(r.read!S == S(4,5));
 
     assert(r.read!ubyte==0b101);
     r.close();
@@ -1238,6 +1255,20 @@ void testArrayByteWriter() {
         w.writeArray!float([90f, 33f]);
 
         assert(w.getArray() == [195, 245, 72, 64, 0, 0, 198, 66, 0, 0, 180, 66, 0, 0, 4, 66]);
+
+        w.reset();
+        assert(w.length == 0);
+
+        struct S {
+            uint a; uint b;
+        }
+        S[] array = [S(1,2), S(3,4), S(5,6)];
+        w.write!S(S(0,9));
+        assert(w.getArray().as!(S*)[0] == S(0,9));
+        w.reset();
+
+        w.writeArray!S(array);
+        assert(w.getArray.as!(S*)[0..3] == array);
     }
 }
 void testBitWriter() {
