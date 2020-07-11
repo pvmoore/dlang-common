@@ -42,7 +42,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-
+        
     } else {
         testPDH();
         testQueue();
@@ -58,7 +58,8 @@ void runTests() {
         testBool3();
         testStack();
         testByteReader();
-        testByteWriter();
+        testFileByteWriter();
+        testArrayByteWriter();
         testBitWriter();
         testBitReader();
         testBitReaderAndWriter();
@@ -397,11 +398,11 @@ void testUtilities() {
 
     // bitcast
     double d = 37.554;
-    ulong l  = d.bitcast!ulong;
-    double d2 = l.bitcast!double;
+    ulong l  = d.bitcastTo!ulong;
+    double d2 = l.bitcastTo!double;
     writefln("d=%s, l=%s, d2=%s", d,l,d2);
 
-    assert(bitcast!ulong(37.554).bitcast!double==37.554);
+    assert(bitcastTo!ulong(37.554).bitcastTo!double==37.554);
 
     // isObject
     class MyClass {}
@@ -1139,9 +1140,21 @@ void testByteReader() {
         assert(r.peek!ubyte(1) == 3);
         assert(r.peek!ubyte(2) == 4);
     }
+    {
+        // float
+        float[] f = [3.14f, 99f, 60f, 77f];
+        ubyte[] b = cast(ubyte[])f;
+        assert(b.length == 16);
+        assert(b.ptr.as!(float*)[0..4] == f);
+
+        auto r = new ByteReader(b);
+
+        assert(r.read!float == 3.14f);
+        assert(r.readArray!float(3) == [99f, 60f, 77f]);
+    }
 }
-void testByteWriter() {
-    writefln("Testing ByteWriter...");
+void testFileByteWriter() {
+    writefln("Testing FileByteWriter...");
 
     string dir = tempDir();
     string filename = dir~uniform(0,100).to!string~"file.bin";
@@ -1160,6 +1173,8 @@ void testByteWriter() {
         assert(w.getBytesWritten==8);
         w.write!ulong(0);
         assert(w.getBytesWritten==16);
+        w.write!float(3.14f);
+        assert(w.getBytesWritten==20);
 
         auto bw = w.getBitWriter();
         bw.write(0b101, 3);
@@ -1174,6 +1189,7 @@ void testByteWriter() {
     assert(r.read!ushort==0xee11);
     assert(r.read!uint==0xff);
     assert(r.read!ulong==0);
+    assert(r.read!float==3.14f);
 
     assert(r.read!ubyte==0b101);
     r.close();
@@ -1213,6 +1229,15 @@ void testArrayByteWriter() {
 
         w.writeArray!ulong([1]);
         assert(w.length==20 && w.getArray==[4,3,6,5, 1,0,0,0, 2,0,0,0, 1,0,0,0,0,0,0,0]);
+
+        w.reset();
+        assert(w.length == 0);
+
+        w.write!float(3.14f);
+        w.write!float(99f);
+        w.writeArray!float([90f, 33f]);
+
+        assert(w.getArray() == [195, 245, 72, 64, 0, 0, 198, 66, 0, 0, 180, 66, 0, 0, 4, 66]);
     }
 }
 void testBitWriter() {

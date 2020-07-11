@@ -111,8 +111,8 @@ bool isZeroMem(void* ptr, ulong numBytes) nothrow {
     return true;
 }
 
-int toInt(float f) pure nothrow { return cast(int)f; }
-int toFloat(int i) pure nothrow { return cast(float)i; }
+//int toInt(float f) pure nothrow { return cast(int)f; }
+//int toFloat(int i) pure nothrow { return cast(float)i; }
 
 wstring[] getCommandLineArgs() {
     version(Win64) {
@@ -150,15 +150,19 @@ bool isPowerOf2(ulong v) pure nothrow {
    return !(v & (v - 1)) && v;
 }
 
-T bitcast(T)(double from) {
-    T* p =cast(T*)&from;
-    return *p;
-}   
-
-T bitcast(T)(ulong from) {
+/**
+ *  double a = 3.14;
+ *  ulong b  = a.bitcastTo!ulong()
+ */
+T bitcastTo(T,F)(F from) {
     T* p =cast(T*)&from;
     return *p;
 }
+
+// T bitcast(T)(ulong from) {
+//     T* p =cast(T*)&from;
+//     return *p;
+// }
 
 bool isSet(T,E)(T value, E flag) if((is(T==enum) || isInteger!T) && (is(E==enum) || isInteger!E)) {
     return (value & flag) == flag;

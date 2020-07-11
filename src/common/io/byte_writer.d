@@ -22,6 +22,7 @@ public:
         else static if(is(T==ushort) || is(T==short)) writeShort(value);
         else static if(is(T==uint) || is(T==int)) writeInt(value);
         else static if(is(T==ulong) || is(T==long)) writeLong(value);
+        else static if(is(T==float)) writeFloat(value);
         else assert(false);
         bytesWritten += T.sizeof;
     }
@@ -30,10 +31,11 @@ public:
         else static if(is(T==ushort) || is(T==short)) writeShortArray(items);
         else static if(is(T==uint) || is(T==int)) writeIntArray(items);
         else static if(is(T==ulong) || is(T==long)) writeLongArray(items);
+        else static if(is(T==float)) writeFloatArray(items);
         else assert(false);
         bytesWritten += T.sizeof*items.length;
     }
-    /** 
+    /**
      *  Create a BitWriter that uses this ByteWriter as the destination.
      */
     final BitWriter getBitWriter() {
@@ -44,10 +46,12 @@ protected:
     abstract void writeShort(ushort value);
     abstract void writeInt(uint value);
     abstract void writeLong(ulong value);
+    abstract void writeFloat(float value);
     abstract void writeByteArray(ubyte[] items);
     abstract void writeShortArray(ushort[] items);
     abstract void writeIntArray(uint[] items);
     abstract void writeLongArray(ulong[] items);
+    abstract void writeFloatArray(float[] items);
 }
 
 final class ArrayByteWriter : ByteWriter {
@@ -72,7 +76,7 @@ protected:
     override void writeByte(ubyte value) {
         expand(1);
         array[length++] = value;
-    }  
+    }
     override void writeShort(ushort value) {
         expand(2);
         *ptr!ushort() = value;
@@ -87,7 +91,12 @@ protected:
         expand(8);
         *ptr!ulong() = value;
         length += 8;
-    }  
+    }
+    override void writeFloat(float value) {
+        expand(4);
+        *ptr!float() = value;
+        length += 4;
+    }
     override void writeByteArray(ubyte[] items) {
         expand(items.length);
         array[length..length+items.length] = items;
@@ -108,9 +117,14 @@ protected:
         ptr!ulong()[0..items.length] = items;
         length += items.length*8;
     }
+    override void writeFloatArray(float[] items) {
+        expand(items.length*4);
+        ptr!float()[0..items.length] = items;
+        length += items.length*4;
+    }
 private:
-    T* ptr(T)() { 
-        return cast(T*)(array.ptr+length); 
+    T* ptr(T)() {
+        return cast(T*)(array.ptr+length);
     }
     void expand(ulong numBytes) {
         if(length+numBytes >= array.length) {
@@ -133,7 +147,7 @@ public:
 protected:
     override void writeByte(ubyte value) {
         file.rawWrite([value]);
-    }  
+    }
     override void writeShort(ushort value) {
          file.rawWrite([value]);
     }
@@ -142,7 +156,10 @@ protected:
     }
     override void writeLong(ulong value) {
          file.rawWrite([value]);
-    }  
+    }
+    override void writeFloat(float value) {
+         file.rawWrite([value]);
+    }
     override void writeByteArray(ubyte[] items) {
         file.rawWrite(items);
     }
@@ -153,6 +170,9 @@ protected:
         file.rawWrite(items);
     }
     override void writeLongArray(ulong[] items) {
+        file.rawWrite(items);
+    }
+    override void writeFloatArray(float[] items) {
         file.rawWrite(items);
     }
 }

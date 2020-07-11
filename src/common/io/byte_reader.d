@@ -51,6 +51,9 @@ protected:
     override ulong readLong() {
         return doRead!ulong;
     }
+    override float readFloat() {
+        return doRead!float;
+    }
     override ubyte[] readByteArray(ulong items) {
         return doReadArray!ubyte(items);
     }
@@ -62,6 +65,9 @@ protected:
     }
     override ulong[] readLongArray(ulong items) {
         return doReadArray!ulong(items);
+    }
+    override float[] readFloatArray(ulong items) {
+        return doReadArray!float(items);
     }
 private:
     void prefetch(uint numBytes) {
@@ -189,6 +195,7 @@ public:
         static if(is(T==ushort) || is(T==short) || is(T==wchar)) return cast(T)readShort();
         static if(is(T==uint) || is(T==int) || is(T==dchar)) return cast(T)readInt();
         static if(is(T==ulong) || is(T==long)) return readLong();
+        static if(is(T==float)) return readFloat();
 
         static if(isStruct!T) {
             auto array = readByteArray(T.sizeof);
@@ -206,6 +213,7 @@ public:
         static if(is(T==ushort) || is(T==short) || is(T==wchar)) return cast(T[])readShortArray(items);
         static if(is(T==uint) || is(T==int) || is(T==dchar)) return cast(T[])readIntArray(items);
         static if(is(T==ulong) || is(T==long)) return readLongArray(items);
+        static if(is(T==float)) return readFloatArray(items);
 
         assert(false);
 	}
@@ -222,6 +230,9 @@ protected:
     ulong readLong() {
         return doRead!ulong;
     }
+    float readFloat() {
+        return doRead!uint.bitcastTo!float;
+    }
     ubyte[] readByteArray(ulong items) {
         return doReadArray!ubyte(items);
     }
@@ -233,6 +244,9 @@ protected:
     }
     ulong[] readLongArray(ulong items) {
         return doReadArray!ulong(items);
+    }
+    float[] readFloatArray(ulong items) {
+        return doReadArray!float(items);
     }
 private:
     T doRead(T)() {
