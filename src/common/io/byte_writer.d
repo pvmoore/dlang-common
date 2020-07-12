@@ -18,7 +18,7 @@ public:
         expect(littleEndian, "Big endian not currently supported");
     }
     void write(T)(T value) {
-        static if(is(T==ubyte) || is(T==byte)) writeByte(value);
+        static if(is(T==ubyte) || is(T==byte) || is(T==char)) writeByte(value.as!ubyte);
         else static if(is(T==ushort) || is(T==short)) writeShort(value);
         else static if(is(T==uint) || is(T==int)) writeInt(value);
         else static if(is(T==ulong) || is(T==long)) writeLong(value);
@@ -29,13 +29,16 @@ public:
         bytesWritten += T.sizeof;
     }
     void writeArray(T)(T[] items) {
-        static if(is(T==ubyte) || is(T==byte)) writeByteArray(items);
+        static if(is(T==ubyte) || is(T==byte) || is(T==char)) writeByteArray(items.as!(ubyte[]));
         else static if(is(T==ushort) || is(T==short)) writeShortArray(items);
         else static if(is(T==uint) || is(T==int)) writeIntArray(items);
         else static if(is(T==ulong) || is(T==long)) writeLongArray(items);
         else static if(is(T==float)) writeFloatArray(items);
         else static if(isStruct!T) writeBytes(items.ptr.as!(ubyte*), (T.sizeof*items.length).as!uint);
-        else assert(false);
+        else {
+            pragma(msg, "%s not supported".format(T.stringof));
+            assert(false);
+        }
         bytesWritten += T.sizeof*items.length;
     }
     /**
