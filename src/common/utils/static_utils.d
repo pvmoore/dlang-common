@@ -145,7 +145,7 @@ string[] getAllSubTypes(T)() if(isObject!T) {
 }
 
 /*
- *  auto b = toArray!VkFormatFeatureFlagBits(bits, "VK_FORMAT_FEATURE_", "_BIT");
+ *  auto b = toString!VkFormatFeatureFlagBits(bits, "VK_FORMAT_FEATURE_", "_BIT");
  */
 string toString(E)(uint bits, string removePrefix, string removeSuffix) if (is(E == enum)) {
     import std.traits : EnumMembers;

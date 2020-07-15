@@ -42,7 +42,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testByteReader();
+       
     } else {
         testPDH();
         testQueue();
@@ -70,6 +70,7 @@ void runTests() {
         testHasher();
         testConsole();
         testAsyncUtils();
+        testCpuUtils();
 
         testPriorityQueue();
 
@@ -1904,4 +1905,11 @@ void testStaticUtils() {
 
 
     writefln("OK");
+}
+void testCpuUtils() {
+    writefln("Testing cpu_utils ...");
+
+    uint features = getAVX512Support();
+
+    writefln("features = %s", toString!AVX512Feature(features, null, null));
 }
