@@ -8,20 +8,14 @@ public:
 import common.allocator;
 import common.archive;
 import common.boxing;
-import common.array;
 import common.attributes;
 import common.bool3;
-import common.list;
 import common.hasher;
 import common.intrinsics;
 import common.objectcache;
 import common.pinned_array;
-import common.queue;
-import common.set;
-import common.stack;
 import common.stringbuffer;
 import common.structcache;
-import common.tree_list;
 import common.velocity;
 
 version(Win64) {

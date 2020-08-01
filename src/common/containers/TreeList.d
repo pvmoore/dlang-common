@@ -1,4 +1,4 @@
-module common.tree_list;
+module common.containers.TreeList;
 
 import common.all;
 /**
@@ -21,6 +21,23 @@ final class TreeList(T) {
 
     bool empty() const { return length==0; }
 
+    override size_t toHash() @safe nothrow {
+        if(length==0) return 0;
+        Node n = first(root);
+        ulong a = 5381;
+        for(auto i=0; i<length; i+=4) {
+            a  = (a << 7)  + hashOf!T(n.value); n = next(n);
+            a ^= (a << 13) + hashOf!T(n.value); n = next(n);
+            a  = (a << 19) + hashOf!T(n.value); n = next(n);
+            a ^= (a << 23) + hashOf!T(n.value); n = next(n);
+        }
+        foreach(i; 0..length%3) {
+            a  = (a << 7) + hashOf(n.value);
+            n = next(n);
+        }
+        return a;
+
+    }
     override bool opEquals(Object other) {
         auto o = cast(TreeList!T)other;
         if(length!=o.length) return false;

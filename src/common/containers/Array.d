@@ -1,4 +1,4 @@
-module common.array;
+module common.containers.Array;
 
 import common.all;
 
@@ -73,6 +73,20 @@ public:
 	void opIndexAssign(T val, ulong i) {
 		array[i] = val;
 	}
+    override size_t toHash() nothrow {
+        if(len==0) return 0;
+        ulong a = 5381;
+        for(auto i=0; i<len; i+=4) {
+            a  = (a << 7)  + hashOf!T(array[i]);
+            a ^= (a << 13) + hashOf!T(array[i+1]);
+            a  = (a << 19) + hashOf!T(array[i+2]);
+            a ^= (a << 23) + hashOf!T(array[i+3]);
+        }
+        foreach(i; len%3..len) {
+            a  = (a << 7) + hashOf(array[i]);
+        }
+        return a;
+    }
 	bool opEquals(inout(T)[] o) const {
         return array[0..len] == o;
 	}

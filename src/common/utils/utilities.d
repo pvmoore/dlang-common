@@ -201,6 +201,13 @@ T firstNotNull(T)(T[] array...) if(isObject!T) {
     return null;
 }
 
+// size_t hashOf(T)(T v) if(isPrimitiveType!T) {
+//     return cast(ulong)v;
+// }
+// size_t hashOf(T)(T v) if(isObject!T || isStruct!T) {
+//     return v.toHash();
+// }
+
 /**
  *  Dynamic dispatch.
  *  eg.

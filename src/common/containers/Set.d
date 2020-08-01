@@ -1,4 +1,4 @@
-module common.set;
+module common.containers.Set;
 /**
  *  An unordered collection of unique items.
  *
@@ -30,6 +30,10 @@ public:
     auto clear() {
         map.clear();
         return this;
+    }
+    override size_t toHash() const @safe pure nothrow {
+        // Doesn't make sense to use this as a key
+        assert(false);
     }
     /// This is a semi-expensive process
     override bool opEquals(Object o) const {

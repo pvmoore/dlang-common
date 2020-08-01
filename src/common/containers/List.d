@@ -1,13 +1,16 @@
-module common.list;
+module common.containers.List;
 
 import common.all;
 
+/**
+ *  Single linked list
+ */
 final class List(T) {
 private:
     Node head, tail;
     int len;
 
-    private static class Node {
+    static class Node {
         Node next;
         T value;
         this(Node next, T value) { this.next=next; this.value=value; }
@@ -37,6 +40,23 @@ nothrow:
         if(n[1]) {
             n[1].value = val;
         }
+    }
+    override size_t toHash() nothrow {
+        import core.internal.hash : hashOf;
+        if(len==0) return 0;
+        auto ptr = head;
+        ulong a = 5381;
+        for(auto i=0; i<len; i+=4) {
+            a  = (a << 7)  + hashOf!T(ptr.value); ptr = ptr.next;
+            a ^= (a << 13) + hashOf!T(ptr.value); ptr = ptr.next;
+            a  = (a << 19) + hashOf!T(ptr.value); ptr = ptr.next;
+            a ^= (a << 23) + hashOf!T(ptr.value); ptr = ptr.next;
+        }
+        foreach(i; 0..len%3) {
+            a  = (a << 7) + hashOf(ptr.value);
+            ptr = ptr.next;
+        }
+        return a;
     }
     bool opEquals(T[] array) {
         if(len != array.length) return false;

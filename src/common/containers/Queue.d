@@ -1,4 +1,4 @@
-module common.queue;
+module common.containers.Queue;
 
 import common.all;
 

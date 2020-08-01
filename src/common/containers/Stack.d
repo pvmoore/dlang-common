@@ -1,4 +1,4 @@
-module common.stack;
+module common.containers.Stack;
 
 import common.all;
 
