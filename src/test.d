@@ -20,12 +20,12 @@ import std.algorithm.iteration  : permutations, map, sum, each;
 import std.algorithm.sorting    : sort;
 import std.algorithm.mutation   : reverse;
 
-import test_async;
-import test_betterc;
-import test_containers;
-import test_io;
-import test_utils;
-import test_wasm;
+import _tests.test_async;
+import _tests.test_betterc;
+import _tests.test_containers;
+import _tests.test_io;
+import _tests.test_utils;
+import _tests.test_wasm;
 
 const RUN_SUBSET = false;
 

@@ -1,4 +1,4 @@
-module test_containers;
+module _tests.test_containers;
 
 import std.stdio  : writefln;
 import std.format : format;

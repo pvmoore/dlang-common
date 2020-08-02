@@ -1,4 +1,4 @@
-module test_utils;
+module _tests.test_utils;
 
 import std : writefln, writeln, format;
 

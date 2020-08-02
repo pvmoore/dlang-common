@@ -1,4 +1,4 @@
-module test_betterc;
+module _tests.test_betterc;
 
 public:
 extern(C):

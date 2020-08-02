@@ -1,4 +1,4 @@
-module test_async;
+module _tests.test_async;
 
 import std.stdio;
 import core.thread;

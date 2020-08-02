@@ -1,4 +1,4 @@
-module test_wasm;
+module _tests.test_wasm;
 
 public:
 import std.stdio;

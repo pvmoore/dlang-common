@@ -19,18 +19,13 @@ configuration "bench" {
 	targetType "executable"
 	targetName "bin-bench"
 	excludedSourceFiles "src/test.d"
-	excludedSourceFiles "src/test_async.d"
+	excludedSourceFiles "src/_tests/test_async.d"
 }
 configuration "library" {
 	#targetType "library"
 	excludedSourceFiles "src/test.d"
-	excludedSourceFiles "src/test_async.d"
-	excludedSourceFiles "src/test_betterc.d"
-	excludedSourceFiles "src/test_containers.d"
-	excludedSourceFiles "src/test_io.d"
-	excludedSourceFiles "src/test_utils.d"
-	excludedSourceFiles "src/test_wasm.d"
 	excludedSourceFiles "src/bench.d"
+	excludedSourceFiles "src/_tests/*"
 }
 
 

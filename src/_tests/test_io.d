@@ -1,4 +1,4 @@
-module test_io;
+module _tests.test_io;
 
 import std : format, writefln, remove, tempDir, uniform, Mt19937, File, to, exists, unpredictableSeed;
 
