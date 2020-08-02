@@ -19,7 +19,7 @@ private:
     T[] array;
     Positions pos;
     uint mask;
-    static final struct Positions {
+    static struct Positions {
         int r;
         int w;
     }

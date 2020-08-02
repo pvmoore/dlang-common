@@ -1,6 +1,6 @@
 name "common"
 platforms "windows"
-	
+
 buildType "debug" {
 	buildOptions "debugMode" "debugInfo" "alwaysStackFrame" "stackStomping" "warningsAsErrors"
 }
@@ -25,6 +25,11 @@ configuration "library" {
 	#targetType "library"
 	excludedSourceFiles "src/test.d"
 	excludedSourceFiles "src/test_async.d"
+	excludedSourceFiles "src/test_betterc.d"
+	excludedSourceFiles "src/test_containers.d"
+	excludedSourceFiles "src/test_io.d"
+	excludedSourceFiles "src/test_utils.d"
+	excludedSourceFiles "src/test_wasm.d"
 	excludedSourceFiles "src/bench.d"
 }
 

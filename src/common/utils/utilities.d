@@ -201,6 +201,14 @@ T firstNotNull(T)(T[] array...) if(isObject!T) {
     return null;
 }
 
+/**
+ * Object o;
+ * let((o) {});
+ */
+void let(T)(T receiver, void delegate(T thing) func) {
+    if(receiver) func(receiver);
+}
+
 // size_t hashOf(T)(T v) if(isPrimitiveType!T) {
 //     return cast(ulong)v;
 // }
