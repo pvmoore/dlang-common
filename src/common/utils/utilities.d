@@ -143,10 +143,9 @@ uint nextHighestPowerOf2(uint v) pure nothrow {
    return v;
 }
 
-bool isPowerOf2(uint v) pure nothrow {
-   return !(v & (v - 1)) && v;
-}
-bool isPowerOf2(ulong v) pure nothrow {
+bool isPowerOf2(T)(T v)
+    if(isInteger!T)
+{
    return !(v & (v - 1)) && v;
 }
 

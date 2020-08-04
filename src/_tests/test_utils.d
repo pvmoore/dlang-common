@@ -16,6 +16,89 @@ void testUtils() {
 void testArrayUtils() {
     writefln("--== Testing array_utils ==--");
 
+    { // contains
+        uint[] a = [1,2,3,4];
+        assert(a.contains(1));
+        assert(a.contains(2));
+        assert(a.contains(3));
+        assert(a.contains(4));
+        assert(!a.contains(5));
+    }
+    { // indexOf
+        float[] a = [1,2,3];
+        assert(a.indexOf(1) == 0);
+        assert(a.indexOf(2) == 1);
+        assert(a.indexOf(3) == 2);
+        assert(a.indexOf(4) == -1);
+    }
+    { // insertAt
+        ubyte[] a;
+        a.insertAt(0, 1);
+        assert(a==[1]);
+        a.insertAt(1, 2);
+        assert(a==[1,2]);
+        a.insertAt(2, 3);
+        assert(a==[1,2,3]);
+        a.insertAt(0, 0);
+        assert(a == [0,1,2,3]);
+        a.insertAt(1, 4);
+        assert(a == [0,4,1,2,3]);
+        a.insertAt(5,9);
+        assert(a==[0,4,1,2,3,9]);
+        a.insertAt(1, [8,7]);
+        assert(a==[0,8,7,4,1,2,3,9]);
+    }
+    { // onlyContains
+        uint[] a = [1,1,1];
+        uint[] b = [0,0,1];
+        assert(a.onlyContains(1));
+        assert(!b.onlyContains(0));
+    }
+    { // push
+        uint[] a = [1,2,3];
+        a.push(4);
+        assert(a == [1,2,3,4]);
+    }
+    { // pop
+        uint[] a = [1,2];
+        assert(2 == a.pop());
+        assert(a==[1]);
+        assert(1==a.pop());
+        assert(a==[]);
+        assert(uint.init == a.pop());
+        assert(a==[]);
+    }
+     { // remove
+        ubyte[] a = [1,2,3,4,5];
+        assert(1 == a.remove(1));
+        assert(a == [2,3,4,5]);
+        assert(ubyte.init == a.remove(0));
+        assert(a== [2,3,4,5]);
+        assert(5 == a.remove(5));
+        assert(a == [2,3,4]);
+        assert(3 == a.remove(3));
+        assert(a == [2,4]);
+    }
+    { // removeAt
+        ubyte[] a = [1,2,3];
+        assert(1 == a.removeAt(0));
+        assert(a == [2,3]);
+        assert(3 == a.removeAt(1));
+        assert(a == [2]);
+        assert(2 == a.removeAt(0));
+        assert(a == []);
+    }
+    { // removeRange
+        ubyte[] a = [1,2,3,4,5,6,7,8,9];
+        a.removeRange(0, 1);
+        assert(a == [3,4,5,6,7,8,9]);
+        a.removeRange(5, 6);
+        assert(a == [3,4,5,6,7]);
+        a.removeRange(1,1);
+        assert(a == [3,5,6,7]);
+        a.removeRange(1,2);
+        assert(a==[3,7]);
+    }
 }
 void testAsyncUtils() {
     writefln("Testing async_utils ...");

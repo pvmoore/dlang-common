@@ -12,17 +12,12 @@ bool contains(T)(T[] values, T value) if(!isSomeChar!T) {
 	return false;
 }
 
-int indexOf(T)(T[] array, T value) if(!isSomeChar!T) {
-    foreach(i, v; array) if(v==value) return cast(int)i;
-    return -1;
-}
-
-bool equals(T)(T[] array, T value) {
-    for(auto i=0; i<array.length; i++) {
-        if(array[i] != value) return false;
-    }
-    return true;
-}
+// bool equals(T)(T[] array, T value) {
+//     for(auto i=0; i<array.length; i++) {
+//         if(array[i] != value) return false;
+//     }
+//     return true;
+// }
 bool equals(T)(T[] array, T[] values) {
     if(array.length != values.length) return false;
     for(auto i=0; i<array.length; i++) {
@@ -31,11 +26,34 @@ bool equals(T)(T[] array, T[] values) {
     return true;
 }
 
-void insert(T)(ref T[] array, long atPos, T extra) {
+int indexOf(T)(T[] array, T value) if(!isSomeChar!T) {
+    foreach(i, v; array) if(v==value) return cast(int)i;
+    return -1;
+}
+
+void insertAt(T)(ref T[] array, long atPos, T extra) {
+	assert(atPos<=array.length);
 	array.insertInPlace(atPos, extra);
 }
-void insert(T)(ref T[] array, long atPos, T[] extra) {
+void insertAt(T)(ref T[] array, long atPos, T[] extra) {
+	assert(atPos<=array.length);
 	array.insertInPlace(atPos, extra);
+}
+/// returns true if the entire array only contains values
+bool onlyContains(T)(T[] array, T value) nothrow {
+	foreach(v; array) {
+        if(v!=value) return false;
+    }
+	return true;
+}
+void push(T)(ref T[] array, T value) {
+	array ~= value;
+}
+T pop(T)(ref T[] array) {
+	if(array.length==0) return T.init;
+	T value = array[$-1];
+	array.length = array.length - 1;
+	return value;
 }
 T remove(T)(ref T[] array, T value) {
 	foreach(i, v; array) {
@@ -45,8 +63,9 @@ T remove(T)(ref T[] array, T value) {
     }
     return T.init;
 }
-/// array.removeAt(i)
+/** array.removeAt(i) */
 T removeAt(T)(ref T[] array, long index) {
+	assert(index<array.length);
 	T element = array[index];
 	foreach(v; array[index+1..$]) {
 		array[index++] = v;
@@ -54,27 +73,12 @@ T removeAt(T)(ref T[] array, long index) {
 	array.length = array.length - 1;
 	return element;
 }
-/// array.removeAt(start,end) inclusive
-void removeAt(T)(ref T[] array, long start, long end) {
+/** array.removeRange(start,end) inclusive */
+void removeRange(T)(ref T[] array, long start, long end) {
+	assert(start <= end);
 	long span = (end-start)+1;
 	foreach(v; array[end+1..$]) {
 		array[start++] = v;
 	}
 	array.length = array.length - span;
-}
-
-void push(T)(ref T[] array, T value) {
-	array ~= value;
-}
-T pop(T)(ref T[] array) {
-	T value = array[$-1];
-	array.length = array.length - 1;
-	return value;
-}
-/// returns true if the entire array only contains values
-bool onlyContains(T)(T[] array, T value) nothrow {
-	foreach(v; array) {
-        if(v!=value) return false;
-    }
-	return true;
 }

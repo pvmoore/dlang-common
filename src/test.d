@@ -1,6 +1,5 @@
 
 import std.stdio;
-import common;
 import core.stdc.stdlib : malloc, calloc;
 import core.atomic      : atomicLoad, atomicStore, atomicOp;
 import core.time        : dur;
@@ -20,6 +19,8 @@ import std.algorithm.iteration  : permutations, map, sum, each;
 import std.algorithm.sorting    : sort;
 import std.algorithm.mutation   : reverse;
 
+import common;
+
 import _tests.test_async;
 import _tests.test_betterc;
 import _tests.test_containers;
@@ -27,7 +28,7 @@ import _tests.test_io;
 import _tests.test_utils;
 import _tests.test_wasm;
 
-const RUN_SUBSET = false;
+enum RUN_SUBSET = false;
 
 void main() {
     version(assert) {
