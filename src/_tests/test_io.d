@@ -9,6 +9,7 @@ void testIo() {
     testFileByteWriter();
     testArrayByteWriter();
     testBitWriter();
+    testArrayBitWriter();
     testBitReader();
     testBitReaderAndWriter();
     testConsole();
@@ -389,28 +390,6 @@ void testBitWriter() {
     assert(writer.bytesWritten==10);
 
     {
-        auto bbw = new BufferBitWriter();
-        assert(bbw.bitsWritten()==0);
-        assert(bbw.bytesWritten()==0);
-        assert(bbw.length()==0);
-        assert(bbw.flushAndGetBuffer()==[]);
-
-        bbw.write(0b1100, 4);
-        assert(bbw.bitsWritten()==4);
-        assert(bbw.bytesWritten()==0);
-
-        bbw.write(0b0, 1);
-        assert(bbw.bitsWritten()==5);
-        assert(bbw.bytesWritten()==0);
-
-        bbw.write(0b101, 3);
-        assert(bbw.bitsWritten()==8);
-        assert(bbw.bytesWritten()==1);
-        assert(bbw.flushAndGetBuffer()==[0b10101100]);
-        assert(bbw.bitsWritten()==8);
-        assert(bbw.bytesWritten()==1);
-    }
-    {
         ubyte[] bytes;
         void receiver2(ubyte b) {
             bytes ~= b;
@@ -440,6 +419,31 @@ void testBitWriter() {
         assert(w.bitsWritten == 16+40+40);
         assert(bytes == [cast(ubyte)0xff, 0, 0xff,0xff,0xff,0xff,0xff, 0,0,0,0,0]);
 
+    }
+}
+void testArrayBitWriter() {
+     writefln("--== Testing ArrayBitWriter ==--");
+    {
+        auto bbw = new ArrayBitWriter();
+        assert(bbw.bitsWritten==0);
+        assert(bbw.bytesWritten==0);
+        assert(bbw.length==0);
+        assert(bbw.flush().as!ArrayBitWriter.getArray()==[]);
+
+        bbw.write(0b1100, 4);
+        assert(bbw.bitsWritten==4);
+        assert(bbw.bytesWritten==0);
+
+        bbw.write(0b0, 1);
+        assert(bbw.bitsWritten==5);
+        assert(bbw.bytesWritten==0);
+
+        bbw.write(0b101, 3);
+        assert(bbw.bitsWritten==8);
+        assert(bbw.bytesWritten==1);
+        assert(bbw.flush().as!ArrayBitWriter.getArray()==[0b10101100]);
+        assert(bbw.bitsWritten==8);
+        assert(bbw.bytesWritten==1);
     }
 }
 void testBitReader() {

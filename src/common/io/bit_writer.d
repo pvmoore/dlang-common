@@ -48,40 +48,23 @@ private:
 }
 //-----------------------------------------------------------------
 
-final class BufferBitWriter {
+final class ArrayBitWriter : BitWriter {
 private:
-    BitWriter writer;
-    ubyte[] _buffer;
+    ubyte[] array;
 
     void writeByte(ubyte b) {
-        _buffer ~= b;
+        array ~= b;
     }
 public:
-    this(uint reserved = 1024) {
-        this.writer = new BitWriter(&writeByte);
-        this._buffer.reserve(reserved);
-    }
-    void write(uint value, uint numBits) {
-        writer.write(value, numBits);
-    }
-    void writeOnes(uint count) {
-        writer.writeOnes(count);
-    }
-    void writeZeroes(uint count) {
-        writer.writeZeroes(count);
-    }
-    uint bitsWritten() {
-        return writer.bitsWritten;
-    }
-    uint bytesWritten() {
-        return writer.bytesWritten;
-    }
     uint length() {
-        return _buffer.length.as!uint;
+        return array.length.as!uint;
     }
-    ubyte[] flushAndGetBuffer() {
-        writer.flush();
-        return _buffer;
+    ubyte[] getArray() {
+        return array;
+    }
+    this(uint reserved = 1024) {
+        super(&writeByte);
+        this.array.reserve(reserved);
     }
 }
 
@@ -94,7 +77,7 @@ public:
  *
  * writer.write(0b11111111, 8);
  */
-final class BitWriter {
+class BitWriter {
 private:
 	ulong bits;
     uint bitpos;
@@ -108,38 +91,44 @@ public:
     /**
      *  Write 0 to 32 bits of value to the stream.
      */
-    void write(uint value, uint numBits) {
+    BitWriter write(uint value, uint numBits) {
         expect(numBits<33);
-        if(numBits==0) return;
+        if(numBits!=0) {
 
-        ulong a = value & (0xffff_ffffu >>> (32-numBits));
-        ulong b = a << bitpos;
+            ulong a = value & (0xffff_ffffu >>> (32-numBits));
+            ulong b = a << bitpos;
 
-        bits        |= b;
-        bitpos      += numBits;
-        bitsWritten += numBits;
+            bits        |= b;
+            bitpos      += numBits;
+            bitsWritten += numBits;
 
-        while(bitpos>7) {
-            //receiver(cast(ubyte)((bits>>>bitpos-8) & 0xff));
-            receiver(cast(ubyte)(bits & 0xff));
-            bits >>>=8;
-            bitpos -= 8;
-            bytesWritten++;
+            while(bitpos>7) {
+                //receiver(cast(ubyte)((bits>>>bitpos-8) & 0xff));
+                receiver(cast(ubyte)(bits & 0xff));
+                bits >>>=8;
+                bitpos -= 8;
+                bytesWritten++;
+            }
         }
+        return this;
     }
-    void writeOnes(uint count) {
-        if(count==0) return;
-        uint rem = count%32;
-        for(auto i=0; i<count/32; i++) write(0xffff_ffff,32);
-        for(auto i=0; i<rem; i++) write(1,1);
+    BitWriter writeOnes(uint count) {
+        if(count!=0) {
+            uint rem = count%32;
+            for(auto i=0; i<count/32; i++) write(0xffff_ffff,32);
+            for(auto i=0; i<rem; i++) write(1,1);
+        }
+        return this;
     }
-    void writeZeroes(uint count) {
-        if(count==0) return;
-        uint rem = count%32;
-        for(auto i=0; i<count/32; i++) write(0,32);
-        for(auto i=0; i<rem; i++) write(0,1);
+    BitWriter writeZeroes(uint count) {
+        if(count!=0) {
+            uint rem = count%32;
+            for(auto i=0; i<count/32; i++) write(0,32);
+            for(auto i=0; i<rem; i++) write(0,1);
+        }
+        return this;
     }
-    void flush() {
+    auto flush() {
         if(bitpos>0) {
             bytesWritten++;
             bitsWritten += (8-bitpos);
@@ -148,6 +137,7 @@ public:
             bitpos = 0;
             bits   = 0;
         }
+        return this;
     }
 }
 

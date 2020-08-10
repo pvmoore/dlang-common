@@ -28,7 +28,7 @@ import _tests.test_io;
 import _tests.test_utils;
 import _tests.test_wasm;
 
-enum RUN_SUBSET = false;
+enum RUN_SUBSET = true;
 
 void main() {
     version(assert) {
@@ -46,7 +46,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-
+        testIo();
     } else {
 
         testAllocator();
