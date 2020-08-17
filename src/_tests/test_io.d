@@ -445,6 +445,30 @@ void testArrayBitWriter() {
         assert(bbw.bitsWritten==8);
         assert(bbw.bytesWritten==1);
     }
+    { // alignTo
+        auto bw = new ArrayBitWriter;
+        bw.alignTo(8);
+        bw.alignTo(32);
+        assert(bw.bitsWritten==0);
+
+        bw.write(0, 2);
+        assert(bw.bitsWritten==2);
+
+        bw.alignTo(8);
+        assert(bw.bitsWritten==8);
+
+        bw.alignTo(16);
+        assert(bw.bitsWritten==16);
+        bw.alignTo(16);
+        assert(bw.bitsWritten==16);
+
+        bw.write(0, 3);
+        assert(bw.bitsWritten==19);
+
+        bw.alignTo(32);
+        assert(bw.bitsWritten==32);
+    }
+    writefln("ArrayBitWriter OK");
 }
 void testBitReader() {
     writefln("--== Testing BitReader==--");

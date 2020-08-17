@@ -139,6 +139,19 @@ public:
         }
         return this;
     }
+    auto alignTo(uint alignment) {
+        assert(alignment>1);
+        assert(From!"core.bitop".popcnt(alignment)==1);
+
+        uint and = alignment-1;
+        uint rem = alignment - (bitsWritten & and);
+
+        if(rem != alignment) {
+            write(0, rem);
+        }
+
+        return this;
+    }
 }
 
 
