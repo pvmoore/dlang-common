@@ -18,6 +18,23 @@ public:
 	this(int reserve=8) {
         array.length = reserve;
 	}
+    auto clone() {
+        import std.traits : hasElaborateCopyConstructor;
+
+        auto temp = new Array!T(length().as!uint);
+
+        static if(hasElaborateCopyConstructor!T) {
+            foreach(i; 0..length()) {
+                temp.add(array[i]);
+            }
+        } else {
+            // Blit everything across
+            temp.array.length = length();
+            temp.len = length();
+            temp.array[0..length()] = array[0..length()];
+        }
+        return temp;
+    }
 
 	/// Getters and setters. All assume you have checked the length
     ref T front() {
