@@ -1,4 +1,4 @@
-module common.async.async_array;
+module common.containers.async_array;
 /**
  * Naive/slow implementation of an asynchronous array.
  */

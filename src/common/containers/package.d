@@ -2,6 +2,8 @@ module common.containers;
 
 public:
 
+import common.containers.async_array;
+import common.containers.async_queue;
 import common.containers.Array;
 import common.containers.List;
 import common.containers.PriorityQueue;

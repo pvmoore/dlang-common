@@ -28,7 +28,7 @@ import _tests.test_io;
 import _tests.test_utils;
 import _tests.test_wasm;
 
-enum RUN_SUBSET = true;
+enum RUN_SUBSET = false;
 
 void main() {
     version(assert) {
@@ -46,7 +46,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testIo();
+        testContainers();
     } else {
 
         testAllocator();
@@ -63,6 +63,8 @@ void runTests() {
         testIo();
         testUtils();
         testWasm();
+
+        runAsyncTests();
     }
 }
 

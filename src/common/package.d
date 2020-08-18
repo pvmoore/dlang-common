@@ -22,8 +22,8 @@ version(Win64) {
     import common.pdh;
 }
 
-import common.async.async_array;
-import common.async.async_queue;
+import common.containers.async_array;
+import common.containers.async_queue;
 
 import common.containers;
 

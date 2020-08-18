@@ -1,4 +1,4 @@
-module common.async.async_queue;
+module common.containers.async_queue;
 
 import common.all;
 
@@ -77,7 +77,17 @@ public:
             if(len==0) return 0;
             if(len>here.length) len = cast(int)here.length;
 
-            here[0..len] = array[pos.r .. pos.r+len];
+            uint start = p.r&mask;
+            uint end   = (p.r+len)&mask;
+
+            if(end>start) {
+                here[0..len] = array[start..end];
+            } else {
+                auto n = array.length-start;
+                here[0..n]     = array[start..array.length];
+                here[n..n+end] = array[0..end];
+            }
+
             auto pptr = cast(Positions*)&pos;
             pptr.r += len;
             return len;

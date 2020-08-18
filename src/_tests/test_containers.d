@@ -14,6 +14,7 @@ void testContainers() {
     testSparseArray();
     testStack();
     testTreeList();
+    testAsyncQueue();
 }
 
 void testArray() {
@@ -460,4 +461,41 @@ void testTreeList() {
 
 
     writefln("tree=%s", tree2);
+}
+void testAsyncQueue() {
+    writefln("==-- Testing AsyncQueue --==");
+
+    // Tests for SCSP (single producer / single consumer)
+
+    {   // drain
+        auto q = makeSPSCQueue!int(8);
+        assert(q.empty() && q.length()==0);
+
+        q.push(1).push(2).push(3).push(4).push(5);
+        assert(!q.empty() && q.length==5);
+
+        assert(q.pop()==1 && q.length()==4);
+
+        // 2,3,4,5
+        int[2] sink;
+        assert(2 == q.drain(sink));
+        assert(sink == [2,3]);
+
+        q.push(6).push(7).push(8);
+        assert(q.length()==5);
+
+        // 4,5,6,7,8
+        int[3] sink2;
+        assert(3==q.drain(sink2) && q.length()==2);
+        assert(sink2 == [4,5,6]);
+
+        q.push(9).push(10).push(11);
+        assert(q.length()==5);
+
+        // 7,8,9,10,11
+        int[5] sink3;
+        assert(5 == q.drain(sink3));
+        assert(q.length()==0);
+        assert(sink3 == [7,8,9,10,11]);
+    }
 }

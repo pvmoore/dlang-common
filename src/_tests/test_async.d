@@ -189,7 +189,7 @@ void testAsyncQueue() {
         int producerBatchSize = 400 / numProducers;
         int consumerBatchSize = 80 / numConsumers;
 
-        // inital rubbish
+        // initial rubbish
         for(auto i=0; i<INITIAL; i++) {
             q.push(-1);
         }
@@ -249,4 +249,6 @@ void testAsyncQueue() {
     testDrain(makeSPMCQueue!int(1024*1024*16), 1, 4);
     testDrain(makeMPSCQueue!int(1024*1024*16), 4, 1);
     testDrain(makeMPMCQueue!int(1024*1024*16), 4, 4);
+
+    
 }
