@@ -54,16 +54,35 @@ public:
         return this;
     }
     T pop() {
-        static if(isSC) {
-            // cast away shared
-            auto pptr = cast(Positions*)&pos;
-            int p = pptr.r;
-            pptr.r = p+1;
-            return array[p&mask];
-        } else {
-            int pos = nextReadPos();
-            return array[pos&mask];
-        }
+        Positions p;
+        T value = T.init;
+
+        do{
+            p = atomicLoad(pos);
+            if(p.r == p.w) break;
+
+            value = array[p.r&mask];
+
+        }while(!cas(&pos.r, p.r, p.r+1));
+
+        // This might be faster but doesn't work on LDC in release mode:
+        // ulong p1;
+        // ulong p2 = p1-1;
+
+        // while(true) {
+        //     auto old = cas64(cast(void*)&pos, p1, p2);
+        //     if((old & 0xffffffff) == (old >>> 32)) break;
+        //     if(old==p1) {
+        //         value = array[p1&mask];
+        //         break;
+        //     }
+
+        //     p1 = old;
+        //     p2 = old;
+        //     p2++;
+        // }
+
+        return value;
     }
     /**
      * Take 'here.length' items from the queue and put them

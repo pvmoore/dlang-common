@@ -21,11 +21,12 @@ void main() {
     version(LDC) {
         writefln("Running benchmarks");
 
-        benchmarkByteReader();
+        benchmarkAsyncQueue();
 
         float f = 1;
         if(f<2) return;
 
+        benchmarkByteReader();
         benchmarkAsyncArray();
         benchmarkQueue();
         benchmarkAsyncQueue();
@@ -127,7 +128,7 @@ void benchmarkArray() {
         a = new Array!int;
         addValues(10_000);
         // insert in the middle
-        while(a.length<20_000) a.insert(99,5_000);
+        while(a.length<20_000) a.insertAt(99,5_000);
     })(J);
     // 189.76 -> 196.35
     writefln("insert .. took %.2f millis", results[0].total!"nsecs"/1000000.0);
@@ -191,12 +192,12 @@ void benchmarkAllocator() {
         add1 ~= tuple(cast(uint)offset, size);
     }
     writefln("1) allocated %s regions", add1.length); flushConsole();
-    at.numBytesFree();
+    auto num = at.numBytesFree();
     free1a = add1.dup;
     free1a.randomShuffle(rng);
     free1b = free1a[free1a.length/2..$].dup;
     free1a.length = free1a.length/2;
-    at.numBytesFree();
+    auto num2 = at.numBytesFree();
 
     writefln("%s", at);
 
@@ -428,7 +429,7 @@ void benchmarkByteReader() {
     if(!exists(filename)) createTestData(filename);
 
     ulong total;
-    auto r = new ByteReader(filename);
+    auto r = new FileByteReader(filename);
     auto results = benchmark!({
         r.rewind();
 

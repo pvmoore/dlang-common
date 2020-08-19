@@ -98,7 +98,6 @@ void testAsyncQueue() {
         int[] popped;
         this(IQueue!int q) {
             this.q = q;
-            this.popped.assumeSafeAppend();
             this.popped.reserve(100_000);
         }
         override void work() {
@@ -110,13 +109,12 @@ void testAsyncQueue() {
         int[] popped;
         this(IQueue!int q) {
             this.q = q;
-            this.popped.assumeSafeAppend();
             this.popped.reserve(100_000);
         }
         override void work() {
             int[5] array;
-            q.drain(array);
-            popped ~= array;
+            auto count = q.drain(array);
+            popped ~= array[0..count];
         }
     }
 
@@ -150,6 +148,7 @@ void testAsyncQueue() {
             consumers.each!(it=>it.doSomeWork(consumerBatchSize));
         }
         consumers.each!(it=>it.doSomeWork(INITIAL/numConsumers));
+
 
         writef("waiting ... ");
         flushConsole();
@@ -224,10 +223,10 @@ void testAsyncQueue() {
         popped     = popped[INITIAL..$];
         numPopped -= INITIAL;
 
-//        writefln("total1=%s", total1);
-//        writefln("total2=%s", total2);
-//        writefln("numPopped=%s", numPopped);
-//        writefln("length=%s", q.length);
+    //    writefln("total1=%s", total1);
+    //    writefln("total2=%s", total2);
+    //    writefln("numPopped=%s", numPopped);
+    //    writefln("length=%s", q.length);
 
         assert(q.length==0);
         assert(total1==total2);
@@ -236,6 +235,7 @@ void testAsyncQueue() {
         for(int i=0; i<numPopped; i++) {
             assert(popped[i] == i/numProducers);
         }
+        writefln("Assertions PASSED");
     }
 
     writefln("Testing push() and pop()");
@@ -250,5 +250,5 @@ void testAsyncQueue() {
     testDrain(makeMPSCQueue!int(1024*1024*16), 4, 1);
     testDrain(makeMPMCQueue!int(1024*1024*16), 4, 4);
 
-    
+
 }

@@ -46,6 +46,22 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "**** Bench (LDC) ****",
+            "type": "shell",
+            "windows": {
+                "command": "dub run --build=release --config=bench --compiler=ldc2 --arch=x86_64"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
     ]
 }

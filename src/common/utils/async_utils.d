@@ -156,6 +156,7 @@ version(DigitalMars) {
         asm pure nothrow @nogc { naked; sfence; ret; }
     }
 } // DigitalMars
+
 version(LDC) {
     import ldc.llvmasm;
     import ldc.attributes;
@@ -180,7 +181,7 @@ version(LDC) {
         // r8 = ptr
         // rdx = expected
         // rcx = newValue
-        return __asm!uint(`
+        return __asm!ulong(`
             mov %rdx, %rax
             lock
             cmpxchg %rcx, (%r8)

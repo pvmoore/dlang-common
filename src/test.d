@@ -28,17 +28,19 @@ import _tests.test_io;
 import _tests.test_utils;
 import _tests.test_wasm;
 
-enum RUN_SUBSET = false;
+enum RUN_SUBSET = true;
 
 void main() {
-    version(assert) {
-        runTests();
-        static if(!RUN_SUBSET) {
+    runTests();
+    static if(!RUN_SUBSET) {
 
-        }
-    } else {
-        writefln("Not running test in release mode");
     }
+    version(assert) {
+
+    } else {
+        writefln("WARNING!! running test in release mode - asserts are disabled");
+    }
+
 }
 void runTests() {
     writefln("Running tests");
@@ -47,6 +49,7 @@ void runTests() {
 
     static if(RUN_SUBSET) {
         testContainers();
+        runAsyncTests();
     } else {
 
         testAllocator();
