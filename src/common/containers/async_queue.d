@@ -1,6 +1,7 @@
 module common.containers.async_queue;
 
 import common.all;
+import core.atomic : pause;
 
 enum ThreadingModel {
     SPSC,   // single producer single consumer
@@ -137,6 +138,7 @@ private:
     int nextReadPos() {
         int i;
         do{
+            //pause();
             i = atomicLoad(pos.r);
         }while(!cas(&pos.r, i, i+1));
         return i;
@@ -144,6 +146,7 @@ private:
     int nextWritePos() {
         int i;
         do{
+            //pause();
             i = atomicLoad(pos.w);
         }while(!cas(&pos.w, i, i+1));
         return i;
