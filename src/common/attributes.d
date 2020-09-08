@@ -8,7 +8,7 @@ import common.all;
  * @Async void myfunc() {}
  * @Async("Some comment") void myfunc() {}
  */
-final struct Async {
+struct Async {
     string comment;
 }
 
@@ -21,12 +21,21 @@ final struct Async {
  *
  *  auto t = Tuple!(__traits(getAttributes, foo));
  */
-final struct Implements {
+struct Implements {
     string interfaceName;
 }
 /**
  *  @Comment("Thing ...")
  */
-final struct Comment {
+struct Comment {
     string value;
+}
+
+/**
+ * Signifies that we do not own the resource and are not required to destroy it.
+ *
+ *  @Borrowed MyClass cls;
+ */
+struct Borrowed {
+    string from;
 }
