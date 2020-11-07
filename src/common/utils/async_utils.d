@@ -26,7 +26,8 @@ import core.atomic  : atomicOp, atomicLoad, atomicStore, cas;
  * Win64 calling convention:
  * https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=vs-2019
  *
- * LDC is using parameters in the opposite direction to the Win64 ABI:
+ * D calling convention:
+ * DMD and LDC uses parameters in the opposite direction to the Win64 ABI:
  * eg. [1 param]  RCX
  *     [2 params] RDX, RCX
  *     [3 params] R8, RDX, RCX
@@ -43,6 +44,7 @@ import core.atomic  : atomicOp, atomicLoad, atomicStore, cas;
  *      On AVX512VL: the ZMM, YMM, and XMM registers 16-31
  */
 version(DigitalMars) {
+
     /**
     * If [ptr] == expected then [ptr] = value else don't update.
     * Returns the old value.
@@ -104,7 +106,7 @@ version(DigitalMars) {
     void atomicAdd32(void* ptr, uint add) {
         asm pure nothrow @nogc {
             // rdx = ptr
-            // rcx = add
+            // ecx = add
             naked;
             lock; xadd [RDX], ECX;
             ret;
@@ -190,7 +192,7 @@ version(LDC) {
     }
     uint atomicSet32(void* ptr, uint newValue) nothrow @nogc @naked {
         // rdx = ptr
-        // rcx = newValue
+        // ecx = newValue
         // Note: ret is implicitly added
         return __asm!uint(`
             xchg %ecx, (%rdx)

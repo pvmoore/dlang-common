@@ -32,7 +32,19 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Test (LDC) ****",
+            "label": "**** Test DMD Release ****",
+            "type": "shell",
+            "windows": {
+                "command": "dub run --build=release --config=test --compiler=dmd --arch=x86_64"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "**** Test (LDC) Debug ****",
             "type": "shell",
             "windows": {
                 "command": "dub run --build=debug --config=test --compiler=ldc2 --arch=x86_64"
@@ -64,7 +76,7 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Bench (LDC) ****",
+            "label": "**** Bench (LDC) Release ****",
             "type": "shell",
             "windows": {
                 "command": "dub run --build=release --config=bench --compiler=ldc2 --arch=x86_64"
