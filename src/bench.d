@@ -1,27 +1,27 @@
 module bench;
 
 import common;
-import core.stdc.stdlib : malloc, calloc;
-import core.atomic      : atomicLoad, atomicStore, atomicOp;
-import core.thread      : Thread, thread_joinAll;
-import std.stdio        : File, writeln, writefln;
-import std.datetime.stopwatch : benchmark, StopWatch;
-import std.random   : randomShuffle,uniform, Mt19937, unpredictableSeed;
-import std.format   : format;
-import std.algorithm.iteration : permutations, map, sum, each;
-import std.algorithm.sorting   : sort;
-import std.algorithm.mutation : reverse;
-import std.typecons : Tuple,tuple;
-import std.range    : array,stride,join,iota;
-import std.parallelism : parallel, task;
-import std.file     : tempDir, remove, exists;
-import std.conv     : to;
+import core.stdc.stdlib         : malloc, calloc;
+import core.atomic              : atomicLoad, atomicStore, atomicOp;
+import core.thread              : Thread, thread_joinAll;
+import std.stdio                : File, writeln, writefln;
+import std.datetime.stopwatch   : benchmark, StopWatch;
+import std.random               : randomShuffle,uniform, Mt19937, unpredictableSeed;
+import std.format               : format;
+import std.algorithm.iteration  : permutations, map, sum, each;
+import std.algorithm.sorting    : sort;
+import std.algorithm.mutation   : reverse;
+import std.typecons             : Tuple,tuple;
+import std.range                : array,stride,join,iota;
+import std.parallelism          : parallel, task;
+import std.file                 : tempDir, remove, exists;
+import std.conv                 : to;
 
 void main() {
     version(LDC) {
-        writefln("Running benchmarks");
+        writefln("Running benchmarks (LDC)");
 
-        benchmarkAsyncQueue();
+        testSimd();
 
         float f = 1;
         if(f<2) return;
@@ -37,9 +37,35 @@ void main() {
         benchmarkStructCache();
         writeln("All benchmarks finished");
     } else {
-        writefln("Run benchmarks using LDC");
+        writefln("Running benchmarks (DMD)");
+
+        testSimd();
     }
 }
+pragma(inline,false)
+void testSimd() {
+    writefln("Testing SIMD #################################################");
+
+    version(DMD) {
+        import core.simd;
+        import ldc.simd;
+
+        float4 a = 0;
+        float4 b = 1;
+
+        float4 c = cast(float4)__simd(XMM.PXOR, a, a);
+        float4 d = cast(float4)__simd(XMM.LODSS, c);
+
+        __simd(XMM.LODAPS, a);
+
+
+        writefln("%s", d);
+
+    }
+
+    writefln("Finished #####################################################");
+}
+
 void benchmarkStructCache() {
     writefln("========--\nBenchmarking StructCache\n==--");
     auto iterations = 10_000_000;

@@ -11,6 +11,7 @@ void testUtils() {
     testStaticUtils();
     testStringUtils();
     testUtilities();
+    testAsmUtils();
 }
 
 void testArrayUtils() {
@@ -300,4 +301,45 @@ void testUtilities() {
     }
 
     writeln("testUtilities ran OK");
+}
+void testAsmUtils() {
+    writefln("========--\nTesting asm utils\n==--");
+
+    struct _4 { float a,b,c,d; }
+    struct _8 { float a,b,c,d,e,f,g,h; }
+
+    {
+        _4 a = _4(0,1,2,3);
+        float b = 4;
+
+        asm pure nothrow @nogc {
+            movups XMM0, [RBP+a];
+        }
+
+        dumpXMMfloat(0);
+
+        asm pure nothrow @nogc {
+            movss XMM0, [RBP+b];
+        }
+
+        dumpXMMfloat(0);
+    }
+
+    {
+        _8 a = _8(0,1,2,3,4,5,6,7);
+        float b = 5;
+
+        asm pure nothrow @nogc {
+            vmovups YMM0, [RBP+a];
+        }
+
+        dumpYMMfloat(0);
+
+        asm pure nothrow @nogc {
+            // upper 4 floats will be zeroed
+            movss XMM0, [RBP+b];
+        }
+
+        dumpYMMfloat(0);
+    }
 }

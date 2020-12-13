@@ -28,7 +28,9 @@ import _tests.test_io;
 import _tests.test_utils;
 import _tests.test_wasm;
 
-enum RUN_SUBSET = false;
+enum RUN_SUBSET = true;
+
+extern(C) void asm_test();
 
 void main() {
     runTests();
@@ -48,7 +50,8 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-
+        //testAsmUtils();
+        asm_test();
     } else {
 
         testAllocator();

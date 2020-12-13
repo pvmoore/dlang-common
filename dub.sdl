@@ -13,6 +13,8 @@ configuration "test" {
 	targetType "executable"
 	targetName "bin-test"
 	excludedSourceFiles "src/bench.d"
+
+	sourceFiles "asm/obj/common.obj" "asm/obj/strings.obj" "asm/obj/dump.obj"
 }
 configuration "bench" {
 	#mainSourceFile "src/bench.d"
@@ -26,6 +28,10 @@ configuration "library" {
 	excludedSourceFiles "src/test.d"
 	excludedSourceFiles "src/bench.d"
 	excludedSourceFiles "src/_tests/*"
+
+	#libs "common-asm"
+	#extraDependencyFiles "common-asm.lib"
+	sourceFiles "asm/obj/common.obj" "asm/obj/strings.obj" "asm/obj/dump.obj"
 }
 
 
