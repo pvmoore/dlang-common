@@ -4,6 +4,11 @@ import common.all;
 import common.parser;
 import std.conv : to;
 
+/**
+ * eg.  auto p = new ExpressionParser!int();
+ *      p.addReference("two", 2);
+ *      assert(0 == p.parse(["1", "+", "(", "1", "-", "two", ")"]));
+ */
 final class ExpressionParser(T) {
     auto addReference(string name, string[] tokens) {
         auto node = parseTokens(tokens);

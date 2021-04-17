@@ -7,28 +7,6 @@ import std.stdio;
 void testParser() {
     writefln("========--\nTesting ExpressionParser\n==--");
 
-    auto parser = new ExpressionParser!double();
-
-    parser.addReference("three", ["2", "*", "(", "2", "+", "two", ")", "+", "one"]);
-    parser.addReference("four", ["3", "*", "three"]);
-    parser.addReference("one", 1);
-    parser.addReference("two", 2);
-
-
-    //auto a = parser.parse(["1"]);
-
-    //auto b = parser.parse(["(", "1", ")"]);
-
-    //auto c = parser.parse(["1", "+", "1"]);
-
-    //auto d = parser.parse(["1", "+", "1", "*", "2"]);
-
-    //auto d = parser.parse(["(", "1", "+", "1", ")", "*", "2"]);
-
-    //auto e = parser.parse(["one", "+", "two"]);
-
-    auto f = parser.parse(["1"]);
-
     testSimple();
     testSimpleWithRefs();
     testSimpleWithRefTokens();
