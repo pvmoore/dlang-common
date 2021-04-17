@@ -12,7 +12,7 @@ import core.thread : Thread;
 import core.time : dur;
 
 import std.math     : abs;
-import std.stdio    : writef,writefln;
+import std.stdio    : writef, writefln;
 import std.array    : Appender, appender, join, uninitializedArray;
 import std.datetime.stopwatch : StopWatch;
 
