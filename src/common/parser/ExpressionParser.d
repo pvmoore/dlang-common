@@ -149,7 +149,7 @@ private:
                 case "/": pos++; parent = attach(parent, new BinaryNode!T(Operator.DIV)); break;
                 case "%": pos++; parent = attach(parent, new BinaryNode!T(Operator.MOD)); break;
                 default:
-                    throw new Exception("Syntax error @ token %s".format(pos));
+                    throw new Exception("Syntax error @ token %s '%s'".format(pos, peek()));
             }
         }
     }
