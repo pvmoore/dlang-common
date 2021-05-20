@@ -43,6 +43,9 @@ final class ExpressionParser(T) {
 
         return node.eval();
     }
+    T getReference(string key) {
+        return references[key];
+    }
 private:
     EPNode!(T)[string] referenceTokens;
     T[string] references;
