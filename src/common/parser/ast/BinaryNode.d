@@ -24,6 +24,7 @@ final class BinaryNode(T) : EPNode!T {
             case MUL: return left * right;
             case DIV: return left / right;
             case MOD: return left % right;
+            case NEG: throw new Exception("Shouldn't get here");
         }
     }
     override int precedence() {

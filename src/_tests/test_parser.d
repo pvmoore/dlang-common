@@ -25,6 +25,9 @@ void testSimple() {
 
     int c = parser.parse(["(", "20", "-", "10", ")", "%", "3"]);
     assert(c==1);
+
+    int d = parser.parse(["-1"]);
+    assert(d==-1);
 }
 
 void testSimpleWithRefs() {
@@ -43,6 +46,9 @@ void testSimpleWithRefs() {
 
     int c = parser.parse(["(", "twenty", "-", "ten", ")", "%", "three"]);
     assert(c==1);
+
+    int d = parser.parse(["-", "two"]);
+    assert(d==-2);
 }
 
 void testSimpleWithRefTokens() {

@@ -5,7 +5,9 @@ enum Operator {
     SUB,
     MUL,
     DIV,
-    MOD
+    MOD,
+
+    NEG
 }
 
 int getPrecedence(Operator op) {
@@ -17,5 +19,7 @@ int getPrecedence(Operator op) {
         case DIV:
         case MOD:
             return 5;
+        case NEG:
+            return 3;
     }
 }

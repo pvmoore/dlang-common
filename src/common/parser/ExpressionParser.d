@@ -73,7 +73,7 @@ private:
     }
     bool isNumber(string s) {
         if(s[0]=='-') {
-            return isNumber(s[1..$]);
+            return s.length > 1 && isNumber(s[1..$]);
         }
         return s[0] >= '0' && s[0] <='9';
     }
@@ -121,7 +121,12 @@ private:
 
     EPNode!T lhs(EPNode!T parent) {
         if(peek() is null) throw new Exception("Syntax error @ token %s".format(pos));
-        if(isNumber(peek())) {
+        if(peek()=="-") {
+            pos++;
+            auto neg = new UnaryNode!T(Operator.NEG);
+            parse(neg);
+            return neg;
+        } else if(isNumber(peek())) {
             auto value = to!T(peek());
             pos++;
             return new NumberNode!T(value);
