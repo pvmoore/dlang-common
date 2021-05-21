@@ -124,7 +124,7 @@ private:
         if(peek()=="-") {
             pos++;
             auto neg = new UnaryNode!T(Operator.NEG);
-            parse(neg);
+            neg.add(lhs(neg));
             return neg;
         } else if(isNumber(peek())) {
             auto value = to!T(peek());

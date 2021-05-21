@@ -28,6 +28,12 @@ void testSimple() {
 
     int d = parser.parse(["-1"]);
     assert(d==-1);
+
+    int e = parser.parse(["-1", "+", "1"]);
+    assert(e == 0);
+
+    int f = parser.parse(["-", "1", "+", "1"]);
+    assert(f == 0);
 }
 
 void testSimpleWithRefs() {
