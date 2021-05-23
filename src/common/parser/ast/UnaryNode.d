@@ -22,6 +22,9 @@ final class UnaryNode(T) : EPNode!T {
             case MUL:
             case DIV:
             case MOD:
+            case BITAND:
+            case BITXOR:
+            case BITOR:
                 throw new Exception("Shouldn't get here");
             case NEG:
                 return -left;

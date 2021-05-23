@@ -156,6 +156,9 @@ private:
                 case "*": pos++; parent = attach(parent, new BinaryNode!T(Operator.MUL)); break;
                 case "/": pos++; parent = attach(parent, new BinaryNode!T(Operator.DIV)); break;
                 case "%": pos++; parent = attach(parent, new BinaryNode!T(Operator.MOD)); break;
+                case "&": pos++; parent = attach(parent, new BinaryNode!T(Operator.BITAND)); break;
+                case "^": pos++; parent = attach(parent, new BinaryNode!T(Operator.BITXOR)); break;
+                case "|": pos++; parent = attach(parent, new BinaryNode!T(Operator.BITOR)); break;
                 default:
                     throw new Exception("Syntax error @ token %s '%s'".format(pos, peek()));
             }

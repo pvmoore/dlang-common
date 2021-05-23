@@ -34,6 +34,15 @@ void testSimple() {
 
     int f = parser.parse(["-", "1", "+", "1"]);
     assert(f == 0);
+
+    int g = parser.parse(["255", "&", "15"]);
+    assert(g==15);
+
+    int h = parser.parse(["16", "|", "15"]);
+    assert(h==31);
+
+    int i = parser.parse(["31", "^", "15"]);
+    assert(i==16);
 }
 
 void testSimpleWithRefs() {
