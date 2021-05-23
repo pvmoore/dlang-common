@@ -160,7 +160,8 @@ private:
                 case "^": pos++; parent = attach(parent, new BinaryNode!T(Operator.BITXOR)); break;
                 case "|": pos++; parent = attach(parent, new BinaryNode!T(Operator.BITOR)); break;
                 default:
-                    throw new Exception("Syntax error @ token %s '%s'".format(pos, peek()));
+                    throw new Exception("Syntax error @ token %s '%s' tree=\n%s\ntokens=%s"
+                        .format(pos, peek(), parent.dump(), tokens));
             }
         }
     }
