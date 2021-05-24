@@ -171,6 +171,17 @@ bool isUnset(T,E)(T value, E flag) if((is(T==enum) || isInteger!T) && (is(E==enu
 }
 
 /**
+ *  net.widget.Label -> "Label"
+ */
+string className(Object obj) {
+    import std.string : lastIndexOf;
+    if(obj is null) return "null";
+    string name = typeid(obj).name;
+    auto i = name.lastIndexOf('.');
+    return i==-1 ? name : name[i+1..$];
+}
+
+/**
  *  auto t = obj.orElse("this");
  */
 T orElse(T)(T t, T other) if(isObject!T) {

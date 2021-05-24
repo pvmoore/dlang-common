@@ -11,7 +11,6 @@ import std.traits :
     Parameters,
     ReturnType;
 
-
 template isStruct(T) {
 	const bool isStruct = is(T==struct);
 }
