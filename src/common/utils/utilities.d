@@ -181,13 +181,6 @@ string className(Object obj) {
     return i==-1 ? name : name[i+1..$];
 }
 
-/**
- *  auto t = obj.orElse("this");
- */
-T orElse(T)(T t, T other) if(isObject!T) {
-    return t !is null ? t : other;
-}
-
 T as(T,I)(I o) { return cast(T)o; }
 
 bool isA(T,I)(I o) if(isObject!T && isObject!I) { return cast(T)o !is null; }
