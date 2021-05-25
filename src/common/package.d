@@ -13,6 +13,7 @@ import common.bool3;
 import common.hasher;
 import common.intrinsics;
 import common.objectcache;
+import common.optional;
 import common.pinned_array;
 import common.stringbuffer;
 import common.structcache;
