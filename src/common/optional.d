@@ -54,18 +54,9 @@ T firstOrElse(T)(Opt!(T)[] opts, T other) {
 }
 
 /**
- * auto t = firstOrElse(["",null," "], "hello");
- */
-string firstOrElse(string[] strings, string other) {
-    foreach(o; strings) {
-        if(o.length > 0) return o;
-    }
-    return other;
-}
-/**
  * auto t = firstOrElse([o1,o2], o3);
  */
-T firstOrElse(T)(Object[] objs, T other) if(isObject!T) {
+T firstOrElse(T)(T[] objs, T other) if(__traits(compiles, "other is null")) {
     foreach(o; objs) {
         if(o !is null) return o;
     }
@@ -75,6 +66,6 @@ T firstOrElse(T)(Object[] objs, T other) if(isObject!T) {
 /**
  *  auto t = obj.orElse("this");
  */
-T orElse(T)(T t, T other) if(isObject!T) {
+T orElse(T)(T t, T other) if(__traits(compiles, "other is null")) {
     return t !is null ? t : other;
 }
