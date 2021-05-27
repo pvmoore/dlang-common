@@ -10,6 +10,7 @@ import common.archive;
 import common.boxing;
 import common.attributes;
 import common.bool3;
+import common.FreeList;
 import common.hasher;
 import common.intrinsics;
 import common.objectcache;
