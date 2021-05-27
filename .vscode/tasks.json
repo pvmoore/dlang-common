@@ -16,6 +16,18 @@
             }
         },
         {
+            "label": "**** Run Unit Tests ****",
+            "type": "shell",
+            "windows": {
+                "command": "run_unittest_build.bat test"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "**** Test ****",
             "type": "shell",
             "windows": {
