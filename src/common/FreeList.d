@@ -14,11 +14,7 @@ private:
 public:
     this(uint length) {
         list.length = length;
-        foreach(i; 0..length) {
-            list[i] = i.as!int+1;
-        }
-        next = 0;
-        numUsed = 0;
+        reset();
     }
     uint acquire() {
         if(numUsed==list.length) throw new Exception("FreeList is full");
@@ -34,6 +30,13 @@ public:
     }
     uint numFree() {
         return list.length.as!uint - numUsed;
+    }
+    void reset() {
+        foreach(i; 0..list.length) {
+            list[i] = i.as!int+1;
+        }
+        next = 0;
+        numUsed = 0;
     }
 }
 
@@ -114,6 +117,11 @@ void test() {
         exception = e;
     }
     assert(exception);
+
+    fl.reset();
+    assert(fl.numFree==8);
+    assert(fl.next==0);
+    assert(fl.list==[1,2,3,4,5,6,7,8]);
 }
 test();
 
