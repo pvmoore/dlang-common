@@ -16,6 +16,7 @@ import common.intrinsics;
 import common.objectcache;
 import common.optional;
 import common.pinned_array;
+import common.Sequence;
 import common.stringbuffer;
 import common.structcache;
 import common.velocity;
