@@ -53,7 +53,8 @@ void runTests() {
     static if(RUN_SUBSET) {
         //testAsmUtils();
         //asm_test();
-        testParser();
+        //testParser();
+        testPDH();
     } else {
 
         testAllocator();
@@ -484,10 +485,19 @@ void testPDH() {
     writefln("--== Testing CPUUsage ==--");
 
 version(Win64) {
-    auto pdh = new PDH();
+    auto pdh = new PDH(1000);
+    pdh.start();
     scope(exit) pdh.destroy();
 
-    pdh.dumpPaths("\\Process(*)\\*"w);
+    auto status = pdh.validatePath("\\Processor(%s)\\%% Processor Time"w.format(0));
+    assert(status == 0);
+
+    //pdh.dumpPaths("\\Process(*)\\*"w);
+    auto paths = pdh.getPaths("\\Processor(*)\\*"w);
+    //pdh.dumpCounters();
+    foreach(p; paths) {
+        writefln("%s", p);
+    }
 
     for(auto i=0; i<2; i++) {
         Thread.sleep(dur!"msecs"(500));

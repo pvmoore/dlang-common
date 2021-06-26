@@ -8,6 +8,7 @@ import std.traits :
     isSomeFunction,
     isFloatingPoint,
     isAssociativeArray,
+    InoutOf,
     Parameters,
     ReturnType;
 
@@ -31,7 +32,9 @@ template isInteger(T) {
         is(T==byte)  || is(T==ubyte) ||
         is(T==short) || is(T==ushort) ||
         is(T==int)   || is(T==uint) ||
-        is(T==long)  || is(T==ulong);
+        is(T==long)  || is(T==ulong) ||
+
+        is(T==const(int));
 }
 /**
  * assert(hasProperty!(A,"foo"));
