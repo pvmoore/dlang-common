@@ -6,12 +6,14 @@ module common.containers.Set;
 final class Set(T) {
 private:
     bool[T] map;
+    bool isFrozen;
 public:
     int length() const { return cast(int)map.length; }
     bool empty() const { return length==0; }
     T[] values() { return map.keys; }
 
     auto add(T value) {
+        if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         map[value] = true;
         return this;
     }
@@ -19,7 +21,12 @@ public:
         foreach(v; values) add(v);
         return this;
     }
+    auto add(Set!T other) {
+        foreach(v; other.map.keys()) add(v);
+        return this;
+    }
     bool remove(T value) {
+        if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         bool* ptr = value in map;
         if(ptr) map.remove(value);
         return ptr !is null;
@@ -27,7 +34,15 @@ public:
     bool contains(T value) const {
         return (value in map) !is null;
     }
+    /**
+     * Set this Set instance as unmodifiable
+     */
+    auto freeze() {
+        this.isFrozen = true;
+        return this;
+    }
     auto clear() {
+        if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         map.clear();
         return this;
     }

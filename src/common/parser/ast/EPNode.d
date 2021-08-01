@@ -41,6 +41,12 @@ abstract class EPNode(T) {
         }
         return true;
     }
+    bool containsMutableRef(Set!string mutableRefs) {
+        foreach(c; children) {
+            if(c.containsMutableRef(mutableRefs)) return true;
+        }
+        return false;
+    }
     void resolve(T[string] references) {
         foreach(c; children) {
             c.resolve(references);

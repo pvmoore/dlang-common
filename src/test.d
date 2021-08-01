@@ -53,8 +53,8 @@ void runTests() {
     static if(RUN_SUBSET) {
         //testAsmUtils();
         //asm_test();
-        //testParser();
-        testPDH();
+        testParser();
+        //testPDH();
     } else {
 
         testAllocator();

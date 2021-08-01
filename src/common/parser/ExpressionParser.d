@@ -10,13 +10,11 @@ import std.conv : to;
  *      assert(0 == p.parse(["1", "+", "(", "1", "-", "two", ")"]));
  */
 final class ExpressionParser(T) {
+    this() {
+        this.mutableReferences = new Set!string;
+    }
     auto addReference(string name, string[] tokens) {
-        auto node = parseTokens(tokens);
-        if(node.isResolved()) {
-            addReference(name, node.eval());
-        } else {
-            this.referenceTokens[name] = node;
-        }
+        this.referenceTokens[name] = tokens;
         return this;
     }
     auto addReference(string name, T value) {
@@ -29,9 +27,21 @@ final class ExpressionParser(T) {
         }
         return this;
     }
+    /**
+     * Add a reference that can change value so any other reference that
+     * uses this must also be assumed to be non-constant.
+     */
+    auto addMutableReference(string name, T value) {
+        references[name] = value;
+        mutableReferences.add(name);
+        return this;
+    }
     T parse(string[] tokens) {
 
-        resolveReferenceTokens();
+        resetMutableReferences();
+        convertReferenceTokens();
+        resolveMutableReferenceNodes();
+        resolveReferenceNodes();
 
         auto node = parseTokens(tokens);
 
@@ -46,9 +56,16 @@ final class ExpressionParser(T) {
     T getReference(string key) {
         return references[key];
     }
+    T[string] getAllReferences() {
+        return references.dup;
+    }
 private:
-    EPNode!(T)[string] referenceTokens;
+    string[][string] referenceTokens;
+    EPNode!(T)[string] referenceNodes;
+    EPNode!(T)[string] mutableReferenceNodes;
     T[string] references;
+    Set!string tempMutableReferences;
+    Set!string mutableReferences;
     int pos;
     string[] tokens;
 
@@ -85,14 +102,66 @@ private:
         return parent;
     }
     /**
+     * Convert all referenceTokens into referenceNodes
+     */
+    void convertReferenceTokens() {
+        foreach(k,tokens; referenceTokens) {
+            referenceNodes[k] = parseTokens(tokens);
+        }
+        referenceTokens.clear();
+    }
+    /**
      *  Resolve all reference tokens into references.
      *  @throw Exception if there is an error or any reference could not be resolved
      */
-    void resolveReferenceTokens() {
-        while(referenceTokens.length > 0) {
+    void resolveReferenceNodes() {
+
+        while(referenceNodes.length > 0) {
             string[] resolvedRefs;
 
-            foreach(k,node; referenceTokens) {
+            foreach(k,node; referenceNodes) {
+
+                node.resolve(references);
+
+                if(node.isResolved()) {
+
+                    auto value = node.eval();
+                    references[k] = value;
+                    resolvedRefs ~= k;
+
+                    if(node.containsMutableRef(tempMutableReferences)) {
+                        mutableReferenceNodes[k] = node;
+                        tempMutableReferences.add(k);
+                    }
+                }
+            }
+
+            if(resolvedRefs.length==0) {
+                throw new Exception("Unable to resolve tokens %s".format(referenceNodes.keys()));
+            }
+
+            foreach(k; resolvedRefs) {
+                referenceNodes.remove(k);
+            }
+        }
+
+        // At this point we have nothing in the referenceNodes hash
+        // but we may have entries in the mutableReferenceNodes for the next
+        // time that 'parse' is called.
+    }
+    /**
+     * Resolve these to references temporarily. The references will be removed again
+     * after 'parse' so that next time they can be re-generated using possibly
+     * different mutable values.
+     */
+    void resolveMutableReferenceNodes() {
+
+        EPNode!(T)[string] tempRefNodes = mutableReferenceNodes.dup;
+
+        while(tempRefNodes.length > 0) {
+            string[] resolvedRefs;
+
+            foreach(k,node; tempRefNodes) {
 
                 node.resolve(references);
 
@@ -104,13 +173,28 @@ private:
             }
 
             if(resolvedRefs.length==0) {
-                throw new Exception("Unable to resolve tokens %s".format(referenceTokens.keys()));
+                throw new Exception("Unable to resolve tokens %s".format(tempRefNodes.keys()));
             }
 
             foreach(k; resolvedRefs) {
-                referenceTokens.remove(k);
+                tempRefNodes.remove(k);
             }
         }
+    }
+    /**
+     * Remove all temporary mutable references from the previous 'parse'
+     */
+    void resetMutableReferences() {
+
+        if(tempMutableReferences) {
+            foreach(k; tempMutableReferences.values()) {
+                if(!mutableReferences.contains(k)) {
+                    references.remove(k);
+                }
+            }
+        }
+
+        tempMutableReferences = new Set!string().add(mutableReferences);
     }
 
     void parse(EPNode!T parent) {
@@ -138,10 +222,6 @@ private:
             return parens;
         } else {
             auto key = peek(); pos++;
-            auto p = key in references;
-            if(p) {
-                return new NumberNode!T(references[key]);
-            }
             return new RefNode!T(key);
         }
     }

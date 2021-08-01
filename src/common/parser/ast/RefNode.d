@@ -19,6 +19,9 @@ final class RefNode(T) : EPNode!T {
     override bool isResolved() {
         return resolved;
     }
+    override bool containsMutableRef(Set!string mutableRefs) {
+        return mutableRefs.contains(refName);
+    }
     override void resolve(T[string] references) {
         auto p = refName in references;
         if(p) {
