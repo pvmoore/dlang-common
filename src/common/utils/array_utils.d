@@ -67,7 +67,7 @@ T remove(T)(ref T[] array, T value) {
 T removeAt(T)(ref T[] array, long index) {
 	assert(index<array.length);
 	T element = array[index];
-	foreach(v; array[index+1..$]) {
+	foreach(ref v; array[index+1..$]) {
 		array[index++] = v;
 	}
 	array.length = array.length - 1;
