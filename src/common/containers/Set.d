@@ -47,8 +47,7 @@ public:
         return this;
     }
     override size_t toHash() const @safe pure nothrow {
-        // Doesn't make sense to use this as a key
-        assert(false);
+        throw new Error("Doesn't make sense to use this as a key");
     }
     /// This is a semi-expensive process
     override bool opEquals(Object o) const {
