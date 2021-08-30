@@ -2,7 +2,8 @@ module common.io.byte_writer;
 /**
  *
  */
-import common.all;
+import common.io;
+import common.utils;
 import std.stdio : File;
 
 abstract class ByteWriter {

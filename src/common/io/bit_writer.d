@@ -3,7 +3,8 @@ module common.io.bit_writer;
  *  Call write to write 0 to 32 bits per call.
  *  Receiver delegate is called when a ubyte is filled up.
  */
-import common.all;
+import common.io;
+import common.utils;
 import std.stdio : File;
 
 final class FileBitWriter {

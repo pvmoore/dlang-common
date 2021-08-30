@@ -1,6 +1,6 @@
 module common.utils.cpu_utils;
 
-import common.all;
+import common.utils;
 
 enum AVX512Feature : uint {
     NONE            = 0,

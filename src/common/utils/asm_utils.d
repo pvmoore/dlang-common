@@ -1,6 +1,6 @@
 module common.utils.asm_utils;
 
-import common.all;
+import std.stdio : writefln;
 
 private:
 

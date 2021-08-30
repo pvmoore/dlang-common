@@ -2,7 +2,7 @@ module common.io.bit_reader;
 /**
  *
  */
-import common.all;
+import common.io;
 
 class BitReader {
 private:
@@ -39,7 +39,7 @@ public:
 
 final class FileBitReader : BitReader {
 private:
-    FileByteReader byteReader; 
+    FileByteReader byteReader;
 public:
     this(string filename) {
         byteReader = new FileByteReader(filename);

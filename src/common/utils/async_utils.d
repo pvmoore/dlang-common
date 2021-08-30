@@ -1,6 +1,5 @@
 module common.utils.async_utils;
 
-import common.all;
 import core.thread  : Thread, ThreadID;
 import core.atomic  : atomicOp, atomicLoad, atomicStore, cas;
 

@@ -3,16 +3,117 @@ module _tests.test_io;
 import std : format, writefln, remove, tempDir, uniform, Mt19937, File, to, exists, unpredictableSeed;
 
 import common.all;
+import common.io;
 
 void testIo() {
-    testByteReader();
-    testFileByteWriter();
-    testArrayByteWriter();
-    testBitWriter();
-    testArrayBitWriter();
-    testBitReader();
-    testBitReaderAndWriter();
-    testConsole();
+    testTypes();
+    // testByteReader();
+    // testFileByteWriter();
+    // testArrayByteWriter();
+    // testBitWriter();
+    // testArrayBitWriter();
+    // testBitReader();
+    // testBitReaderAndWriter();
+    // testConsole();
+}
+
+void testTypes() {
+    writefln("--== Testing io.types ==--");
+
+    // Filename
+    {
+        auto f = Filename("name.txt");
+        assert(f.value == "name.txt");
+        assert(f == Filename("name.txt"));
+        assert(f != Filename("name.txt2"));
+        assert(f.getExtension() == "txt");
+        assert(f.withoutExtension() == "name");
+        assert(f.withExtension("bmp") == "name.bmp");
+    }
+    {
+        auto f = Filename("/hello.there/name.txt");
+        assert(f.value == "name.txt");
+        assert(f.hasExtension);
+        assert(f.getExtension() == "txt");
+        assert(f.withoutExtension() == "name");
+    }
+    {
+        auto f = Filename("hello.there/name.txt");
+        assert(f.value == "name.txt");
+        assert(f.hasExtension);
+        assert(f.getExtension() == "txt");
+        assert(f.withoutExtension() == "name");
+    }
+    {
+        auto f = Filename("c:/hello.there/name.txt");
+        assert(f.value == "name.txt");
+        assert(f.hasExtension);
+        assert(f.getExtension() == "txt");
+        assert(f.withoutExtension() == "name");
+    }
+    {
+        auto f = Filename("name");
+        assert(f.value == "name");
+        assert(!f.hasExtension);
+        assert(f.getExtension() == null);
+        assert(f.withoutExtension() == "name");
+    }
+
+    // Directory
+    {
+        auto d = Directory("c:/hello.there/");
+        assert(d.value == "c:/hello.there/");
+        assert(d.value == Directory("c:/hello.there/"));
+        assert(d.value != Directory("c:/hello.there2/"));
+        assert(d.isAbsolute());
+    }
+    {
+        auto d = Directory("/hello.there/");
+
+        version(Windows) {
+            assert(d.value == "hello.there/");
+            assert(d.isRelative());
+        } else {
+            assert(d.value == "/hello.there/");
+            assert(d.isAbsolute());
+        }
+    }
+    {
+        auto d = Directory("hello.there/");
+        assert(d.value == "hello.there/");
+        assert(d.isRelative());
+    }
+    {
+        auto d = Directory("one/two/");
+        assert(d.value == "one/two/");
+    }
+    {
+        auto d = Directory("hello.there/");
+        assert(d.value == "hello.there/");
+        assert(d.isRelative());
+
+        auto d2 = d.add(Directory("one/two/"));
+        assert(d2.value == "hello.there/one/two/", d2.value);
+    }
+    // Filepath
+    {
+        auto f = Filename("name.txt");
+        auto d = Directory("one/two");
+        auto p = Filepath(d, f);
+        assert(p == "one/two/name.txt");
+    }
+    {
+        auto p = Filepath("one/two/name.txt");
+        assert(p.filename == "name.txt");
+        assert(p.directory == "one/two/");
+        assert(p.value() == "one/two/name.txt");
+    }
+    {
+        Filepath path;
+        path = Filepath("dir/name");
+        assert(path.filename == "name");
+        assert(path.directory == "dir/");
+    }
 }
 
 void testByteReader() {

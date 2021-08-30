@@ -2,7 +2,8 @@ module common.utils.timing;
 /**
  *
  */
-import common.all;
+import std.datetime.stopwatch   : StopWatch;
+import std.format               : format;
 
 final class Timing {
 private:

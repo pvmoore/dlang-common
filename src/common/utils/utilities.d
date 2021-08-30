@@ -1,6 +1,10 @@
 module common.utils.utilities;
 
-import common.all;
+import common.utils;
+import common.intrinsics        : unlikely;
+import common.io                : flushConsole;
+import std.datetime.stopwatch   : StopWatch;
+import std.format               : format;
 
 void expect(bool b, string file=__FILE__, int line=__LINE__) {
     if(unlikely(!b)) {

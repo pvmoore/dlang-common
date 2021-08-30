@@ -2,7 +2,8 @@ module common.io.byte_reader;
 /**
  *
  */
-import common.all;
+import common.io;
+import common.utils;
 import std.stdio : File, SEEK_SET;
 
 final class FileByteReader : ByteReader {

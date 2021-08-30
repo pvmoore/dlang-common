@@ -1,5 +1,7 @@
 module common.io.console;
 
+import common.io;
+
 private import std.stdio;
 private import std.format : format;
 private import std.utf    : toUTF16;
