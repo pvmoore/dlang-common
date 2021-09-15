@@ -7,6 +7,7 @@ import std.array    : replace;
 import std.string   : lastIndexOf, startsWith;
 import std.file     : exists, mkdirRecurse;
 import std.path     : baseName, buildNormalizedPath, dirName, isAbsolute, stripExtension;
+import std.format   : format;
 
 struct Filename {
     bool hasExtension;
@@ -27,9 +28,21 @@ struct Filename {
         return value.toHash();
     }
     //------------------------------------------------------
+    string getBaseName() const {
+        if(!hasExtension) return value;
+        auto dot = value.lastIndexOf('.');
+        return value[0..dot];
+    }
     string getExtension() const {
+        if(!hasExtension) return null;
         auto dot = value.lastIndexOf('.');
         return dot==-1 ? null : value[dot+1..$];
+    }
+    auto add(string suffix) const {
+        if(hasExtension) {
+            return Filename("%s%s.%s".format(getBaseName(), suffix, getExtension()));
+        }
+        return Filename(value ~ suffix);
     }
     auto withoutExtension() const {
         if(!hasExtension) return this;

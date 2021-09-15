@@ -3,8 +3,10 @@ module common.containers.Set;
  *  An unordered collection of unique items.
  *
  */
-final class Set(T) {
-private:
+import std.format : format;
+
+class Set(T) {
+protected:
     bool[T] map;
     bool isFrozen;
 public:
@@ -12,12 +14,12 @@ public:
     bool empty() const { return length==0; }
     T[] values() { return map.keys; }
 
-    auto add(T value) {
+    Set!T add(T value) {
         if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         map[value] = true;
         return this;
     }
-    auto add(T[] values) {
+    Set!T add(T[] values) {
         foreach(v; values) add(v);
         return this;
     }
@@ -41,7 +43,7 @@ public:
         this.isFrozen = true;
         return this;
     }
-    auto clear() {
+    Set!T clear() {
         if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         map.clear();
         return this;
@@ -60,5 +62,13 @@ public:
             if(!(k in map)) return false;
         }
         return true;
+    }
+    override string toString() {
+        string s = "[";
+        foreach(i, ref T k; values()) {
+            if(i>0) s ~= ", ";
+            s ~= "%s".format(k);
+        }
+        return s ~ "]";
     }
 }

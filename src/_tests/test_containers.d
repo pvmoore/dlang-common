@@ -6,15 +6,16 @@ import std.format : format;
 import common.containers;
 
 void testContainers() {
-    testArray();
-    testList();
-    testPriorityQueue();
-    testQueue();
-    testSet();
-    testSparseArray();
-    testStack();
-    testTreeList();
-    testAsyncQueue();
+    // testArray();
+    // testList();
+    // testPriorityQueue();
+    // testQueue();
+    // testSet();
+    // testSparseArray();
+    // testStack();
+    // testTreeList();
+    // testAsyncQueue();
+    testUniqueList();
 }
 
 void testArray() {
@@ -352,6 +353,47 @@ void testSet() {
         assert(s1!=s2);
         s2.add(2);
         assert(s1==s2);
+    }
+}
+void testUniqueList() {
+    writefln("--== Testing UniqueList ==--");
+
+    {   // Set functionality
+        auto s = new UniqueList!int;
+        assert(s.empty && s.length==0);
+
+        s.add(2).add(4);
+        assert(!s.empty && s.length==2);
+        assert(s.contains(2) && s.contains(4));
+
+        s.add(2).add(3);
+        assert(!s.empty && s.length==3);
+        assert(s.contains(2) && s.contains(3) && s.contains(4));
+
+        assert(s.remove(2)==true);
+        assert(s.length==2);
+
+        assert(s.remove(1)==false);
+        assert(s.length==2);
+
+        assert(s.values()==[4,3], "%s".format(s.values()));
+
+        s.clear();
+        assert(s.empty && s.length==0);
+    }
+    {
+        auto s = new UniqueList!int;
+        s.add(1).add(2).add(3).add(4);
+
+        writefln("%s", s);
+        assert(s == [1,2,3,4]);
+
+        s.clear();
+        s.add(4);
+        s.add([3,2,1]);
+
+        writefln("%s", s);
+        assert(s == [4,3,2,1]);
     }
 }
 void testStack() {

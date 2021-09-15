@@ -55,7 +55,8 @@ void runTests() {
         //asm_test();
         //testParser();
         //testPDH();
-        testIo();
+        //testIo();
+        testContainers();
     } else {
 
         testAllocator();
