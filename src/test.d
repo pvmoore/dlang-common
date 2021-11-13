@@ -56,7 +56,8 @@ void runTests() {
         //testParser();
         //testPDH();
         //testIo();
-        testContainers();
+        //testContainers();
+        testUtils();
     } else {
 
         testAllocator();

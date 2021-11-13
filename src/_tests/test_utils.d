@@ -6,12 +6,12 @@ import common.all;
 
 void testUtils() {
     testArrayUtils();
-    testAsyncUtils();
-    testCpuUtils();
-    testStaticUtils();
-    testStringUtils();
-    testUtilities();
-    testAsmUtils();
+    // testAsyncUtils();
+    // testCpuUtils();
+    // testStaticUtils();
+    // testStringUtils();
+    // testUtilities();
+    // testAsmUtils();
 }
 
 void testArrayUtils() {
@@ -99,6 +99,19 @@ void testArrayUtils() {
         assert(a == [3,5,6,7]);
         a.removeRange(1,2);
         assert(a==[3,7]);
+    }
+    {   // add(T,U)(T[], U[])
+        ubyte[] bytes = [cast(ubyte)0,1,2,3,4];
+        uint[] ints = [5,6]; // 5,0,0,0,6,0,0,0
+        short[] shorts = [7,8]; // 7,0,8,0
+
+        bytes.add(ints);
+        assert(bytes.length == 5 + 2*4);
+        assert(bytes == [cast(ubyte)0,1,2,3,4, 5,0,0,0, 6,0,0,0]);
+
+        bytes.add(shorts);
+        assert(bytes.length == 13 + 2*2);
+        assert(bytes == [cast(ubyte)0,1,2,3,4, 5,0,0,0, 6,0,0,0, 7,0,8,0]);
     }
 }
 void testAsyncUtils() {

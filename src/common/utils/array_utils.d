@@ -82,3 +82,11 @@ void removeRange(T)(ref T[] array, long start, long end) {
 	}
 	array.length = array.length - span;
 }
+
+/**
+ * Append a U[] to a T[]
+ */
+T[] add(T,U)(return ref T[] dest, U[] array) {
+	dest ~= cast(T[])array;
+	return dest;
+}
