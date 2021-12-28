@@ -32,6 +32,22 @@ void todo(string msg = "TODO - Not yet implemented") {
     assert(false, msg);
 }
 
+version(assert) {
+    /**
+     * Throw Exception if _result_ is true
+     */
+    void throwIf(A...)(bool result, string msgFmt, A args) {
+        if(result) throw new Exception(format(msgFmt, args));
+    }
+} else {
+    /**
+     * No-op in release mode
+     */
+    void throwIf(A...)(bool result, string msgFmt, A args) {
+
+    }
+}
+
 /**
  * Creates a property with optional public setter and getter.
  *   eg. mixin(property!(string, "myvariable", true, true));
@@ -318,3 +334,83 @@ R dynamicDispatchRet(string FUNCNAME="visit", O, R, T, ARGS...)
 //	import std.format:format;
 //	throw new Error("visit(%s) not implemented".format(fqn));
 //}
+
+/**
+ * Return up to 32 bits from _bits_.
+ * Works identically to the GLSL function of the same name.
+ */
+uint bitfieldExtract(uint bits, uint bitPos, uint numBits) {
+    if(numBits==0) return 0;
+    if(bitPos >= 32) return 0;
+    if(numBits > 32) numBits = 32;
+
+    bits >>>= bitPos;
+    bits &= (0xffff_ffff >>> (32-numBits));
+    return bits;
+}
+/**
+ * Return up to 32 bits from _bits_ array.
+ *
+ */
+uint bitfieldExtract(ubyte[] bits, uint bitPos, uint numBits) {
+    if(numBits == 0) return 0;
+    auto bytePos = bitPos / 8;
+    throwIf(bytePos >= bits.length, "%s >= %s", bytePos, bits.length);
+    throwIf(numBits > 32, "numBits must be 32 or less");
+
+    bitPos &= 7;
+
+    uint shift = 32-numBits;
+    uint value;
+
+    if(bitPos != 0) {
+        auto n = 8-bitPos;
+        if(n > numBits) n = numBits;
+
+        value = bitfieldExtract(bits[bytePos], bitPos, n) << (32-n);
+
+        bitPos = 0;
+        bytePos++;
+        numBits -= n;
+
+        throwIf(bytePos >= bits.length, "%s >= %s", bytePos, bits.length);
+    }
+
+    foreach(i; 0..numBits/8) {
+        value >>>= 8;
+        value |= (bits[bytePos] << 24);
+
+        bytePos++;
+        numBits -= 8;
+
+        throwIf(bytePos >= bits.length, "%s >= %s", bytePos, bits.length);
+    }
+
+    if(numBits > 0) {
+        value >>>= numBits;
+        value |= (bitfieldExtract(bits[bytePos], bitPos, numBits) << (32-numBits));
+    }
+
+    return value >>> shift;
+}
+/*
+uint getIndex(uint offsetIndexes, uint numBits, uint index) {
+
+        uint bitOffset = index*numBits;
+        uint byteIndex = bitOffset / 8;
+        bitOffset &= 7;
+
+        uint uintIndex = byteIndex/4;
+        uint uintRem = byteIndex&3u;
+
+        uint bitpos = bitOffset + (uintRem*8);
+        uint numBits2 = maxOf(0, numBits - (32-bitpos));
+        numBits -= numBits2;
+
+        auto array = optView[offsetIndexes+uintIndex..$].as!(uint[]);
+
+        return bitfieldExtract(array[0], bitpos, numBits) +
+                (bitfieldExtract(array[1], 0, numBits2) << numBits);
+    }
+
+    */

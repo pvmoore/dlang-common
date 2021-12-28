@@ -6,13 +6,13 @@ import common.all;
 import common.io;
 
 void testIo() {
-    testTypes();
+    //testTypes();
     // testByteReader();
     // testFileByteWriter();
     // testArrayByteWriter();
     // testBitWriter();
     // testArrayBitWriter();
-    // testBitReader();
+    testBitReader();
     // testBitReaderAndWriter();
     // testConsole();
 }
@@ -691,6 +691,27 @@ void testBitReader() {
         assert(reader.read(2)==0b11);
         assert(reader.read(3)==0b010);
         reader.close();
+    }
+
+    {
+        writefln("ArrayBitReader");
+
+        ubyte[] array = [0b1100_0011, 0b0111_0101, 0b00000010, 0b00000011, 0b00000110];
+        auto br = new ArrayBitReader(array);
+
+        assert(br.read(4) == 0b0011);
+        assert(br.read(4) == 0b1100);
+        assert(br.read(1) == 0b1);
+        assert(br.getNumBitsRead() == 9);
+
+        assert(br.read(3) == 0b010);
+        br.skipToEndOfByte();
+        assert(br.getNumBitsRead()==16);
+        assert(br.read(8) == 0b00000010);
+
+        br.skipBits(4);
+        assert(br.getNumBitsRead() == 28);
+        assert(br.read(4) == 0b0000);
     }
 }
 void testBitReaderAndWriter() {

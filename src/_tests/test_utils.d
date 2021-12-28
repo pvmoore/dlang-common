@@ -5,12 +5,12 @@ import std : writefln, writeln, format;
 import common.all;
 
 void testUtils() {
-    testArrayUtils();
+    //testArrayUtils();
     // testAsyncUtils();
     // testCpuUtils();
     // testStaticUtils();
     // testStringUtils();
-    // testUtilities();
+    testUtilities();
     // testAsmUtils();
 }
 
@@ -311,6 +311,53 @@ void testUtilities() {
         let!Object(obj, (o) {});
 
         obj.let!Object(o=>writefln("%s", o));
+    }
+
+    {
+        writefln("bitfieldExtract(uint, uint, uint)");
+        uint bits = 0b11111111_00000000_11001100_00110011;
+
+        assert(bitfieldExtract(bits, 0, 4) == 0b0011);
+        assert(bitfieldExtract(bits, 0, 8) == 0b00110011);
+        assert(bitfieldExtract(bits, 2, 8) == 0b00001100);
+        assert(bitfieldExtract(bits, 3, 8) == 0b10000110);
+        assert(bitfieldExtract(bits, 5, 1) == 0b1);
+        assert(bitfieldExtract(bits, 6, 1) == 0b0);
+        assert(bitfieldExtract(bits, 6, 0) == 0b0);
+
+        assert(bitfieldExtract(bits, 0, 32) == bits);
+        assert(bitfieldExtract(bits, 0, 100) == bits);
+        assert(bitfieldExtract(bits, 1, 100) == bits >>> 1);
+    }
+    {
+        writefln("bitfieldExtract(ubyte[], uint, uint)");
+
+        ubyte[] bits = [
+            0b01100101, 0b11110000, // 0  - 15
+            0b11001100, 0b01010101, // 16 - 31
+            0b11111111, 0b00001111, // 32 - 47
+            0b00110011, 0b10101010  // 48 - 63
+        ];
+
+        assert(bitfieldExtract(bits, 0, 0) == 0);
+        assert(bitfieldExtract(bits, 0, 4) == 0b0101);
+        assert(bitfieldExtract(bits, 0, 8) == 0b01100101);
+        assert(bitfieldExtract(bits, 0, 14) == 0b110000_01100101);
+
+        assert(bitfieldExtract(bits, 1, 4) == 0b0010);
+        assert(bitfieldExtract(bits, 1, 8) == 0b00110010);
+        assert(bitfieldExtract(bits, 1, 12) == 0b1000_00110010);
+        assert(bitfieldExtract(bits, 1, 16) == 0b01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 19) == 0b11001111000_00110010);
+        assert(bitfieldExtract(bits, 1, 21) == 0b00110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 24) == 0b11100110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 27) == 0b010_11100110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 30) == 0b101010_11100110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 32) == 0b1_01010101_11001100_11110000_0110010_);
+
+        assert(bitfieldExtract(bits, 9, 10) == 0b_1001111000);
+
+        assert(bitfieldExtract(bits, 30, 4) == 0b1101);
     }
 
     writeln("testUtilities ran OK");
