@@ -1,7 +1,5 @@
 module common.io.byte_reader;
-/**
- *
- */
+
 import common.io;
 import common.utils;
 import std.stdio : File, SEEK_SET;
@@ -198,7 +196,7 @@ public:
         else static if(is(T==ulong) || is(T==long)) return readLong();
         else static if(is(T==float)) return readFloat();
         else static if(isStruct!T) return *cast(T*)readByteArray(T.sizeof).ptr;
-        else assert(false);
+        else static assert(false);
 	}
     T[] readArray(T)(ulong items) {
         if(eof()) {
@@ -210,7 +208,7 @@ public:
         else static if(is(T==ulong) || is(T==long)) return readLongArray(items);
         else static if(is(T==float)) return readFloatArray(items);
         else static if(isStruct!T) return cast(T[])readByteArray(items*T.sizeof);
-        else assert(false);
+        else static assert(false);
 	}
 protected:
     ubyte readByte() {

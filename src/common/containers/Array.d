@@ -133,12 +133,12 @@ public:
     auto opOpAssign(string op)(T val) {
         static if(op=="~") {
             return add(val);
-        } else assert(false, "Array!%s %s= %s is not implemented".format(T.stringof, op, T.stringof));
+        } else static assert(false, "Array!%s %s= %s is not implemented".format(T.stringof, op, T.stringof));
     }
     auto opOpAssign(string op)(T[] vals) {
         static if(op=="~") {
             return add(vals);
-        } else assert(false, "Array!%s %s= %s[] is not implemented".format(T.stringof, op, T.stringof));
+        } else static assert(false, "Array!%s %s= %s[] is not implemented".format(T.stringof, op, T.stringof));
     }
 
 	auto add(T val) {

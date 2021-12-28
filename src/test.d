@@ -51,12 +51,12 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        //testAsmUtils();
-        //asm_test();
-        //testParser();
-        //testPDH();
-        //testIo();
-        //testContainers();
+        testAsmUtils();
+        asm_test();
+        testParser();
+        testPDH();
+        testIo();
+        testContainers();
         testUtils();
     } else {
 
@@ -68,6 +68,7 @@ void runTests() {
         testStringBuffer();
         testStructCache();
         testVelocity();
+        testFreeList();
 
         testBetterc();
         testContainers();

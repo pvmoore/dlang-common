@@ -143,7 +143,7 @@ private:
         return false;
     }
     string readKeyword(string templt, ref int pos) {
-        assert(templt[pos]=='$');
+        throwIf(templt[pos]!='$');
         pos++;
         int p = pos;
         wlp: while(pos<templt.length) {

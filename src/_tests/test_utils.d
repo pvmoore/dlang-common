@@ -5,13 +5,13 @@ import std : writefln, writeln, format;
 import common.all;
 
 void testUtils() {
-    //testArrayUtils();
-    // testAsyncUtils();
-    // testCpuUtils();
-    // testStaticUtils();
-    // testStringUtils();
+    testArrayUtils();
+    testAsyncUtils();
+    testCpuUtils();
+    testStaticUtils();
+    testStringUtils();
     testUtilities();
-    // testAsmUtils();
+    testAsmUtils();
 }
 
 void testArrayUtils() {

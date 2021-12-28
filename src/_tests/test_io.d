@@ -6,15 +6,15 @@ import common.all;
 import common.io;
 
 void testIo() {
-    //testTypes();
-    // testByteReader();
-    // testFileByteWriter();
-    // testArrayByteWriter();
-    // testBitWriter();
-    // testArrayBitWriter();
+    testTypes();
+    testByteReader();
+    testFileByteWriter();
+    testArrayByteWriter();
+    testBitWriter();
+    testArrayBitWriter();
     testBitReader();
-    // testBitReaderAndWriter();
-    // testConsole();
+    testBitReaderAndWriter();
+    testConsole();
 }
 
 void testTypes() {

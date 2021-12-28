@@ -11,10 +11,10 @@ import core.sync.semaphore : Semaphore;
 import core.thread : Thread;
 import core.time : dur;
 
-import std.math     : abs;
-import std.stdio    : writef, writefln;
-import std.array    : Appender, appender, join, uninitializedArray;
-import std.datetime.stopwatch : StopWatch;
+import std.math                 : abs;
+import std.stdio                : writef, writefln;
+import std.array                : Appender, appender, join, uninitializedArray;
+import std.datetime.stopwatch   : StopWatch;
 
 import std.format   : format;
 import std.range    : array;
@@ -27,4 +27,4 @@ import std.traits   : isPointer;
 
 import std.typecons : Tuple, tuple;
 
-
+import common.utils : throwIf;

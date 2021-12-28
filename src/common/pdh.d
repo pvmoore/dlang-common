@@ -133,16 +133,16 @@ private:
     void loadDLL() {
         pdhHandle = LoadLibraryA("Pdh");
         if(pdhHandle) {
-            *(cast(void**)&PdhOpenQueryW) = GetProcAddress(pdhHandle, "PdhOpenQueryW"); assert(PdhOpenQueryW);
-            *(cast(void**)&PdhCloseQuery) = GetProcAddress(pdhHandle, "PdhCloseQuery"); assert(PdhCloseQuery);
-            *(cast(void**)&PdhAddCounterW) = GetProcAddress(pdhHandle, "PdhAddCounterW"); assert(PdhAddCounterW);
-            *(cast(void**)&PdhCollectQueryData) = GetProcAddress(pdhHandle, "PdhCollectQueryData"); assert(PdhCollectQueryData);
-            *(cast(void**)&PdhGetFormattedCounterValue) = GetProcAddress(pdhHandle, "PdhGetFormattedCounterValue"); assert(PdhGetFormattedCounterValue);
-            *(cast(void**)&PdhAddEnglishCounterW) = GetProcAddress(pdhHandle, "PdhAddEnglishCounterW"); assert(PdhAddEnglishCounterW);
-            *(cast(void**)&PdhExpandWildCardPathW) = GetProcAddress(pdhHandle, "PdhExpandWildCardPathW"); assert(PdhExpandWildCardPathW);
-            *(cast(void**)&PdhGetFormattedCounterArrayW) = GetProcAddress(pdhHandle, "PdhGetFormattedCounterArrayW"); assert(PdhGetFormattedCounterArrayW);
-            *(cast(void**)&PdhBrowseCountersW) = GetProcAddress(pdhHandle, "PdhBrowseCountersW"); assert(PdhBrowseCountersW);
-            *(cast(void**)&PdhValidatePathW) = GetProcAddress(pdhHandle, "PdhValidatePathW"); assert(PdhValidatePathW);
+            *(cast(void**)&PdhOpenQueryW) = GetProcAddress(pdhHandle, "PdhOpenQueryW"); throwIf(!PdhOpenQueryW);
+            *(cast(void**)&PdhCloseQuery) = GetProcAddress(pdhHandle, "PdhCloseQuery"); throwIf(!PdhCloseQuery);
+            *(cast(void**)&PdhAddCounterW) = GetProcAddress(pdhHandle, "PdhAddCounterW"); throwIf(!PdhAddCounterW);
+            *(cast(void**)&PdhCollectQueryData) = GetProcAddress(pdhHandle, "PdhCollectQueryData"); throwIf(!PdhCollectQueryData);
+            *(cast(void**)&PdhGetFormattedCounterValue) = GetProcAddress(pdhHandle, "PdhGetFormattedCounterValue"); throwIf(!PdhGetFormattedCounterValue);
+            *(cast(void**)&PdhAddEnglishCounterW) = GetProcAddress(pdhHandle, "PdhAddEnglishCounterW"); throwIf(!PdhAddEnglishCounterW);
+            *(cast(void**)&PdhExpandWildCardPathW) = GetProcAddress(pdhHandle, "PdhExpandWildCardPathW"); throwIf(!PdhExpandWildCardPathW);
+            *(cast(void**)&PdhGetFormattedCounterArrayW) = GetProcAddress(pdhHandle, "PdhGetFormattedCounterArrayW"); throwIf(!PdhGetFormattedCounterArrayW);
+            *(cast(void**)&PdhBrowseCountersW) = GetProcAddress(pdhHandle, "PdhBrowseCountersW"); throwIf(!PdhBrowseCountersW);
+            *(cast(void**)&PdhValidatePathW) = GetProcAddress(pdhHandle, "PdhValidatePathW"); throwIf(!PdhValidatePathW);
 
         } else {
             throw new Error("Unable to load Pdh library");

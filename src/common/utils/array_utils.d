@@ -1,7 +1,8 @@
 module common.utils.array_utils;
 
-import std.array	: insertInPlace;
-import std.traits   : isSomeString, isSomeChar;
+import std.array			  : insertInPlace;
+import std.traits   		  : isSomeString, isSomeChar;
+import common.utils.utilities : throwIf;
 /**
  *  eg.
  *  int[] intArray;
@@ -32,11 +33,11 @@ int indexOf(T)(T[] array, T value) if(!isSomeChar!T) {
 }
 
 void insertAt(T)(ref T[] array, long atPos, T extra) {
-	assert(atPos<=array.length);
+	throwIf(atPos>array.length, "%s > %s", atPos, array.length);
 	array.insertInPlace(atPos, extra);
 }
 void insertAt(T)(ref T[] array, long atPos, T[] extra) {
-	assert(atPos<=array.length);
+	throwIf(atPos>array.length, "%s > %s", atPos, array.length);
 	array.insertInPlace(atPos, extra);
 }
 /// returns true if the entire array only contains values
@@ -65,7 +66,8 @@ T remove(T)(ref T[] array, T value) {
 }
 /** array.removeAt(i) */
 T removeAt(T)(ref T[] array, long index) {
-	assert(index<array.length);
+	throwIf(index>=array.length, "%s >= %s", index, array.length);
+
 	T element = array[index];
 	foreach(ref v; array[index+1..$]) {
 		array[index++] = v;
@@ -75,7 +77,8 @@ T removeAt(T)(ref T[] array, long index) {
 }
 /** array.removeRange(start,end) inclusive */
 void removeRange(T)(ref T[] array, long start, long end) {
-	assert(start <= end);
+	throwIf(start > end, "%s > %s", start, end);
+
 	long span = (end-start)+1;
 	foreach(v; array[end+1..$]) {
 		array[start++] = v;

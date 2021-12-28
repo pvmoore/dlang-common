@@ -141,8 +141,8 @@ public:
         return this;
     }
     auto alignTo(uint alignment) {
-        assert(alignment>1);
-        assert(From!"core.bitop".popcnt(alignment)==1);
+        throwIf(alignment<=1, "alignment must be > 1");
+        throwIf(From!"core.bitop".popcnt(alignment)!=1, "alignment must be a multiple of 2");
 
         uint and = alignment-1;
         uint rem = alignment - (bitsWritten & and);

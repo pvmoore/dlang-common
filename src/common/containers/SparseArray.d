@@ -52,8 +52,9 @@ public:
     ulong numItems;
 
     this(ulong length) {
-        assert(length>0);
-        assert(isPowerOf2(length));
+        throwIf(length==0, "Length cannot be 0");
+        throwIf(!isPowerOf2(length), "Length must be a power of 2");
+
         this.length = length;
     }
     auto set(ulong index, T value) {

@@ -40,11 +40,11 @@ public:
     }
 }
 
-unittest {
+version(assert)
+void testFreeList() {
+    import std : writefln;
+    writefln("--== Testing FreeList ==--");
 
-import std.format;
-
-void test() {
     auto fl = new FreeList(8);
     assert(fl.numFree() == 8);
     assert(fl.next == 0);
@@ -123,6 +123,3 @@ void test() {
     assert(fl.next==0);
     assert(fl.list==[1,2,3,4,5,6,7,8]);
 }
-test();
-
-} // unittest

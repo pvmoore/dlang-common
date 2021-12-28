@@ -1,7 +1,5 @@
 module common.io.byte_writer;
-/**
- *
- */
+
 import common.io;
 import common.utils;
 import std.stdio : File;
@@ -25,7 +23,7 @@ public:
         else static if(is(T==ulong) || is(T==long)) writeLong(value);
         else static if(is(T==float)) writeFloat(value);
         else static if(isStruct!T) writeBytes((&value).as!(ubyte*), T.sizeof);
-        else assert(false);
+        else static assert(false);
 
         bytesWritten += T.sizeof;
     }
@@ -38,7 +36,7 @@ public:
         else static if(isStruct!T) writeBytes(items.ptr.as!(ubyte*), (T.sizeof*items.length).as!uint);
         else {
             pragma(msg, "%s not supported".format(T.stringof));
-            assert(false);
+            static assert(false);
         }
         bytesWritten += T.sizeof*items.length;
     }

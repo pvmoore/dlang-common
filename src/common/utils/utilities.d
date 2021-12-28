@@ -29,22 +29,20 @@ void expect(A...)(bool b, lazy string fmt, lazy A args) {
     }
 }
 void todo(string msg = "TODO - Not yet implemented") {
-    assert(false, msg);
+    throwIf(true, msg);
 }
 
-version(assert) {
-    /**
-     * Throw Exception if _result_ is true
-     */
-    void throwIf(A...)(bool result, string msgFmt, A args) {
+/**
+ * Throw Exception if _result_ is true
+ */
+void throwIf(A...)(bool result, string msgFmt, A args) {
+    version(assert) {
         if(result) throw new Exception(format(msgFmt, args));
     }
-} else {
-    /**
-     * No-op in release mode
-     */
-    void throwIf(A...)(bool result, string msgFmt, A args) {
-
+}
+void throwIf(bool result) {
+    version(assert) {
+        throwIf(result, "Assertion failed");
     }
 }
 
@@ -136,18 +134,19 @@ bool isZeroMem(void* ptr, ulong numBytes) nothrow {
 
 wstring[] getCommandLineArgs() {
     version(Win64) {
-    import core.sys.windows.windows :
-        CommandLineToArgvW,
-        GetCommandLineW;
+        import core.sys.windows.windows :
+            CommandLineToArgvW,
+            GetCommandLineW;
 
-	wchar* cmd = GetCommandLineW();
-	int numArgs;
-	wchar** argsArray = CommandLineToArgvW(cmd, &numArgs);
-	wstring[] w;
-	for(auto i=0; i<numArgs; i++) {
-		w ~= fromWStringz(argsArray[i]);
-	}
-	return w;
+        wchar* cmd = GetCommandLineW();
+        int numArgs;
+        wchar** argsArray = CommandLineToArgvW(cmd, &numArgs);
+        wstring[] w;
+        for(auto i=0; i<numArgs; i++) {
+            w ~= fromWStringz(argsArray[i]);
+        }
+        return w;
+
     } else assert(false);
 }
 
@@ -393,24 +392,3 @@ uint bitfieldExtract(ubyte[] bits, uint bitPos, uint numBits) {
 
     return value >>> shift;
 }
-/*
-uint getIndex(uint offsetIndexes, uint numBits, uint index) {
-
-        uint bitOffset = index*numBits;
-        uint byteIndex = bitOffset / 8;
-        bitOffset &= 7;
-
-        uint uintIndex = byteIndex/4;
-        uint uintRem = byteIndex&3u;
-
-        uint bitpos = bitOffset + (uintRem*8);
-        uint numBits2 = maxOf(0, numBits - (32-bitpos));
-        numBits -= numBits2;
-
-        auto array = optView[offsetIndexes+uintIndex..$].as!(uint[]);
-
-        return bitfieldExtract(array[0], bitpos, numBits) +
-                (bitfieldExtract(array[1], 0, numBits2) << numBits);
-    }
-
-    */

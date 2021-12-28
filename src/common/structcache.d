@@ -119,6 +119,7 @@ private:
                 return m;
             }
         }
+        throwIf(true);
         assert(false);
     }
     void calculateElementSize(int alignment) {

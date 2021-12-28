@@ -1,6 +1,7 @@
 module common.io.bit_reader;
 
 import common.io;
+import common.utils.utilities : throwIf;
 
 class BitReader {
 protected:
@@ -17,7 +18,7 @@ public:
     }
     uint read(uint numBits) {
         if(numBits==0) return 0;
-        version(assert) if(numBits>32) throw new Exception("numBits must be <= 32");
+        throwIf(numBits>32, "numBits must be <= 32");
 
         while(bitpos<numBits) {
             ulong b = getByte();
@@ -54,10 +55,7 @@ private:
     uint bytePos;
 
     ubyte provider() {
-        version(assert) {
-            import std.format : format;
-            if(bytePos >= array.length) throw new Exception("Index %s >= %s".format(bytePos, array.length));
-        }
+        throwIf(bytePos >= array.length, "Index %s >= %s", bytePos, array.length);
         return array[bytePos++];
     }
 public:
