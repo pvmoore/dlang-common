@@ -1,6 +1,8 @@
 module common.utils.map_utils;
 
-import std.traits : isAssociativeArray;
+import std.traits 				: isAssociativeArray;
+import std.typecons 			: Tuple, tuple;
+
 
 /// mymap.contains(myvalue)
 bool containsKey(M,V)(M map, V value) if(isAssociativeArray!M) {
@@ -30,4 +32,37 @@ V* getOrAdd(K,V)(ref V[K] map, K key, V addMe) {
 
 	map[key] = addMe;
 	return key in map;
+}
+
+/**
+ * uint[ulong] theMap;
+ * Tuple!(ulong,uint)[] e = theMap.entries();
+ */
+Tuple!(K,V)[] entries(K,V)(V[K] theMap) {
+	import std.range : array;
+	import std.algorithm.iteration : map;
+
+	return theMap.byKeyValue().map!(it=>tuple(it.key, it.value)).array;
+}
+/**
+ * uint[ulong] theMap;
+ * Tuple!(ulong,uint)[] e = theMap.sortedEntries((a,b)=>a[0] > b[0]);
+ */
+Tuple!(K,V)[] sortedEntries(K,V)(V[K] theMap, bool function(Tuple!(K,V) a, Tuple!(K,V) b) comp) {
+	import std.range : array;
+	import std : map, sort;
+
+	auto arr = theMap.byKeyValue().map!(it=>tuple(it.key, it.value)).array;
+
+	sort!(comp)(arr);
+
+	return arr;
+}
+Tuple!(K,V)[] sortedEntriesByKey(K,V)(V[K] theMap, bool ascending = true) {
+	return ascending ? theMap.sortedEntries!(K,V)((a,b)=>a[0] < b[0])
+					 : theMap.sortedEntries!(K,V)((a,b)=>a[0] > b[0]);
+}
+Tuple!(K,V)[] sortedEntriesByValue(K,V)(V[K] theMap, bool ascending = true) {
+	return ascending ? theMap.sortedEntries!(K,V)((a,b)=>a[1] < b[1])
+					 : theMap.sortedEntries!(K,V)((a,b)=>a[1] > b[1]);
 }

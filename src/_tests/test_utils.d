@@ -5,13 +5,124 @@ import std : writefln, writeln, format;
 import common.all;
 
 void testUtils() {
-    testArrayUtils();
-    testAsyncUtils();
-    testCpuUtils();
-    testStaticUtils();
-    testStringUtils();
-    testUtilities();
-    testAsmUtils();
+    static if(true) {
+        testMapUtils();
+    } else {
+        testArrayUtils();
+        testMapUtils();
+        testAsyncUtils();
+        testCpuUtils();
+        testStaticUtils();
+        testStringUtils();
+        testUtilities();
+        testAsmUtils();
+    }
+}
+
+void testMapUtils() {
+    writefln("--== Testing map_utils ==--");
+
+    import std : sort;
+
+    alias Entry = Tuple!(ulong,uint);
+
+    {   // entries
+        uint[ulong] map = [
+            4:2,
+            7:3,
+            1:10,
+            5:25,
+            3:7
+        ];
+        auto e = map.entries!(ulong,uint)();
+        alias comp = (x,y) => x[1] > y[1];
+        auto sorted = e.sort!(comp)().array;
+
+        writefln("sorted = %s", sorted);
+        assert(sorted == [
+            Entry(5,25),
+            Entry(1,10),
+            Entry(3,7),
+            Entry(7,3),
+            Entry(4,2)
+        ]);
+    }
+    {   // sortedEntries
+        uint[ulong] map = [
+            4:2,
+            7:3,
+            1:10,
+            5:25,
+            3:7
+        ];
+        auto sorted = map.sortedEntries!(ulong,uint)((a,b)=>a[1]>b[1]);
+        writefln("sorted = %s", sorted);
+        assert(sorted == [
+            Entry(5,25),
+            Entry(1,10),
+            Entry(3,7),
+            Entry(7,3),
+            Entry(4,2)
+        ]);
+    }
+    {
+        // sortedEntriesByKey
+        uint[ulong] map = [
+            4:2,
+            7:3,
+            1:10,
+            5:25,
+            3:7
+        ];
+        auto sortedAsc = map.sortedEntriesByKey(true);
+        writefln("sortedAsc = %s", sortedAsc);
+        assert(sortedAsc == [
+            Entry(1,10),
+            Entry(3,7),
+            Entry(4,2),
+            Entry(5,25),
+            Entry(7,3)
+        ]);
+
+        auto sortedDesc = map.sortedEntriesByKey(false);
+        writefln("sortedDesc = %s", sortedDesc);
+        assert(sortedDesc == [
+            Entry(7,3),
+            Entry(5,25),
+            Entry(4,2),
+            Entry(3,7),
+            Entry(1,10)
+        ]);
+    }
+    {
+        // sortedEntriesByValue
+        uint[ulong] map = [
+            4:2,
+            7:3,
+            1:10,
+            5:25,
+            3:7
+        ];
+        auto sortedAsc = map.sortedEntriesByValue(true);
+        writefln("sortedAsc = %s", sortedAsc);
+        assert(sortedAsc == [
+            Entry(4,2),
+            Entry(7,3),
+            Entry(3,7),
+            Entry(1,10),
+            Entry(5,25)
+        ]);
+
+        auto sortedDesc = map.sortedEntriesByValue(false);
+        writefln("sortedDesc = %s", sortedDesc);
+        assert(sortedDesc == [
+            Entry(5,25),
+            Entry(1,10),
+            Entry(3,7),
+            Entry(7,3),
+            Entry(4,2)
+        ]);
+    }
 }
 
 void testArrayUtils() {

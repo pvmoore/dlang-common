@@ -35,6 +35,7 @@ extern(C) void asm_test();
 
 void main() {
     runTests();
+
     static if(!RUN_SUBSET) {
 
     }
@@ -51,12 +52,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testAsmUtils();
-        asm_test();
-        testParser();
-        testPDH();
-        testIo();
-        testContainers();
+        
         testUtils();
     } else {
 
@@ -69,6 +65,10 @@ void runTests() {
         testStructCache();
         testVelocity();
         testFreeList();
+        testParser();
+
+        testAsmUtils();
+        asm_test();
 
         testBetterc();
         testContainers();
