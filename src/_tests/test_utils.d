@@ -47,7 +47,7 @@ void testMapUtils() {
             Entry(4,2)
         ]);
     }
-    {   // sortedEntries
+    {   // entriesSorted
         uint[ulong] map = [
             4:2,
             7:3,
@@ -55,7 +55,7 @@ void testMapUtils() {
             5:25,
             3:7
         ];
-        auto sorted = map.sortedEntries!(ulong,uint)((a,b)=>a[1]>b[1]);
+        auto sorted = map.entriesSorted!(ulong,uint)((a,b)=>a[1]>b[1]);
         writefln("sorted = %s", sorted);
         assert(sorted == [
             Entry(5,25),
@@ -66,7 +66,7 @@ void testMapUtils() {
         ]);
     }
     {
-        // sortedEntriesByKey
+        // entriesSortedByKey
         uint[ulong] map = [
             4:2,
             7:3,
@@ -74,7 +74,7 @@ void testMapUtils() {
             5:25,
             3:7
         ];
-        auto sortedAsc = map.sortedEntriesByKey(true);
+        auto sortedAsc = map.entriesSortedByKey(true);
         writefln("sortedAsc = %s", sortedAsc);
         assert(sortedAsc == [
             Entry(1,10),
@@ -84,7 +84,7 @@ void testMapUtils() {
             Entry(7,3)
         ]);
 
-        auto sortedDesc = map.sortedEntriesByKey(false);
+        auto sortedDesc = map.entriesSortedByKey(false);
         writefln("sortedDesc = %s", sortedDesc);
         assert(sortedDesc == [
             Entry(7,3),
@@ -95,7 +95,7 @@ void testMapUtils() {
         ]);
     }
     {
-        // sortedEntriesByValue
+        // entriesSortedByValue
         uint[ulong] map = [
             4:2,
             7:3,
@@ -103,7 +103,7 @@ void testMapUtils() {
             5:25,
             3:7
         ];
-        auto sortedAsc = map.sortedEntriesByValue(true);
+        auto sortedAsc = map.entriesSortedByValue(true);
         writefln("sortedAsc = %s", sortedAsc);
         assert(sortedAsc == [
             Entry(4,2),
@@ -113,7 +113,7 @@ void testMapUtils() {
             Entry(5,25)
         ]);
 
-        auto sortedDesc = map.sortedEntriesByValue(false);
+        auto sortedDesc = map.entriesSortedByValue(false);
         writefln("sortedDesc = %s", sortedDesc);
         assert(sortedDesc == [
             Entry(5,25),

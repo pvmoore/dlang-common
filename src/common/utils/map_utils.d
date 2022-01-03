@@ -46,9 +46,9 @@ Tuple!(K,V)[] entries(K,V)(V[K] theMap) {
 }
 /**
  * uint[ulong] theMap;
- * Tuple!(ulong,uint)[] e = theMap.sortedEntries((a,b)=>a[0] > b[0]);
+ * Tuple!(ulong,uint)[] e = theMap.entriesSorted((a,b)=>a[0] > b[0]);
  */
-Tuple!(K,V)[] sortedEntries(K,V)(V[K] theMap, bool function(Tuple!(K,V) a, Tuple!(K,V) b) comp) {
+Tuple!(K,V)[] entriesSorted(K,V)(V[K] theMap, bool function(Tuple!(K,V) a, Tuple!(K,V) b) comp) {
 	import std.range : array;
 	import std : map, sort;
 
@@ -58,11 +58,11 @@ Tuple!(K,V)[] sortedEntries(K,V)(V[K] theMap, bool function(Tuple!(K,V) a, Tuple
 
 	return arr;
 }
-Tuple!(K,V)[] sortedEntriesByKey(K,V)(V[K] theMap, bool ascending = true) {
-	return ascending ? theMap.sortedEntries!(K,V)((a,b)=>a[0] < b[0])
-					 : theMap.sortedEntries!(K,V)((a,b)=>a[0] > b[0]);
+Tuple!(K,V)[] entriesSortedByKey(K,V)(V[K] theMap, bool ascending = true) {
+	return ascending ? theMap.entriesSorted!(K,V)((a,b)=>a[0] < b[0])
+					 : theMap.entriesSorted!(K,V)((a,b)=>a[0] > b[0]);
 }
-Tuple!(K,V)[] sortedEntriesByValue(K,V)(V[K] theMap, bool ascending = true) {
-	return ascending ? theMap.sortedEntries!(K,V)((a,b)=>a[1] < b[1])
-					 : theMap.sortedEntries!(K,V)((a,b)=>a[1] > b[1]);
+Tuple!(K,V)[] entriesSortedByValue(K,V)(V[K] theMap, bool ascending = true) {
+	return ascending ? theMap.entriesSorted!(K,V)((a,b)=>a[1] < b[1])
+					 : theMap.entriesSorted!(K,V)((a,b)=>a[1] > b[1]);
 }
