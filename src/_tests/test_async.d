@@ -15,7 +15,7 @@ void runAsyncTests() {
     scope(exit) writefln("Async tests finished");
 
     testAsyncQueue();
-    //testAsyncArray();
+    testAsyncArray();
 }
 // ======================================================
 class AsyncWorkerBase {

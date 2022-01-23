@@ -20,14 +20,22 @@ IQueue!T makeMPMCQueue(T)(uint cap) { return new Queue!(T,ThreadingModel.MPMC)(c
 
 final class Queue(T,ThreadingModel TM) : IQueue!T {
 private:
+    const uint mask;
     T[] array;
-    shared Positions pos;
-    uint mask;
+    align(16) shared Positions pos;
+
     static struct Positions {
         int r;
         int w;
     }
     static assert(Positions.sizeof==8);
+
+    enum IS_SINGLE_PRODUCER = TM==ThreadingModel.SPSC ||
+                              TM==ThreadingModel.SPMC;
+
+    enum IS_SINGLE_CONSUMER = TM==ThreadingModel.SPSC ||
+                              TM==ThreadingModel.MPSC;
+
 public:
     this(uint capacity) {
         if(!isPowerOf2(capacity)) throw new Error("Queue capacity must be a power of 2");
@@ -41,7 +49,7 @@ public:
     bool empty() { return length==0; }
 
     IQueue!T push(T value) {
-        static if(isSP) {
+        static if(IS_SINGLE_PRODUCER) {
             // cast away shared
             auto pptr = cast(Positions*)&pos;
             int p     = pptr.w;
@@ -49,8 +57,8 @@ public:
             pptr.w = p+1;
             array[p&mask] = value;
         } else {
-            int pos = nextWritePos();
-            array[pos&mask] = value;
+            int p = nextWritePos();
+            array[p&mask] = value;
         }
         return this;
     }
@@ -67,6 +75,8 @@ public:
         }while(!cas(&pos.r, p.r, p.r+1));
 
         // This might be faster but doesn't work on LDC in release mode:
+        // (possibly due to undefined behaviour)
+        
         // ulong p1;
         // ulong p2 = p1-1;
 
@@ -86,12 +96,11 @@ public:
         return value;
     }
     /**
-     * Take 'here.length' items from the queue and put them
-     * in 'here'.
+     * Take 'here.length' items from the queue and put them in 'here'.
      * Returns the number taken.
      */
     uint drain(T[] here) {
-        static if(isSC) {
+        static if(IS_SINGLE_CONSUMER) {
             auto p = atomicLoad(pos);
             auto len = p.w-p.r;
             if(len==0) return 0;
@@ -150,13 +159,5 @@ private:
             i = atomicLoad(pos.w);
         }while(!cas(&pos.w, i, i+1));
         return i;
-    }
-    static bool isSP() pure {
-        return TM==ThreadingModel.SPSC ||
-               TM==ThreadingModel.SPMC;
-    }
-    static bool isSC() pure {
-        return TM==ThreadingModel.SPSC ||
-               TM==ThreadingModel.MPSC;
     }
 }
