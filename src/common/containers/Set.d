@@ -1,10 +1,11 @@
 module common.containers.Set;
+
+import std.format : format;
+
 /**
  *  An unordered collection of unique items.
  *
  */
-import std.format : format;
-
 class Set(T) {
 protected:
     bool[T] map;
