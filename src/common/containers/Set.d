@@ -9,14 +9,12 @@ import std.format : format;
 class Set(T) {
 protected:
     bool[T] map;
-    bool isFrozen;
 public:
     int length() const { return cast(int)map.length; }
     bool empty() const { return length==0; }
     T[] values() { return map.keys; }
 
     Set!T add(T value) {
-        if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         map[value] = true;
         return this;
     }
@@ -29,7 +27,6 @@ public:
         return this;
     }
     bool remove(T value) {
-        if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         bool* ptr = value in map;
         if(ptr) map.remove(value);
         return ptr !is null;
@@ -37,15 +34,7 @@ public:
     bool contains(T value) const {
         return (value in map) !is null;
     }
-    /**
-     * Set this Set instance as unmodifiable
-     */
-    auto freeze() {
-        this.isFrozen = true;
-        return this;
-    }
     Set!T clear() {
-        if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Set");
         map.clear();
         return this;
     }

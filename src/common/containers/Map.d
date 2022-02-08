@@ -9,7 +9,6 @@ class Map(K,V) {
 protected:
     alias This = Map!(K,V);
     V[K] map;
-    bool isFrozen;
 public:
 final:
     int length() { return cast(int)map.length; }
@@ -21,19 +20,16 @@ final:
     auto byKeyValue() { return map.byKeyValue(); }
 
     This add(K key, V value) {
-        checkFrozen();
         map[key] = value;
         return this;
     }
     This add(V[K] otherMap) {
-        checkFrozen();
         foreach(e; otherMap.byKeyValue()) {
             map[e.key] = e.value;
         }
         return this;
     }
     This add(This otherMap) {
-        checkFrozen();
         add(otherMap.map);
         return this;
     }
@@ -51,7 +47,6 @@ final:
         return key in map;
     }
     bool remove(K key) {
-        checkFrozen();
         return map.remove(key);
     }
     bool containsKey(K key) {
@@ -76,20 +71,11 @@ final:
         return false;
     }
     This clear() {
-        checkFrozen();
         map.clear();
         return this;
     }
     This rehash() {
-        checkFrozen();
         map.rehash();
-        return this;
-    }
-    /**
-     * Set this Map instance as unmodifiable
-     */
-    This freeze() {
-        this.isFrozen = true;
         return this;
     }
     override string toString() {
@@ -99,9 +85,5 @@ final:
             s ~= "%s:%s".format(e.key, e.value);
         }
         return s ~ "]";
-    }
-private:
-    void checkFrozen() {
-        if(isFrozen) throw new Exception("Attempingt to modify an unmodifiable Map");
     }
 }
