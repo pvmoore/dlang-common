@@ -15,12 +15,22 @@ void flushConsole() {
  *  Debug console logging. Always flushes console after writing.
  */
 void dbg(int i) {
-    writefln("%s", i);
-    flushConsole();
+    version(assert) {
+        writefln("%s", i);
+        flushConsole();
+    }
 }
 void dbg(A...)(string fmt, A args) {
-    writefln(fmt, args);
-    flushConsole();
+    version(assert) {
+        writefln(fmt, args);
+        flushConsole();
+    }
+}
+void dbg(string s) {
+    version(assert) {
+        writeln(s);
+        flushConsole();
+    }
 }
 
 version(Win64) {
