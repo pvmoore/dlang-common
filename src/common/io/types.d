@@ -87,8 +87,12 @@ struct Directory {
     bool exists() const {
         return .exists(value);
     }
-    auto add(Directory dir) {
+    Directory add(Directory dir) {
         return Directory(buildNormalizedPath(value, dir.value));
+    }
+    Filepath add(Filepath path) {
+        throwIf(!path.directory.isRelative(), "Cannot add absolute path to directory");
+        return Filepath(add(path.directory), path.filename);
     }
     bool isAbsolute() {
         return .isAbsolute(value);
@@ -117,6 +121,16 @@ struct Filepath {
     this(string value) {
         this.filename = Filename(value);
         this.directory = Directory(value[0..value.length-filename.value.length]);
+    }
+    //------------------------------------------------------
+    bool exists() const {
+        return .exists(value);
+    }
+    bool isAbsolute() {
+        return directory.isAbsolute();
+    }
+    bool isRelative() {
+        return !isAbsolute();
     }
     //------------------------------------------------------
     bool opEquals(const Filepath other) const {

@@ -7,14 +7,14 @@ import common.io;
 
 void testIo() {
     testTypes();
-    testByteReader();
-    testFileByteWriter();
-    testArrayByteWriter();
-    testBitWriter();
-    testArrayBitWriter();
-    testBitReader();
-    testBitReaderAndWriter();
-    testConsole();
+    // testByteReader();
+    // testFileByteWriter();
+    // testArrayByteWriter();
+    // testBitWriter();
+    // testArrayBitWriter();
+    // testBitReader();
+    // testBitReaderAndWriter();
+    // testConsole();
 }
 
 void testTypes() {
@@ -87,7 +87,7 @@ void testTypes() {
         auto d = Directory("one/two/");
         assert(d.value == "one/two/");
     }
-    {
+    {   // add(Directory)
         auto d = Directory("hello.there/");
         assert(d.value == "hello.there/");
         assert(d.isRelative());
@@ -95,24 +95,55 @@ void testTypes() {
         auto d2 = d.add(Directory("one/two/"));
         assert(d2.value == "hello.there/one/two/", d2.value);
     }
+    {   // add(Filepath)
+        auto d = Directory("a/");
+        assert(d.value == "a/");
+
+        auto f1 = d.add(Filepath(Directory("."), Filename("name.txt")));
+        assert(f1.directory == Directory("a") && f1.filename == Filename("name.txt"));
+
+        auto f2 = d.add(Filepath(Directory(""), Filename("name.txt")));
+        assert(f2.directory == Directory("a") && f2.filename == Filename("name.txt"));
+
+        auto f3 = d.add(Filepath(Directory("b"), Filename("name.txt")));
+        assert(f3.directory == Directory("a/b") && f3.filename == Filename("name.txt"));
+
+        auto f4 = d.add(Filepath(Directory("b/c/d"), Filename("name.txt")));
+        assert(f4.directory == Directory("a/b/c/d") && f4.filename == Filename("name.txt"));
+
+        auto f5 = d.add(Filepath(Directory("../b"), Filename("name.txt")));
+        assert(f5.directory == Directory("b") && f5.filename == Filename("name.txt"));
+        writefln("f1 = %s", f1);
+        writefln("f2 = %s", f2);
+        writefln("f3 = %s", f3);
+        writefln("f4 = %s", f4);
+        writefln("f5 = %s", f5);
+    }
     // Filepath
     {
         auto f = Filename("name.txt");
         auto d = Directory("one/two");
         auto p = Filepath(d, f);
         assert(p == "one/two/name.txt");
+        assert(p.isRelative());
     }
     {
         auto p = Filepath("one/two/name.txt");
         assert(p.filename == "name.txt");
         assert(p.directory == "one/two/");
         assert(p.value() == "one/two/name.txt");
+        assert(p.isRelative());
     }
     {
         Filepath path;
         path = Filepath("dir/name");
         assert(path.filename == "name");
         assert(path.directory == "dir/");
+        assert(path.isRelative());
+    }
+    {
+        Filepath p = Filepath("c:/dir/name.txt");
+        assert(p.isAbsolute());
     }
 }
 
