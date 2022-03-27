@@ -15,7 +15,7 @@ private:
     Values values;
 
 	this() {
-	    this.root   = new Block(Type.ROOT);
+	    this.root   = new Block(VType.ROOT);
 	    this.values = new Values;
 	}
 public:
@@ -50,7 +50,7 @@ private:
 //===============================================================
 private:
 
-enum Type { ROOT, TEXT, KEY, IF, LOOP }
+enum VType { ROOT, TEXT, KEY, IF, LOOP }
 
 final class Values {
     string[string] strings;
@@ -58,12 +58,12 @@ final class Values {
 }
 
 final class Block {
-    Type type;
+    VType type;
     string content;
     string var;
     Block[] blocks;
 
-    this(Type type) {
+    this(VType type) {
         this.type = type;
     }
     auto withContent(string c) {
@@ -92,7 +92,7 @@ public:
             bool found  = readText(templt, pos);
 
             if(text.length>0) {
-                parent.blocks ~= new Block(Type.TEXT).withContent(text);
+                parent.blocks ~= new Block(VType.TEXT).withContent(text);
             }
 
             if(found) {
@@ -102,7 +102,7 @@ public:
                 } else if("IF"==key) {
                     readText(templt, pos);
                     key = readKeyword(templt, pos);
-                    auto block = new Block(Type.IF).withContent(key);
+                    auto block = new Block(VType.IF).withContent(key);
                     parent.blocks ~= block;
                     parse(templt, pos, block);
                 } else if("LOOP"==key) {
@@ -110,13 +110,13 @@ public:
                     key = readKeyword(templt, pos);
                     readText(templt, pos);
                     string var = readKeyword(templt, pos);
-                    auto block = new Block(Type.LOOP)
+                    auto block = new Block(VType.LOOP)
                         .withContent(key)
                         .withVar(var);
                     parent.blocks ~= block;
                     parse(templt, pos, block);
                 } else {
-                    parent.blocks ~= new Block(Type.KEY).withContent(key);
+                    parent.blocks ~= new Block(VType.KEY).withContent(key);
                 }
             }
         }
@@ -173,7 +173,7 @@ final class BlockProcessor {
             }
         }
 
-        final switch(block.type) with(Type) {
+        final switch(block.type) with(VType) {
             case TEXT:
                 buf ~= block.content;
                 break;
