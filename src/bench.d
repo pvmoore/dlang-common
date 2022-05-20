@@ -4,6 +4,7 @@ import common;
 import core.stdc.stdlib         : malloc, calloc;
 import core.atomic              : atomicLoad, atomicStore, atomicOp;
 import core.thread              : Thread, thread_joinAll;
+import core.memory              : GC;
 import std.stdio                : File, writeln, writefln;
 import std.datetime.stopwatch   : benchmark, StopWatch;
 import std.random               : randomShuffle,uniform, Mt19937, unpredictableSeed;
@@ -21,26 +22,25 @@ void main() {
     version(LDC) {
         writefln("Running benchmarks (LDC)");
 
-        testSimd();
+        testStringAppending();
+        // testSimd();
+        // benchmarkByteReader();
+        // benchmarkAsyncArray();
+        // benchmarkQueue();
+        // benchmarkAsyncQueue();
+        // benchmarkAllocator();
+        // benchmarkUtilities();
+        // benchmarkArray();
+        // benchmarkList();
+        // benchmarkStructCache();
 
-        float f = 1;
-        if(f<2) return;
-
-        benchmarkByteReader();
-        benchmarkAsyncArray();
-        benchmarkQueue();
-        benchmarkAsyncQueue();
-        benchmarkAllocator();
-        benchmarkUtilities();
-        benchmarkArray();
-        benchmarkList();
-        benchmarkStructCache();
-        writeln("All benchmarks finished");
     } else {
         writefln("Running benchmarks (DMD)");
 
-        testSimd();
+        //testSimd();
+        testStringAppending();
     }
+    writeln("All benchmarks finished");
 }
 pragma(inline,false)
 void testSimd() {
@@ -64,6 +64,92 @@ void testSimd() {
     }
 
     writefln("Finished #####################################################");
+}
+void testStringAppending() {
+    writefln("Testing String Appending #################################################");
+    Mt19937 gen; gen.seed(0);
+    StopWatch w;
+    auto iterations = 1_000_000;
+
+    writefln("%s", iterations%8);
+
+    writefln("Preparing...");
+    string[] strings =
+        iota(0, iterations)
+            .map!(it=>uniform(0, 100, gen))
+            .map!(it=>"*".repeat(it))
+            .array;
+
+    GC.collect();
+
+    string str;
+    writefln("Start...");
+
+    w.start();
+    for(auto i=0; i<iterations; i+=8) {
+        string a = strings[i];
+        a ~= strings[i+1];
+        a ~= strings[i+2];
+        a ~= strings[i+3];
+        a ~= strings[i+4];
+        a ~= strings[i+5];
+        a ~= strings[i+6];
+        a ~= strings[i+7];
+        str ~= a;
+
+        //str ~= s;
+    }
+    w.stop();
+
+    // 80
+
+    writefln("%s", str.length);
+
+    writefln("Elapsed %s millis", w.peek().total!"nsecs"/1000000.0);
+
+    //
+    auto buf = new StringBuffer();
+    w.reset(); w.start();
+
+    for(auto i=0; i<iterations; i+=8) {
+        auto a = new StringBuffer()
+            .add(strings[i])
+            .add(strings[i+1])
+            .add(strings[i+2])
+            .add(strings[i+3])
+            .add(strings[i+4])
+            .add(strings[i+5])
+            .add(strings[i+6])
+            .add(strings[i+7]);
+        buf.add(a.slice());
+        //buf.add(s);
+    }
+    w.stop();
+    writefln("%s", buf.length);
+    writefln("Elapsed %s millis", w.peek().total!"nsecs"/1000000.0);
+
+    //
+    auto buf2 = new StringBuffer();
+    w.reset(); w.start();
+
+    for(auto i=0; i<iterations; i+=8) {
+        auto a = tlStringBuffer()
+            .add(strings[i])
+            .add(strings[i+1])
+            .add(strings[i+2])
+            .add(strings[i+3])
+            .add(strings[i+4])
+            .add(strings[i+5])
+            .add(strings[i+6])
+            .add(strings[i+7]);
+        buf2.add(a.sliceDup());
+        //buf2.add(s);
+    }
+    w.stop();
+    writefln("%s", buf2.length);
+    writefln("Elapsed %s millis", w.peek().total!"nsecs"/1000000.0);
+
+    writefln("Finished String Appending ################################################");
 }
 
 void benchmarkStructCache() {

@@ -23,8 +23,17 @@ public:
         this();
         add(str);
     }
+    // override size_t toHash() {
+    //     return Object.toHash(array.values());
+    // }
     override string toString() const {
         return cast(string)array[0..array.length].idup;
+    }
+    T[] slice() {
+        return array[0..array.length];
+    }
+    T[] sliceDup() {
+        return array[0..array.length].dup;
     }
     bool opEquals(inout(T)[] o) const {
         return array[] == o;

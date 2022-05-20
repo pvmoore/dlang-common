@@ -216,7 +216,7 @@ bool isOneOf(T)(T thing, T[] args...) {
     return false;
 }
 
-T firstNotNull(T)(T[] array...) if(isObject!T) {
+T firstNotNull(T)(T[] array...) if(isObject!T || is(T==string)) {
     foreach(t; array) {
         if(t !is null) return t;
     }
