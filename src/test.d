@@ -53,7 +53,7 @@ void runTests() {
 
     static if(RUN_SUBSET) {
 
-        testIo();
+        testStringBuffer();
     } else {
 
         testAllocator();
@@ -554,12 +554,12 @@ void testStringBuffer() {
     writefln("--== Testing StringBuffer ==--");
     { // add, ~=, length and empty
         auto buf = new StringBuffer;
-        assert(buf.length==0 && buf.empty);
+        assert(buf.length==0 && buf.isEmpty());
         buf.add('a')
            .add("bc");
         buf ~= 'd';
         buf ~= "ef";
-        assert(buf=="abcdef" && buf.length==6 && !buf.empty);
+        assert(buf=="abcdef" && buf.length==6 && !buf.isEmpty());
     }
     { // add(format)
         auto buf = new StringBuffer;
@@ -619,6 +619,17 @@ void testStringBuffer() {
         assert(buf=="bcdef");
         buf.remove(4);
         assert(buf=="bcde");
+    }
+    {   // slice, sliceDup
+        auto buf = new StringBuffer("abcdef");
+        auto s = buf.slice();
+        auto s2 = buf.sliceDup();
+        assert(s=="abcdef");
+        assert(s2=="abcdef");
+        buf.clear();
+        buf.add("123456");
+        assert(s=="123456");    // takes on new value
+        assert(s2=="abcdef");   // does not take on new value
     }
 }
 void testHasher() {

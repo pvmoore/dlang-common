@@ -14,7 +14,7 @@ private:
     Array!T array;
 public:
     ulong length() const { return array.length; }
-    bool empty() const { return length==0; }
+    bool isEmpty() const { return length==0; }
 
     this() {
         this.array = new Array!T;
