@@ -36,14 +36,29 @@ void todo(string msg = "TODO - Not yet implemented") {
  * Throw Exception if _result_ is true
  */
 void throwIf(A...)(bool result, string msgFmt, A args) {
-    version(assert) {
-        if(result) throw new Exception(format(msgFmt, args));
-    }
+    if(result) throw new Exception(format(msgFmt, args));
 }
+void throwIfNot(A...)(bool result, string msgFmt, A args) {
+    if(!result) throw new Exception(format(msgFmt, args));
+}
+void throwIfNull(A...)(void* result, string msgFmt, A args) {
+    if(result is null) throw new Exception(format(msgFmt, args));
+}
+void throwIfNotNull(A...)(void* result, string msgFmt, A args) {
+    if(result !is null) throw new Exception(format(msgFmt, args));
+}
+
 void throwIf(bool result) {
-    version(assert) {
-        throwIf(result, "Assertion failed");
-    }
+    throwIf(result, "Assertion failed");
+}
+void throwIfNot(bool result) {
+    throwIf(!result, "Assertion failed");
+}
+void throwIfNull(void* obj) {
+    throwIf(obj is null, "Expected object to be not null");
+}
+void throwIfNotNull(void* obj) {
+    throwIf(obj !is null, "Expected object to be null");
 }
 
 /**
