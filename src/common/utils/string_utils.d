@@ -4,6 +4,7 @@ import std.string   : indexOf;
 import std.traits   : isSomeChar, isSomeString;
 import std.format   : format;
 import std.array    : Appender, appender, join;
+import std.typecons : Tuple, tuple;
 
 string repeat(string s, long count) {
     if(count<=0) return "";
@@ -72,4 +73,29 @@ wstring fromWStringz(wchar* chars, int limit=1000) {
 }
 size_t toHash(string s) nothrow @trusted {
     return typeid(s).getHash(&s);
+}
+
+string getPrefix(string s, string delimiter) {
+    if(s is null || delimiter is null) return "";
+    auto i = s.indexOf(delimiter);
+    if(i!=-1) {
+        return s[0..i];
+    }
+    return "";
+}
+string getSuffix(string s, string delimiter) {
+    if(s is null || delimiter is null) return "";
+    auto i = s.indexOf(delimiter);
+    if(i!=-1) {
+        return s[i+delimiter.length..$];
+    }
+    return "";
+}
+Tuple!(string,string) getPrefixAndSuffix(string s, string delimiter) {
+    if(s is null || delimiter is null) return tuple("", "");
+    auto i = s.indexOf(delimiter);
+    if(i!=-1) {
+        return tuple(s[0..i], s[i+delimiter.length..$]);
+    }
+    return tuple("", "");
 }

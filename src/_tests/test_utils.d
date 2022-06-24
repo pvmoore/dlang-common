@@ -6,7 +6,7 @@ import common.all;
 
 void testUtils() {
     static if(true) {
-        testMapUtils();
+        testStringUtils();
     } else {
         testArrayUtils();
         testMapUtils();
@@ -289,20 +289,51 @@ void testStaticUtils() {
 void testStringUtils() {
     writefln("--== Testing string_utils ==--");
 
-    string s1 = "hello";
-    auto r1   = s1.removeChars('l');
-    assert(s1=="hello");
-    assert(r1=="heo");
+    {
+        string s1 = "hello";
+        auto r1   = s1.removeChars('l');
+        assert(s1=="hello");
+        assert(r1=="heo");
+    }
+    {
+        char[] s2 = ['h','e','l','l','o'];
+        auto r2   = s2.removeChars('l');
+        assert(s2==['h','e','l','l','o']);
+        assert(r2==['h','e', 'o']);
+    }
+    {
+        const(char)[] s3 = ['h','e','l','l','o'];
+        auto r3          = s3.removeChars('l');
+        assert(s3==['h','e','l','l','o']);
+        assert(r3==['h','e', 'o']);
+    }
+    {   // getPrefix
+        auto s = "hello_there";
+        assert(s.getPrefix("_") == "hello");
+        assert(s.getPrefix("-") == "");
+        assert(s.getPrefix(null) == "");
 
-    char[] s2 = ['h','e','l','l','o'];
-    auto r2   = s2.removeChars('l');
-    assert(s2==['h','e','l','l','o']);
-    assert(r2==['h','e', 'o']);
+        string s2 = null;
+        assert(s2.getPrefix("_") == "");
+    }
+    {   // getSuffix
+        auto s = "hello_there";
+        assert(s.getSuffix("_") == "there");
+        assert(s.getSuffix("--",) == "");
+        assert(s.getSuffix(null) == "");
 
-    const(char)[] s3 = ['h','e','l','l','o'];
-    auto r3          = s3.removeChars('l');
-    assert(s3==['h','e','l','l','o']);
-    assert(r3==['h','e', 'o']);
+        string s2 = null;
+        assert(s2.getSuffix("_") == "");
+    }
+    {   // getPrefixAndSuffix
+        auto s = "hello_there";
+        auto t = s.getPrefixAndSuffix("_");
+        assert(t[0] == "hello" && t[1] == "there");
+
+        auto t2 = s.getPrefixAndSuffix("wah");
+        assert(t2[0] == "" && t2[1] == "");
+
+    }
 }
 void testUtilities() {
     writefln("========--\nTesting utilities\n==--");
