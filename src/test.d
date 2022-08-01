@@ -53,7 +53,7 @@ void runTests() {
 
     static if(RUN_SUBSET) {
 
-        testUtils();
+        testContainers();
     } else {
 
         testAllocator();

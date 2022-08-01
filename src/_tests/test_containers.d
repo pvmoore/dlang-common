@@ -6,19 +6,259 @@ import std.format : format;
 import common.containers;
 
 void testContainers() {
-    testArray();
-    testList();
-    testPriorityQueue();
-    testQueue();
-    testSet();
-    testMap();
-    testSparseArray();
-    testStack();
-    testTreeList();
-    testAsyncQueue();
-    testUniqueList();
+    //testArray();
+    testCircularBuffer();
+    // testList();
+    // testPriorityQueue();
+    // testQueue();
+    // testSet();
+    // testMap();
+    // testSparseArray();
+    // testStack();
+    // testTreeList();
+    // testAsyncQueue();
+    // testUniqueList();
 }
 
+void testCircularBuffer() {
+    writefln("==-- Testing CircularBuffer --==");
+
+    {   // invalid length
+        try{
+            new CircularBuffer!int(7);
+            assert(false);
+        }catch(Exception e) {}
+    }
+    {   // isEmpty, size, add and take
+        auto buf = new CircularBuffer!int(8);
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+
+        buf.add(1);
+        assert(!buf.isEmpty());
+        assert(buf.size()==1);
+
+        assert(1==buf.take());
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+
+        buf.add(1);
+        buf.add(2);
+        buf.add(3);
+        assert(buf.size()==3);
+
+        assert(1==buf.take());
+        assert(2==buf.take());
+        assert(3==buf.take());
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+    }
+    {   // fully populated
+        auto buf = new CircularBuffer!int(8);
+        buf.add(1);
+        buf.add(2);
+        buf.add(3);
+        buf.add(4);
+        buf.add(5);
+        buf.add(6);
+        buf.add(7);
+        buf.add(8);
+        assert(buf.size()==8, "%s".format(buf.size()));
+
+        assert(1==buf.take());
+        assert(2==buf.take());
+        assert(3==buf.take());
+        assert(4==buf.take());
+        assert(5==buf.take());
+        assert(6==buf.take());
+        assert(7==buf.take());
+        assert(8==buf.take());
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+    }
+    {   // wrap
+        auto buf = new CircularBuffer!int(8);
+
+        buf.add(1).add(2).add(3).add(4).add(5).add(6).add(7).add(8);
+
+        assert(1==buf.take());
+        assert(2==buf.take());
+        assert(3==buf.take());
+        assert(4==buf.take());
+
+        assert(buf.size()==4);
+
+        buf.add(9);
+        buf.add(10);
+        buf.add(11);
+        buf.add(12);
+        assert(buf.size()==8);
+
+        assert(5==buf.take());
+        assert(6==buf.take());
+        assert(7==buf.take());
+        assert(8==buf.take());
+
+        assert(buf.size()==4);
+
+        buf.add(13);
+        buf.add(14);
+        buf.add(15);
+        assert(buf.size()==7);
+
+        assert(9==buf.take());
+        assert(10==buf.take());
+        assert(11==buf.take());
+        assert(12==buf.take());
+        assert(13==buf.take());
+        assert(14==buf.take());
+        assert(15==buf.take());
+        assert(buf.size()==0);
+    }
+    {   // can't add if buffer is full
+        try{
+            auto buf = new CircularBuffer!int(4);
+            buf.add(1);
+            buf.add(2);
+            buf.add(3);
+            buf.add(4);
+            buf.add(5);
+            assert(false);
+        }catch(Exception e) {}
+    }
+    {   // can't take if buffer is empty
+        try{
+            auto buf = new CircularBuffer!int(4);
+            buf.take();
+            assert(false);
+        }catch(Exception e) {}
+    }
+
+    writefln("==-- Testing ContiguousCircularBuffer --==");
+
+    {   // invalid length
+        try{
+            new ContiguousCircularBuffer!int(7);
+            assert(false);
+        }catch(Exception e) {}
+    }
+    {   // isEmpty, size, add and take
+        auto buf = new ContiguousCircularBuffer!int(8);
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+        assert(buf.slice()==[]);
+
+        buf.add(1);
+        assert(!buf.isEmpty());
+        assert(buf.size()==1);
+        assert(buf.slice()==[1]);
+
+        assert(1==buf.take());
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+
+        buf.add(1);
+        buf.add(2);
+        buf.add(3);
+        assert(buf.size()==3);
+        assert(buf.slice()==[1,2,3]);
+
+        assert(1==buf.take());
+        assert(2==buf.take());
+        assert(3==buf.take());
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+        assert(buf.slice()==[]);
+    }
+    {   // fully populated
+        auto buf = new ContiguousCircularBuffer!int(8);
+        buf.add(1);
+        buf.add(2);
+        buf.add(3);
+        buf.add(4);
+        buf.add(5);
+        buf.add(6);
+        buf.add(7);
+        buf.add(8);
+        assert(buf.size()==8, "%s".format(buf.size()));
+        assert(buf.slice()==[1,2,3,4,5,6,7,8]);
+
+        assert(1==buf.take());
+        assert(2==buf.take());
+        assert(3==buf.take());
+        assert(4==buf.take());
+        assert(5==buf.take());
+        assert(6==buf.take());
+        assert(7==buf.take());
+        assert(8==buf.take());
+        assert(buf.isEmpty());
+        assert(buf.size()==0);
+        assert(buf.slice()==[]);
+    }
+    {   // wrap
+        auto buf = new ContiguousCircularBuffer!int(8);
+
+        buf.add(1).add(2).add(3).add(4).add(5).add(6).add(7).add(8);
+        assert(buf.slice()==[1,2,3,4,5,6,7,8]);
+
+        assert(1==buf.take());
+        assert(2==buf.take());
+        assert(3==buf.take());
+        assert(4==buf.take());
+
+        assert(buf.size()==4);
+        assert(buf.slice()==[5,6,7,8]);
+
+        buf.add(9);
+        buf.add(10);
+        buf.add(11);
+        buf.add(12);
+        assert(buf.size()==8);
+        assert(buf.slice()==[5,6,7,8,9,10,11,12]);
+
+        assert(5==buf.take());
+        assert(6==buf.take());
+        assert(7==buf.take());
+        assert(8==buf.take());
+
+        assert(buf.size()==4);
+        assert(buf.slice()==[9,10,11,12]);
+
+        buf.add(13);
+        buf.add(14);
+        buf.add(15);
+        assert(buf.size()==7);
+        assert(buf.slice()==[9,10,11,12,13,14,15]);
+
+        assert(9==buf.take());
+        assert(10==buf.take());
+        assert(11==buf.take());
+        assert(12==buf.take());
+        assert(13==buf.take());
+        assert(14==buf.take());
+        assert(15==buf.take());
+        assert(buf.size()==0);
+        assert(buf.slice()==[]);
+    }
+    {   // can't add if buffer is full
+        try{
+            auto buf = new ContiguousCircularBuffer!int(4);
+            buf.add(1);
+            buf.add(2);
+            buf.add(3);
+            buf.add(4);
+            buf.add(5);
+            assert(false);
+        }catch(Exception e) {}
+    }
+    {   // can't take if buffer is empty
+        try{
+            auto buf = new ContiguousCircularBuffer!int(4);
+            buf.take();
+            assert(false);
+        }catch(Exception e) {}
+    }
+}
 void testMap() {
     writefln("==-- Testing Map --==");
 
