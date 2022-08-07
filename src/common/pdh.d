@@ -42,14 +42,11 @@ public:
         if(pdhHandle) FreeLibrary(pdhHandle);
     }
     void start() {
-        auto t = new Thread(&loop);
-        t.isDaemon = true;
-        t.name = "PDH Polling Thread";
-        t.start();
         PDH_STATUS status = PdhOpenQueryW(null, 0, &query);
         if(status != ERROR_SUCCESS) {
             throw new Exception("Can't open PDH query: %s".format(status));
         } else {
+
             for(auto i=0; i<numCores; i++) {
                 wstring s = "\\Processor(%s)\\%% Processor Time"w.format(i);
                 check(PdhAddEnglishCounterW(query, s.ptr, 0, counters.ptr+i), "PdhAddEnglishCounterW '%s'".format(s));
@@ -57,8 +54,15 @@ public:
 
 //            check(PdhAddEnglishCounterW(query, "\\Process(bin-test)\\Thread Count"w.ptr, 0, counters.ptr+8),
 //                "PdhAddEnglishCounterW");
-            //check(PdhCollectQueryData(query), "PdhCollectQueryData");
+
+            // This PdhCollectQueryData needs to be here otherwise you get an error later
+            // when calling PdhGetFormattedCounterValue
+            check(PdhCollectQueryData(query), "PdhCollectQueryData");
         }
+        auto t = new Thread(&loop);
+        t.isDaemon = true;
+        t.name = "PDH Polling Thread";
+        t.start();
     }
     double getCPUTotalPercentage() {
         return values[$-1];
@@ -176,11 +180,13 @@ private:
         double[] values = new double[numCores+1];
         PDH_FMT_COUNTERVALUE value;
         foreach(i, c; counters) {
-            check(PdhGetFormattedCounterValue(
+            PDH_STATUS status = PdhGetFormattedCounterValue(
                 counters[i],
                 PDH_FMT_DOUBLE,
                 null,
-                &value), "PdhGetFormattedCounterValue");
+                &value);
+            check(status, "PdhGetFormattedCounterValue");
+
             values[i] = value.u.doubleValue;
             total += values[i];
         }
@@ -251,7 +257,8 @@ enum PDH_MAX_COUNTER_PATH   = 2048;
 // https://docs.microsoft.com/en-us/windows/win32/perfctrs/pdh-error-codes
 enum ErrorCodes {
     PDH_CSTATUS_NO_COUNTER  = 0xC0000BB9,   // The specified counter could not be found
-    PDH_INVALID_DATA        = 0xC0000BC6 ,
+    PDH_INVALID_DATA        = 0xC0000BC6,
+    PDH_CSTATUS_NO_MACHINE  = 0x800007D0,
 }
 
 extern(Windows) {

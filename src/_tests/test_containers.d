@@ -6,18 +6,18 @@ import std.format : format;
 import common.containers;
 
 void testContainers() {
-    //testArray();
+    testArray();
     testCircularBuffer();
-    // testList();
-    // testPriorityQueue();
-    // testQueue();
-    // testSet();
-    // testMap();
-    // testSparseArray();
-    // testStack();
-    // testTreeList();
-    // testAsyncQueue();
-    // testUniqueList();
+    testList();
+    testPriorityQueue();
+    testQueue();
+    testSet();
+    testMap();
+    testSparseArray();
+    testStack();
+    testTreeList();
+    testAsyncQueue();
+    testUniqueList();
 }
 
 void testCircularBuffer() {

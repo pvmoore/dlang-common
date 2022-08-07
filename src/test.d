@@ -53,7 +53,7 @@ void runTests() {
 
     static if(RUN_SUBSET) {
 
-        testContainers();
+        testPDH();
     } else {
 
         testAllocator();
@@ -503,7 +503,7 @@ version(Win64) {
         writefln("%s", p);
     }
 
-    for(auto i=0; i<2; i++) {
+    for(auto i=0; i<5; i++) {
         Thread.sleep(dur!"msecs"(500));
         double total = pdh.getCPUTotalPercentage();
         double[] cores = pdh.getCPUPercentagesByCore();
