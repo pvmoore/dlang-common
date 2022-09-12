@@ -33,6 +33,53 @@ void dbg(string s) {
     }
 }
 
+/**
+ * writefln("%sHello%s", Ansi.RED, Ansi.RESET);
+ */
+enum Ansi : string {
+    BLACK           = "\u001b[30m",
+    RED             = "\u001b[31m",
+    GREEN           = "\u001b[32m",
+    YELLOW          = "\u001b[33m",
+    BLUE            = "\u001b[34m",
+    MAGENTA         = "\u001b[35m",
+    CYAN            = "\u001b[36m",
+    WHITE           = "\u001b[37m",
+
+    BLACK_BOLD      = "\u001b[30;1m",
+    RED_BOLD        = "\u001b[31;1m",
+    GREEN_BOLD      = "\u001b[32;1m",
+    YELLOW_BOLD     = "\u001b[33;1m",
+    BLUE_BOLD       = "\u001b[34;1m",
+    MAGENTA_BOLD    = "\u001b[35;1m",
+    CYAN_BOLD       = "\u001b[36;1m",
+    WHITE_BOLD      = "\u001b[37;1m",
+
+    BLACK_BG        = "\u001b[40m",
+    RED_BG          = "\u001b[41m",
+    GREEN_BG        = "\u001b[42m",
+    YELLOW_BG       = "\u001b[43m",
+    BLUE_BG         = "\u001b[44m",
+    MAGENTA_BG      = "\u001b[45m",
+    CYAN_BG         = "\u001b[46m",
+    WHITE_BG        = "\u001b[47m",
+
+    BLACK_BOLD_BG   = "\u001b[40;1m",
+    RED_BOLD_BG     = "\u001b[41;1m",
+    GREEN_BOLD_BG   = "\u001b[42;1m",
+    YELLOW_BOLD_BG  = "\u001b[43;1m",
+    BLUE_BOLD_BG    = "\u001b[44;1m",
+    MAGENTA_BOLD_BG = "\u001b[45;1m",
+    CYAN_BOLD_BG    = "\u001b[46;1m",
+    WHITE_BOLD_BG   = "\u001b[47;1m",
+
+    BOLD            = "\u001b[1m",
+    UNDERLINE       = "\u001b[4m",
+    INVERSE         = "\u001b[7m",
+
+    RESET           = "\u001b[0m",
+}
+
 version(Win64) {
 import core.sys.windows.windows;
 

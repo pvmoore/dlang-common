@@ -90,6 +90,9 @@ struct Directory {
     Directory add(Directory dir) {
         return Directory(buildNormalizedPath(value, dir.value));
     }
+    Filepath add(Filename name) {
+        return Filepath(this, name);
+    }
     Filepath add(Filepath path) {
         throwIf(!path.directory.isRelative(), "Cannot add absolute path to directory");
         return Filepath(add(path.directory), path.filename);
