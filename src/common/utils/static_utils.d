@@ -153,11 +153,15 @@ string toString(E)(uint bits, string removePrefix, string removeSuffix) if (is(E
     import std.traits : EnumMembers;
     import std.string : startsWith, endsWith;
     import std.format : format;
+     import core.bitop : popcnt;
 
     string buf = "[";
     foreach(i, e; EnumMembers!E) {
 
         if(bits & e) {
+            // Skip enum members that have more than one bit set
+            if(popcnt(e) > 1) continue;
+
             string s = "%s".format(e);
             if(removePrefix && s.startsWith(removePrefix)) {
                 s = s[removePrefix.length..$];
@@ -174,11 +178,19 @@ string toString(E)(uint bits, string removePrefix, string removeSuffix) if (is(E
 /*
  *  auto b = toArray!VkFormatFeatureFlagBits(bits, "VK_FORMAT_FEATURE_", "_BIT");
  */
-E[] toArray(E)(uint bits, string removePrefix = null, string removeSuffix = null) if (is(E == enum)) {
+E[] toArray(E)(uint bits) if (is(E == enum)) {
     import std.traits : EnumMembers;
+    import core.bitop : popcnt;
+
     E[] array;
     foreach(e; EnumMembers!E) {
-        if(bits & e) array ~= e;
+
+        // Skip enum members that have more than one bit set
+        if(popcnt(e) > 1) continue;
+
+        if(bits & e) {
+            array ~= e;
+        }
     }
     return array;
 }
