@@ -53,7 +53,7 @@ void runTests() {
 
     static if(RUN_SUBSET) {
 
-        testPDH();
+        testUtils();
     } else {
 
         testAllocator();

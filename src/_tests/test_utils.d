@@ -6,7 +6,7 @@ import common.all;
 
 void testUtils() {
     static if(true) {
-        testStringUtils();
+        testUtilities();
     } else {
         testArrayUtils();
         testMapUtils();
@@ -500,6 +500,17 @@ void testUtilities() {
         assert(bitfieldExtract(bits, 9, 10) == 0b_1001111000);
 
         assert(bitfieldExtract(bits, 30, 4) == 0b1101);
+    }
+    {   // getAlignedValue
+        assert(getAlignedValue(0, 4) == 0);
+        assert(getAlignedValue(1, 4) == 4);
+        assert(getAlignedValue(3, 4) == 4);
+        assert(getAlignedValue(4, 4) == 4);
+        assert(getAlignedValue(0, 8) == 0);
+        assert(getAlignedValue(1, 8) == 8);
+        assert(getAlignedValue(7, 8) == 8);
+        assert(getAlignedValue(8, 8) == 8);
+        assert(getAlignedValue(9, 8) == 16);
     }
 
     writeln("testUtilities ran OK");

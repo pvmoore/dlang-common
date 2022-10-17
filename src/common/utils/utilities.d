@@ -184,6 +184,16 @@ bool isPowerOf2(T)(T v)
 }
 
 /**
+ * Return the value with the specified alignment.
+ * eg. value=3, align=4 => 4
+ */
+ulong getAlignedValue(ulong value, uint alignment) {
+    // Assume alignment is a power of 2
+    ulong mask = alignment-1;
+    return (value + mask) & ~mask;
+}
+
+/**
  *  double a = 3.14;
  *  ulong b  = a.bitcastTo!ulong()
  */
