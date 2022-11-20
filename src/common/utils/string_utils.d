@@ -21,6 +21,13 @@ bool contains(string s, char value) {
 bool contains(string s, string value) {
     return s.indexOf(value)!=-1;
 }
+bool containsAny(string s, string[] values...) {
+    foreach(v; values) {
+        if(s.contains(v)) return true;
+    }
+    return false;
+}
+
 bool startsWith(T)(T s, T prefix) if(isSomeString!T) {
 	if(!s || !prefix || s.length < prefix.length || prefix.length==0) return false;
 	return s[0..prefix.length] == prefix;

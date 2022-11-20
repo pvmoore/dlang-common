@@ -6,7 +6,7 @@ import common.all;
 
 void testUtils() {
     static if(true) {
-        testUtilities();
+        testStringUtils();
     } else {
         testArrayUtils();
         testMapUtils();
@@ -332,7 +332,13 @@ void testStringUtils() {
 
         auto t2 = s.getPrefixAndSuffix("wah");
         assert(t2[0] == "" && t2[1] == "");
-
+    }
+    {
+        // containsAny
+        assert("hello".containsAny("ll"));
+        assert(!"hello".containsAny("a", "aa"));
+        assert("hello".containsAny("a", "lo"));
+        assert("hello".containsAny("this", "hello"));
     }
 }
 void testUtilities() {
