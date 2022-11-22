@@ -27,6 +27,13 @@ bool containsAny(string s, string[] values...) {
     }
     return false;
 }
+string capitalised(string s) {
+    import std;
+    if(s.length>0) {
+        return s[0..1].toUpper() ~ s[1..$];
+    }
+    return s;
+}
 
 bool startsWith(T)(T s, T prefix) if(isSomeString!T) {
 	if(!s || !prefix || s.length < prefix.length || prefix.length==0) return false;

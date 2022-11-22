@@ -6,7 +6,7 @@ import common.all;
 
 void testUtils() {
     static if(true) {
-        testStringUtils();
+        testRangeUtils();
     } else {
         testArrayUtils();
         testMapUtils();
@@ -16,6 +16,7 @@ void testUtils() {
         testStringUtils();
         testUtilities();
         testAsmUtils();
+        testRangeUtils();
     }
 }
 
@@ -340,6 +341,13 @@ void testStringUtils() {
         assert("hello".containsAny("a", "lo"));
         assert("hello".containsAny("this", "hello"));
     }
+    {
+        // capitalised
+        assert("Hello" == capitalised("hello"));
+        assert(".." == "..".capitalised());
+        assert("" == "".capitalised());
+        assert(null is capitalised(cast(string)null));
+    }
 }
 void testUtilities() {
     writefln("========--\nTesting utilities\n==--");
@@ -560,5 +568,16 @@ void testAsmUtils() {
         }
 
         dumpYMMfloat(0);
+    }
+}
+void testRangeUtils() {
+    writefln("========--\nTesting range utils\n==--");
+    {
+        // frontOrDefault
+        int[] r = [1,2,3,4];
+
+
+        assert(4 == r.filter!(it=>it > 3).frontOrDefault(0));
+        assert(0 == r.filter!(it=>it > 4).frontOrDefault(0));
     }
 }
