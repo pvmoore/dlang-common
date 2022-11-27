@@ -573,11 +573,11 @@ void testAsmUtils() {
 void testRangeUtils() {
     writefln("========--\nTesting range utils\n==--");
     {
-        // frontOrDefault
+        // frontOrElse
         int[] r = [1,2,3,4];
 
 
-        assert(4 == r.filter!(it=>it > 3).frontOrDefault(0));
-        assert(0 == r.filter!(it=>it > 4).frontOrDefault(0));
+        assert(4 == r.filter!(it=>it > 3).frontOrElse(0));
+        assert(0 == r.filter!(it=>it > 4).frontOrElse(0));
     }
 }
