@@ -5,7 +5,7 @@ import common.utils;
 
 import std.array    : replace;
 import std.string   : lastIndexOf, startsWith;
-import std.file     : exists, mkdirRecurse;
+import std.file     : getSize, exists, mkdirRecurse;
 import std.path     : baseName, buildNormalizedPath, dirName, isAbsolute, stripExtension;
 import std.format   : format;
 
@@ -134,6 +134,24 @@ struct Filepath {
     }
     bool isRelative() {
         return !isAbsolute();
+    }
+    ulong size() {
+        return getSize(value);
+    }
+    ubyte[] read() {
+        import std.stdio : File;
+        File file = File(value, "rb");
+        ubyte[] buf = new ubyte[size()];
+        file.rawRead(buf);
+        return buf;
+    }
+    string readString() {
+        return cast(string)read();
+    }
+    void write(string s) {
+        import std.stdio : File;
+        File file = File(value, "wb");
+        file.rawWrite(s);
     }
     //------------------------------------------------------
     bool opEquals(const Filepath other) const {

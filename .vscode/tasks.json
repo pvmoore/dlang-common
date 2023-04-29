@@ -130,6 +130,18 @@
                 "panel": "shared"
             },
             "problemMatcher": []
+        },
+        {
+            "label": "**** Build Library ****",
+            "type": "shell",
+            "windows": {
+                "command": "dub build --build=debug --config=library --compiler=dmd --arch=x86_64"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
         }
 
 

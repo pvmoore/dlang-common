@@ -19,6 +19,7 @@ import common.pinned_array;
 import common.Sequence;
 import common.stringbuffer;
 import common.structcache;
+import common.threads;
 import common.velocity;
 
 version(Win64) {
@@ -28,6 +29,7 @@ version(Win64) {
 import common.containers;
 import common.io;
 import common.utils;
+import common.web;
 
 extern(C) {
     void dumpGPR();

@@ -26,8 +26,10 @@ import _tests.test_betterc;
 import _tests.test_containers;
 import _tests.test_io;
 import _tests.test_parser;
+import _tests.test_threads;
 import _tests.test_utils;
 import _tests.test_wasm;
+import _tests.test_web;
 
 enum RUN_SUBSET = true;
 
@@ -53,7 +55,7 @@ void runTests() {
 
     static if(RUN_SUBSET) {
 
-        testUtils();
+        testWeb();
     } else {
 
         testAllocator();
@@ -75,6 +77,9 @@ void runTests() {
         testIo();
         testUtils();
         testWasm();
+
+        testThreads();
+        testWeb();
 
         runAsyncTests();
     }

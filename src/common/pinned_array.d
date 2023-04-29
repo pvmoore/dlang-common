@@ -12,7 +12,7 @@ final class PinnedArray(T) {
 private:
     T[] arrays;
 
-    private static struct Chunk {
+    static struct Chunk {
         T[] array;
         long len;
     }
