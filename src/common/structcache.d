@@ -1,6 +1,7 @@
 module common.structcache;
 
 import common.all;
+
 /**
  *  Memory cache providing pinned memory for structs.
  *
@@ -11,7 +12,7 @@ private:
     Array!MemBlock blocks;
     int len;
 
-    private class MemBlock {
+    class MemBlock {
         ubyte[] buffer;
         int[] freeList;
         int head;
@@ -22,8 +23,8 @@ private:
             freeList.length = size;
             reset();
         }
-        bool full() const { return len==freeList.length; }
-        bool empty() const { return len==0; }
+        bool isFull() const { return len==freeList.length; }
+        bool isEmpty() const { return len==0; }
         T* take() {
             ubyte* p    = buffer.ptr;
             uint offset = head*ELEMENT_SIZE;
@@ -86,7 +87,7 @@ public:
         len--;
 
         if(blocks.length>1 &&
-           b.empty &&
+           b.isEmpty() &&
            countEmptyMemBlocks()>1)
         {
             // release a block if 2 of them are empty
@@ -105,7 +106,7 @@ public:
 private:
     MemBlock findFreeMemBlock() {
         foreach(i, m; blocks) {
-            if(!m.full) return m;
+            if(!m.isFull()) return m;
         }
         return addMemBlock(cast(int)blocks[$-1].freeList.length*2);
     }
@@ -135,7 +136,7 @@ private:
     int countEmptyMemBlocks() {
         int count = 0;
         foreach(m; blocks) {
-            if(m.empty) count++;
+            if(m.isEmpty()) count++;
         }
         return count;
     }
@@ -143,7 +144,7 @@ private:
         long smallestIndex = 0;
         long smallestLen   = int.max;
         foreach(i, m; blocks) {
-            if(m.empty && m.freeList.length < smallestLen) {
+            if(m.isEmpty() && m.freeList.length < smallestLen) {
                 smallestIndex = i;
                 smallestLen   = m.freeList.length;
             }

@@ -5,6 +5,7 @@ import std.traits : isEqualityComparable, isOrderingComparable;
 
 auto makeHighPriorityQueue(T)() { return new PriorityQueue!(T, true); }
 auto makeLowPriorityQueue(T)()  { return new PriorityQueue!(T, false); }
+
 /**
  *  A priority queue implemented using a backing array.
  *  This makes the assumtion that the size is not likely to get too large since shifting data in an

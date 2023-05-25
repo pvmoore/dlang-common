@@ -10,33 +10,33 @@ final class FreeList {
 private:
     uint[] list;
     uint next;
-    uint numUsed;
+    uint _numUsed;
 public:
+    uint numUsed() { return _numUsed; }
+    uint numFree() { return list.length.as!uint - _numUsed; }
+
     this(uint length) {
         list.length = length;
         reset();
     }
     uint acquire() {
-        if(numUsed==list.length) throw new Exception("FreeList is full");
+        throwIf(_numUsed==list.length, "FreeList is full");
         auto index = next;
         next = list[next];
-        numUsed++;
+        _numUsed++;
         return index;
     }
     void release(uint index) {
         list[index] = next;
         next = index;
-        numUsed--;
-    }
-    uint numFree() {
-        return list.length.as!uint - numUsed;
+        _numUsed--;
     }
     void reset() {
         foreach(i; 0..list.length) {
             list[i] = i.as!int+1;
         }
         next = 0;
-        numUsed = 0;
+        _numUsed = 0;
     }
 }
 
@@ -119,7 +119,7 @@ void testFreeList() {
     assert(exception);
 
     fl.reset();
-    assert(fl.numFree==8);
+    assert(fl.numFree()==8);
     assert(fl.next==0);
     assert(fl.list==[1,2,3,4,5,6,7,8]);
 }

@@ -8,10 +8,14 @@ module common.threads;
 import common.all;
 
 private {
-    import core.thread             : Thread;
-    import core.thread.threadgroup : ThreadGroup;
-    import std.parallelism         : defaultPoolThreads, totalCPUs, task, Task, taskPool, TaskPool;
-    import std.concurrency         : scheduler, spawn, thisTid, Tid;
+    import std.parallelism  : defaultPoolThreads, totalCPUs, task, Task, taskPool, TaskPool;
+    import std.concurrency  : scheduler, spawn, thisTid;
+}
+
+public {
+    import core.thread              : Thread;
+    import core.thread.threadgroup  : ThreadGroup;
+    import std.concurrency          : Tid;
 }
 
 public final class Threads {
