@@ -60,6 +60,15 @@ void throwIfNull(void* obj) {
 void throwIfNotNull(void* obj) {
     throwIf(obj !is null, "Expected object to be null");
 }
+void throwIfNotEqual(string a, string b) {
+    if(a == b) return;
+    throwIf(true, 
+            "Expected strings to be the same but they are different:\n" ~
+            "A: %s\n" ~
+            "B: %s\n" ~
+            "A: %s\n" ~
+            "B: %s", a, b, cast(ubyte[])a, cast(ubyte[])b);
+}
 
 /**
  * Creates a property with optional public setter and getter.
