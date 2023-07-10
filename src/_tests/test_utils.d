@@ -532,6 +532,11 @@ void testUtilities() {
 void testAsmUtils() {
     writefln("========--\nTesting asm utils\n==--");
 
+    version(LDC) {
+
+    } // version(LDC)
+    version(DigitalMars) {
+
     struct _4 { float a,b,c,d; }
     struct _8 { float a,b,c,d,e,f,g,h; }
 
@@ -569,6 +574,7 @@ void testAsmUtils() {
 
         dumpYMMfloat(0);
     }
+    } // version(DigitalMars) 
 }
 void testRangeUtils() {
     writefln("========--\nTesting range utils\n==--");
