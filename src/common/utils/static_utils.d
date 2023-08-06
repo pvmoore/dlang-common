@@ -1,13 +1,16 @@
 module common.utils.static_utils;
 
-import std.traits :
+public import std.traits :
     isArray,
     isPointer,
     isSigned,
     isUnsigned,
     isSomeFunction,
+    isSomeString,
     isFloatingPoint,
-    isAssociativeArray,
+    isAssociativeArray;
+
+import std.traits :
     InoutOf,
     Parameters,
     ReturnType;
