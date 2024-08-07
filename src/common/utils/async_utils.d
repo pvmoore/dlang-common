@@ -261,3 +261,10 @@ version(LDC) {
     }
 
 } // LDC
+
+bool atomicIsTrue(ref bool b) {
+    return atomicLoad(b);
+}
+void atomicSet(ref bool b, bool value) {
+    atomicStore(b, value);
+}

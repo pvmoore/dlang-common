@@ -5,8 +5,8 @@ import std : writefln, writeln, format;
 import common.all;
 
 void testUtils() {
-    static if(true) {
-        testRangeUtils();
+    static if(false) {
+  
     } else {
         testArrayUtils();
         testMapUtils();
@@ -249,6 +249,15 @@ void testAsyncUtils() {
     t2.start();
     t2.join();
     t.join();
+
+    bool b = true;
+    {
+        assert(atomicIsTrue(b));
+        atomicSet(b, false);
+        assert(!atomicIsTrue(b));
+        atomicSet(b, true);
+        assert(atomicIsTrue(b));
+    }
 }
 void testCpuUtils() {
     writefln("Testing cpu_utils ...");

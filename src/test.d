@@ -55,7 +55,7 @@ void runTests() {
 
     static if(RUN_SUBSET) {
 
-        testWeb();
+
     } else {
 
         testAllocator();

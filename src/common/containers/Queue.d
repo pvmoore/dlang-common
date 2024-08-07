@@ -26,7 +26,7 @@ private:
     static assert(Positions.sizeof==8);
 public:
     this(uint capacity) {
-        if(!isPowerOf2(capacity)) throw new Error("Queue capacity must be a power of 2");
+        throwIfNot(isPowerOf2(capacity), "Queue capacity must be a power of 2");
         this.array.length = capacity;
         this.mask         = capacity-1;
     }
@@ -66,7 +66,8 @@ public:
      */
     uint drain(T[] here) {
         auto i = cast(int)here.length;
-        if(i>length) i = length;
+        auto len = length();
+        if(i>len) i = len;
         here[0..i] = array[pos.r .. pos.r+i];
         pos.r += i;
         return i;

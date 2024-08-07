@@ -3,13 +3,13 @@ module common.bool3;
 import common.all;
 /**
  *  bool3 b = true
- *  bool3 b = bool3.unknown;
+ *  bool3 b = bool3.unknown();
  *
- *  b.setTrue
- *  b.isTrue
+ *  b.setTrue()
+ *  b.isTrue()
  *
  */
-final struct bool3 {
+struct bool3 {
 private:
     enum : int {
         UNKNOWN = -1,
