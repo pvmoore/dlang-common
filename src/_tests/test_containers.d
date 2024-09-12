@@ -443,44 +443,44 @@ void testList() {
     writefln("--== Testing List ==--");
 
     auto a = new List!int;
-    assert(a.empty && a.length==0);
+    assert(a.isEmpty() && a.length()==0);
 
     // add
     for(auto i=0; i<5; i++) a.add(i);
-    assert(a.length==5 && !a.empty && a==[0,1,2,3,4]);
+    assert(a.length()==5 && !a.isEmpty() && a==[0,1,2,3,4]);
     a.add(5);
-    assert(a.length==6 && a[5]==5);
+    assert(a.length()==6 && a[5]==5);
 
     // remove
-    assert(a.remove(0)==0 && a.length==5);
+    assert(a.remove(0)==0 && a.length()==5);
     assert(a==[1,2,3,4,5]);
 
-    assert(a.remove(2)==3 && a.length==4);
+    assert(a.remove(2)==3 && a.length()==4);
     assert(a==[1,2,4,5]);
 
-    assert(a.remove(3)==5 && a.length==3);
+    assert(a.remove(3)==5 && a.length()==3);
     assert(a==[1,2,4]);
 
-    assert(a.remove(2)==4 && a.length==2);
+    assert(a.remove(2)==4 && a.length()==2);
     assert(a==[1,2]);
 
-    assert(a.remove(1)==2 && a.length==1);
+    assert(a.remove(1)==2 && a.length()==1);
     assert(a==[1]);
 
-    assert(a.remove(0)==1 && a.length==0);
+    assert(a.remove(0)==1 && a.length()==0);
     assert(a==[]);
 
     // insert
     a.clear();
     a.add(0).add(1).add(2);
     a.insert(99, 0);
-    assert(a.length==4 && a==[99,0,1,2]);
+    assert(a.length()==4 && a==[99,0,1,2]);
     a.insert(55, 1);
-    assert(a.length==5 && a==[99,55,0,1,2]);
+    assert(a.length()==5 && a==[99,55,0,1,2]);
     a.insert(33, 4);
-    assert(a.length==6 && a==[99,55,0,1,33,2]);
+    assert(a.length()==6 && a==[99,55,0,1,33,2]);
     a.insert(11, 6);
-    assert(a.length==7 && a==[99,55,0,1,33,2,11]);
+    assert(a.length()==7 && a==[99,55,0,1,33,2,11]);
 }
 void testPriorityQueue() {
     writefln("Testing PriorityQueue...");

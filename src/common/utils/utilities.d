@@ -41,10 +41,10 @@ void throwIf(A...)(bool result, string msgFmt, A args) {
 void throwIfNot(A...)(bool result, string msgFmt, A args) {
     if(!result) throw new Exception(format(msgFmt, args));
 }
-void throwIfNull(A...)(void* result, string msgFmt, A args) {
+void throwIfNull(A...)(inout void* result, string msgFmt, A args) {
     if(result is null) throw new Exception(format(msgFmt, args));
 }
-void throwIfNotNull(A...)(void* result, string msgFmt, A args) {
+void throwIfNotNull(A...)(inout void* result, string msgFmt, A args) {
     if(result !is null) throw new Exception(format(msgFmt, args));
 }
 
@@ -54,10 +54,10 @@ void throwIf(bool result) {
 void throwIfNot(bool result) {
     throwIf(!result, "Assertion failed");
 }
-void throwIfNull(void* obj) {
+void throwIfNull(inout void* obj) {
     throwIf(obj is null, "Expected object to be not null");
 }
-void throwIfNotNull(void* obj) {
+void throwIfNotNull(inout void* obj) {
     throwIf(obj !is null, "Expected object to be null");
 }
 void throwIfNotEqual(string a, string b) {

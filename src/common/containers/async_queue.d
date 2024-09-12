@@ -1,7 +1,6 @@
 module common.containers.async_queue;
 
 import common.all;
-import core.atomic : pause;
 
 enum ThreadingModel {
     SPSC,   // single producer single consumer
@@ -38,7 +37,7 @@ private:
 
 public:
     this(uint capacity) {
-        if(!isPowerOf2(capacity)) throw new Error("Queue capacity must be a power of 2");
+        throwIfNot(isPowerOf2(capacity), "Queue capacity must be a power of 2");
         this.array.length = capacity;
         this.mask         = capacity-1;
     }
@@ -104,6 +103,7 @@ public:
             auto p = atomicLoad(pos);
             auto len = p.w-p.r;
             if(len==0) return 0;
+
             if(len>here.length) len = cast(int)here.length;
 
             uint start = p.r&mask;
@@ -147,7 +147,6 @@ private:
     int nextReadPos() {
         int i;
         do{
-            //pause();
             i = atomicLoad(pos.r);
         }while(!cas(&pos.r, i, i+1));
         return i;
@@ -155,7 +154,6 @@ private:
     int nextWritePos() {
         int i;
         do{
-            //pause();
             i = atomicLoad(pos.w);
         }while(!cas(&pos.w, i, i+1));
         return i;

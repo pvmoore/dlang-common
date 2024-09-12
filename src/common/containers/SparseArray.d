@@ -66,5 +66,6 @@ public:
     }
     void clear() {
         this.numItems = 0;
+        this.values.length = 0;
     }
 }

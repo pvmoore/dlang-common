@@ -26,11 +26,13 @@ public:
         return "[" ~ buf.data.join(", ") ~ "]";
     }
 nothrow:
-    @property int length() const { return len; }
-    @property bool empty() const { return length==0; }
+    int length() const { return len; }
+    bool isEmpty() const { return len==0; }
+
     this() {
 
     }
+
     T opIndex(int i) {
         Node[2] n = find(i);
         return n[1] ? n[1].value : T.init;
@@ -46,11 +48,11 @@ nothrow:
         if(len==0) return 0;
         auto ptr = head;
         ulong a = 5381;
-        for(auto i=0; i<len; i+=4) {
-            a  = (a << 7)  + hashOf!T(ptr.value); ptr = ptr.next;
-            a ^= (a << 13) + hashOf!T(ptr.value); ptr = ptr.next;
-            a  = (a << 19) + hashOf!T(ptr.value); ptr = ptr.next;
-            a ^= (a << 23) + hashOf!T(ptr.value); ptr = ptr.next;
+        foreach(i; 0..len/4) {
+            a  = (a << 7)  + hashOf(ptr.value); ptr = ptr.next;
+            a ^= (a << 13) + hashOf(ptr.value); ptr = ptr.next;
+            a  = (a << 19) + hashOf(ptr.value); ptr = ptr.next;
+            a ^= (a << 23) + hashOf(ptr.value); ptr = ptr.next;
         }
         foreach(i; 0..len%3) {
             a  = (a << 7) + hashOf(ptr.value);
