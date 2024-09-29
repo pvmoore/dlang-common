@@ -3,18 +3,14 @@ module common.io.byte_writer;
 import common.io;
 import common.utils;
 import std.stdio : File;
+import core.bitop : byteswap, bswap;
 
 abstract class ByteWriter {
-protected:
-    bool LE;
-    ulong bytesWritten;
 public:
     ulong getBytesWritten() const { return bytesWritten; }
 
     this(bool littleEndian = true) {
         this.LE = littleEndian;
-
-        expect(littleEndian, "Big endian not currently supported");
     }
     void write(T)(T value) {
         static if(is(T==ubyte) || is(T==byte) || is(T==char)) writeByte(value.as!ubyte);
@@ -47,6 +43,9 @@ public:
         return new BitWriter((it)=>write!ubyte(it));
     }
 protected:
+    bool LE;
+    ulong bytesWritten;
+
     abstract void writeByte(ubyte value);
     abstract void writeShort(ushort value);
     abstract void writeInt(uint value);
@@ -59,6 +58,11 @@ protected:
     abstract void writeIntArray(uint[] items);
     abstract void writeLongArray(ulong[] items);
     abstract void writeFloatArray(float[] items);
+
+    ushort swap(ushort v) { return LE ? v : byteswap(v); }
+    uint swap(uint v) { return LE ? v : bswap(v); }
+    ulong swap(ulong v) { return LE ? v : bswap(v); }
+    float swap(float v) { return LE ? v : bswap(v.bitcastTo!uint).bitcastTo!float; }
 }
 
 final class ArrayByteWriter : ByteWriter {
@@ -86,25 +90,26 @@ protected:
     }
     override void writeShort(ushort value) {
         expand(2);
-        *ptr!ushort() = value;
+        *ptr!ushort() = swap(value);
         length += 2;
     }
     override void writeInt(uint value) {
         expand(4);
-        *ptr!uint() = value;
+        *ptr!uint() = swap(value);
         length += 4;
     }
     override void writeLong(ulong value) {
         expand(8);
-        *ptr!ulong() = value;
+        *ptr!ulong() = swap(value);
         length += 8;
     }
     override void writeFloat(float value) {
         expand(4);
-        *ptr!float() = value;
+        *ptr!float() = swap(value);
         length += 4;
     }
     override void writeBytes(ubyte* ptr, uint count) {
+        throwIf(!LE, "Writing structs in big endian mode is not currently supported");
         expand(count);
         array[length..length+count] = ptr[0..count];
         length += count;
@@ -116,22 +121,50 @@ protected:
     }
     override void writeShortArray(ushort[] items) {
         expand(items.length*2);
-        ptr!ushort()[0..items.length] = items;
+        auto p = ptr!ushort;
+        if(LE) {
+            p[0..items.length] = items;
+        } else {
+            foreach(i; 0..items.length) {
+                p[i] = swap(items[i]);
+            }
+        }
         length += items.length*2;
     }
     override void writeIntArray(uint[] items) {
         expand(items.length*4);
-        ptr!uint()[0..items.length] = items;
+        auto p = ptr!uint;
+        if(LE) {
+            p[0..items.length] = items;
+        } else {
+            foreach(i; 0..items.length) {
+                p[i] = swap(items[i]);
+            }
+        }
         length += items.length*4;
     }
     override void writeLongArray(ulong[] items) {
         expand(items.length*8);
-        ptr!ulong()[0..items.length] = items;
+        auto p = ptr!ulong;
+        if(LE) {
+            p[0..items.length] = items;
+        } else {
+            foreach(i; 0..items.length) {
+                p[i] = swap(items[i]);
+            }
+        }
         length += items.length*8;
     }
     override void writeFloatArray(float[] items) {
         expand(items.length*4);
-        ptr!float()[0..items.length] = items;
+        auto p = ptr!float;
+        if(LE) {
+            p[0..items.length] = items;
+        } else {
+            foreach(i; 0..items.length) {
+                p[i] = swap(items[i]);
+            }
+        }
         length += items.length*4;
     }
 private:
@@ -151,6 +184,8 @@ private:
 public:
     this(string filename, bool littleEndian = true) {
         super(littleEndian);
+
+        throwIf(!littleEndian, "Big endian not currently supported");
 
         this.file = File(filename, "wb");
     }

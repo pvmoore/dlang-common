@@ -6,10 +6,10 @@ import common.all;
 import common.io;
 
 void testIo() {
-    testTypes();
+    //1testTypes();
     // testByteReader();
     // testFileByteWriter();
-    // testArrayByteWriter();
+    testArrayByteWriter();
     // testBitWriter();
     // testArrayBitWriter();
     // testBitReader();
@@ -364,8 +364,8 @@ void testFileByteWriter() {
 void testArrayByteWriter() {
     writefln("Testing ArrayByteWriter...");
 
-    {
-        auto w = new ArrayByteWriter;
+    { // little endian
+        auto w = new ArrayByteWriter(256, true);
 
         w.write!ubyte(0x89);
         assert(w.length==1 && w.getArray==[0x89]);
@@ -379,23 +379,26 @@ void testArrayByteWriter() {
         w.write!ulong(0x0102030405060708L);
         assert(w.length==15 && w.getArray==[0x89, 0xd2, 0xd1, 4,3,2,1, 8,7,6,5,4,3,2,1]);
 
-        w.writeArray!ubyte(cast(ubyte[])[6,7,8]);
-        assert(w.length==18 && w.getArray==[0x89, 0xd2, 0xd1, 4,3,2,1, 8,7,6,5,4,3,2,1, 6,7,8]);
+        w.write!float(1.0f); // 3f 80 00 00
+        assert(w.length==19 && w.getArray==[0x89, 0xd2, 0xd1, 4,3,2,1, 8,7,6,5,4,3,2,1, 0x00, 0x00, 0x80, 0x3f]);
 
         w.reset();
         assert(w.length==0);
 
+        w.writeArray!ubyte(cast(ubyte[])[6,7,8]);
+        assert(w.length==3 && w.getArray==[6,7,8]);
+
         w.writeArray!ushort(cast(ushort[])[0x0304, 0x0506]);
-        assert(w.length==4 && w.getArray==[4,3,6,5]);
+        assert(w.length==7 && w.getArray==[6,7,8,  4,3,6,5]);
 
         w.writeArray!uint([1,2]);
-        assert(w.length==12 && w.getArray==[4,3,6,5, 1,0,0,0, 2,0,0,0]);
+        assert(w.length==15 && w.getArray==[6,7,8,  4,3,6,5, 1,0,0,0, 2,0,0,0]);
 
         w.pack();
-        assert(w.length==12 && w.getReservedLength==12);
+        assert(w.length==15 && w.getReservedLength==15);
 
         w.writeArray!ulong([1]);
-        assert(w.length==20 && w.getArray==[4,3,6,5, 1,0,0,0, 2,0,0,0, 1,0,0,0,0,0,0,0]);
+        assert(w.length==23 && w.getArray==[6,7,8,  4,3,6,5, 1,0,0,0, 2,0,0,0, 1,0,0,0,0,0,0,0]);
 
         w.reset();
         assert(w.length == 0);
@@ -419,6 +422,47 @@ void testArrayByteWriter() {
 
         w.writeArray!S(array);
         assert(w.getArray.as!(S*)[0..3] == array);
+    }
+    {   // big endian
+        auto w = new ArrayByteWriter(256, false);
+
+        w.write!ubyte(0x89);
+        assert(w.length==1 && w.getArray==[0x89]);
+
+        w.write!ushort(0xd1d2);
+        assert(w.length==3 && w.getArray==[0x89, 0xd1, 0xd2]);
+
+        w.write!uint(0x01020304);
+        assert(w.length==7 && w.getArray==[0x89, 0xd1, 0xd2, 1,2,3,4]);
+
+        w.write!ulong(0x0102030405060708L);
+        assert(w.length==15 && w.getArray==[0x89, 0xd1, 0xd2, 1,2,3,4, 1,2,3,4,5,6,7,8]);
+
+        w.write!float(1.0f); // 3f 80 00 00
+        assert(w.length==19 && w.getArray==[0x89, 0xd1, 0xd2, 1,2,3,4, 1,2,3,4,5,6,7,8, 0x3f, 0x80, 0x00, 0x00]);
+
+        w.reset();
+        assert(w.length==0);
+
+        w.writeArray!ubyte(cast(ubyte[])[6,7,8]);
+        assert(w.length==3 && w.getArray==[6,7,8]);
+
+        w.writeArray!ushort(cast(ushort[])[0x0304, 0x0506]);
+        assert(w.length==7 && w.getArray==[6,7,8,  3,4,5,6]);
+
+        w.writeArray!uint([1,2]);
+        assert(w.length==15 && w.getArray==[6,7,8,  3,4,5,6, 0,0,0,1, 0,0,0,2]);
+
+        w.pack();
+        assert(w.length==15 && w.getReservedLength==15);
+
+        w.writeArray!ulong([1]);
+        assert(w.length==23 && w.getArray==[6,7,8,  3,4,5,6, 0,0,0,1, 0,0,0,2, 0,0,0,0,0,0,0,1]);
+
+        writefln("%x", 3.14f.bitcastTo!uint);
+
+        w.writeArray!float([3.14f]); // 40 48 f5 c3
+        assert(w.length==27 && w.getArray==[6,7,8,  3,4,5,6, 0,0,0,1, 0,0,0,2, 0,0,0,0,0,0,0,1, 0x40, 0x48, 0xf5, 0xc3]);
     }
 }
 void testBitWriter() {

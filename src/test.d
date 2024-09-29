@@ -39,7 +39,7 @@ void main() {
     runTests();
 
     static if(!RUN_SUBSET) {
-
+        
     }
     version(assert) {
 
@@ -54,7 +54,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-
+    
 
     } else {
 
