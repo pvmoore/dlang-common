@@ -6,7 +6,7 @@ import common.all;
 
 void testUtils() {
     static if(false) {
-  
+      
     } else {
         testArrayUtils();
         testMapUtils();
@@ -395,6 +395,12 @@ void testUtilities() {
     assert(o2.as!I !is null);
 
     assert((3.14).as!int == 3);
+
+    {   // className
+        string n = className!MyClass;
+        writefln("className = %s", n);
+        assert(n == "MyClass");
+    }
 
     { // isA
         class AA {}
