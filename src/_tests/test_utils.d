@@ -6,7 +6,7 @@ import common.all;
 
 void testUtils() {
     static if(false) {
-      
+    
     } else {
         testArrayUtils();
         testMapUtils();
@@ -399,6 +399,10 @@ void testUtilities() {
     {   // className
         string n = className!MyClass;
         writefln("className = %s", n);
+        assert(n == "MyClass");
+
+        string n2 = className(new MyClass());
+        writefln("className = %s", n2);
         assert(n == "MyClass");
     }
 

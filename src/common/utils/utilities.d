@@ -233,6 +233,13 @@ string className(T)() if(isObject!T) {
     return i==-1 ? name : name[i+1..$];
 }
 
+string className(Object obj) {
+    import std.string : lastIndexOf;
+    string name = typeid(obj).name;
+    auto i = name.lastIndexOf('.');
+    return i==-1 ? name : name[i+1..$];
+}
+
 T as(T,I)(I o) { return cast(T)o; }
 
 bool isA(T,I)(I o) if(isObject!T && isObject!I) { return cast(T)o !is null; }
