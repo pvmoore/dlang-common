@@ -48,13 +48,14 @@ void main() {
     }
 
 }
+
 void runTests() {
     writefln("Running tests");
     scope(failure) writefln("-- FAIL");
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        
+      
 
     } else {
 
@@ -69,7 +70,6 @@ void runTests() {
         testFreeList();
         testParser();
 
-        testAsmUtils();
         asm_test();
 
         testBetterc();

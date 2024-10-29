@@ -6,8 +6,9 @@ import common.all;
 
 void testUtils() {
     static if(false) {
-    
+   
     } else {
+        testAsmUtils();
         testArrayUtils();
         testMapUtils();
         testAsyncUtils();
@@ -250,13 +251,70 @@ void testAsyncUtils() {
     t2.join();
     t.join();
 
-    bool b = true;
     {
+        bool b = true;
         assert(atomicIsTrue(b));
         atomicSet(b, false);
         assert(!atomicIsTrue(b));
         atomicSet(b, true);
         assert(atomicIsTrue(b));
+    }
+
+    { // uint cas32(void* ptr, uint expected, uint newValue)
+        uint a = 30;
+
+        uint old = cas32(&a, 30, 31);
+        writefln("a = %s", a);
+        throwIf(old != 30);
+        uint old2 = cas32(&a, 31, 32);
+        throwIf(old2 != 31);
+    }
+    { // ulong cas64(void* ptr, ulong expected, ulong newValue)
+        ulong a = 30;
+
+        ulong old = cas64(&a, 30, 31);
+        writefln("a = %s", a);
+        throwIf(old != 30);
+        ulong old2 = cas64(&a, 31, 32);
+        throwIf(old2 != 31);
+    }
+    {   // uint atomicSet32(void* ptr, uint newValue)
+        // uint atomicGet32(void* ptr) 
+        uint a = 0;
+        uint old = atomicSet32(&a, 9);
+        uint b = atomicGet32(&a);
+        writefln("a = %s, old = %s, b = %s", a, old, b);
+        throwIf(a != 9);
+        throwIf(old != 0);
+        throwIf(b != 9);
+    }
+    {   // ulong atomicSet64(void* ptr, ulong newValue)
+        // ulong atomicGet64(void* ptr) 
+        ulong a = 0;
+        ulong old = atomicSet64(&a, 9);
+        ulong b = atomicGet64(&a);
+        writefln("a = %s, old = %s", a, old);
+        throwIf(a != 9);
+        throwIf(old != 0);
+        throwIf(b != 9);
+    }
+    {   // void atomicAdd32(void* ptr, uint add) 
+        uint a = 5;
+        atomicAdd32(&a, 3);
+        writefln("a = %s", a);
+    }
+    {   // void atomicAdd64(void* ptr, ulong add) 
+        ulong a = 5;
+        atomicAdd64(&a, 3);
+        writefln("a = %s", a);
+    }
+    {
+        // mfence()
+        // sfence()
+        // lfence()
+        mfence();
+        sfence();
+        lfence();
     }
 }
 void testCpuUtils() {

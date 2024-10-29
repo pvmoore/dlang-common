@@ -56,10 +56,11 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Test (LDC) Debug ****",
+            "label": "**** Test (LDC) Debug !! ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=debug --config=test --compiler=ldc2 --arch=x86_64"
+                "command": "run_ldc_build.bat",
+                "args": ["debug", "test"]
             },
             "group": {
                 "kind": "build",
@@ -75,7 +76,7 @@
             "label": "**** Test (LDC) Release****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=release --config=test --compiler=ldc2 --arch=x86_64"
+                "command": "run_release_build.bat test"
             },
             "group": {
                 "kind": "build",

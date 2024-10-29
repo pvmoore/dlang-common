@@ -21,27 +21,6 @@ import core.atomic  : atomicOp, atomicLoad, atomicStore, cas;
 //     }
 // }
 
-/**
- * Win64 calling convention:
- * https://docs.microsoft.com/en-us/cpp/build/x64-calling-convention?view=vs-2019
- *
- * D calling convention:
- * DMD and LDC uses parameters in the opposite direction to the Win64 ABI:
- * eg. [1 param]  RCX
- *     [2 params] RDX, RCX
- *     [3 params] R8, RDX, RCX
- *     [4 params] R9, R8, RDX, RCX
- *     [5 params] stack, R9, R8, RDX, RCX
- *     [5 params] stack, XMM3, XMM2, XMM1, XMM0 (real args)
- *
- * Return value:
- *      RAX (integer)
- *      XMM0 (float,double)
- *
- * Clobbered:
- *      RAX, RCX, RDX, R8, R9, R10, R11, XMM0-5, and the upper portions of YMM0-15 and ZMM0-15
- *      On AVX512VL: the ZMM, YMM, and XMM registers 16-31
- */
 version(DigitalMars) {
 
     /**
@@ -162,102 +141,104 @@ version(LDC) {
     import ldc.llvmasm;
     import ldc.attributes;
     // See https://wiki.dlang.org/LDC_inline_assembly_expressions
+    // https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html
 
     /**
     * If [ptr] == expected then [ptr] = value else don't update.
     * Returns the old value.
     */
-    uint cas32(void* ptr, uint expected, uint newValue) nothrow @nogc @naked {
-        // r8 = ptr
-        // edx = expected
-        // ecx = newValue
+    uint cas32(void* ptr, uint expected, uint newValue) nothrow @nogc {
+        // $0 eax            
+        // $1 ptr            
+        // $2 expected (eax) 
+        // $3 newValue       
         return __asm!uint(`
-            mov %edx, %eax
             lock
-            cmpxchg %ecx, (%r8)
+            cmpxchg $3, ($1)
             `,
-            "={eax}");
+            "={eax},r,{eax},r",
+            ptr, expected, newValue);
     }
-    ulong cas64(void* ptr, ulong expected, ulong newValue) nothrow @nogc @naked {
-        // r8 = ptr
-        // rdx = expected
-        // rcx = newValue
+    ulong cas64(void* ptr, ulong expected, ulong newValue) nothrow @nogc {
+        // $0 rax            
+        // $1 ptr            
+        // $2 expected (rax) 
+        // $3 newValue       
         return __asm!ulong(`
-            mov %rdx, %rax
             lock
-            cmpxchg %rcx, (%r8)
+            cmpxchg $3, ($1)
             `,
-            "={rax}");
+            "={rax},r,{rax},r",
+            ptr, expected, newValue);
     }
-    uint atomicSet32(void* ptr, uint newValue) nothrow @nogc @naked {
-        // rdx = ptr
-        // ecx = newValue
-        // Note: ret is implicitly added
+    uint atomicSet32(void* ptr, uint newValue) nothrow @nogc {
+        // $0 return
+        // $1 ptr
+        // $2 newValue
         return __asm!uint(`
-            xchg %ecx, (%rdx)
-            mov %ecx, %eax
+            xchg $2, ($1)
+            mov $2, $0
             `,
-            "={eax}"
+            "=r,r,r",
+            ptr, newValue
         );
     }
     /* The should be enough on x86 arch */
-    uint atomicGet32(void* ptr) nothrow @nogc @naked {
-        // rcx = ptr
+    uint atomicGet32(void* ptr) nothrow @nogc {
+        // $0 return
+        // $1 ptr
         return __asm!uint(`
-            mov (%rcx), %eax
+            mov ($1), $0
             `,
-            "={eax}");
+            "=r,r", ptr);
     }
-    void atomicAdd32(void* ptr, uint add) nothrow @nogc @naked {
-        // rdx = ptr
-        // ecx = add
-        // Note: ret needs to be added manually
+    void atomicAdd32(void* ptr, uint add) nothrow @nogc {
+        // $0 ptr
+        // $1 add
         __asm(`
             lock
-            xadd %ecx, (%rdx)
-            ret
+            xaddl $1, $0
             `,
-            "");
+            "=*m,r", ptr, add);
     }
-
-    ulong atomicSet64(void* ptr, ulong newValue) nothrow @nogc @naked {
-        // rdx = ptr
-        // rcx = newValue
-        // Note: ret is implicitly added
+    ulong atomicSet64(void* ptr, ulong newValue) nothrow @nogc {
+        // $0 return 
+        // $1 ptr
+        // $2 newValue
         return __asm!ulong(`
-            xchg %rcx, (%rdx)
-            mov %rcx, %rax
+            xchg $2, ($1)
+            mov $2, $0
             `,
-            "={rax}"
+            "=r,r,r",
+            ptr, newValue
         );
     }
     /* The should be enough on x86 arch */
-    ulong atomicGet64(void* ptr) nothrow @nogc @naked {
-        // rcx = ptr
+    ulong atomicGet64(void* ptr) nothrow @nogc {
+        // $0 return
+        // $1 ptr
         return __asm!ulong(`
-            mov (%rcx), %rax
+            movq ($1), $0
             `,
-            "={rax}");
+            "=r,r", ptr);
     }
-    void atomicAdd64(void* ptr, ulong add) nothrow @nogc @naked {
-        // rdx = ptr
-        // rcx = add
-        // Note: ret needs to be added manually
+    void atomicAdd64(void* ptr, ulong add) nothrow @nogc {
+        // $0 ptr
+        // $1 add
         __asm(`
             lock
-            xadd %rcx, (%rdx)
-            ret
+            xaddq $1, $0
             `,
-            "");
+            "=*m,r", ptr, add);
     }
-    void mfence() nothrow @nogc @naked {
-        __asm(`mfence; ret`, "");
+    void mfence() nothrow @nogc {
+        __asm(`mfence`, "");
     }
-    void lfence() nothrow @nogc @naked {
-        __asm(`lfence; ret`, "");
+    void lfence() nothrow @nogc {
+        __asm(`lfence`, "");
     }
-    void sfence() nothrow @nogc @naked {
-        __asm(`sfence; ret`, "");
+    void sfence() nothrow @nogc {
+        __asm(`sfence`, "");
     }
 
 } // LDC
