@@ -33,6 +33,10 @@ void dbg(string s) {
     }
 }
 
+string ansiWrap(string text, string ansi) {
+    return ansi ~ text ~ Ansi.RESET;
+}
+
 /**
  * writefln("%sHello%s", Ansi.RED, Ansi.RESET);
  */
