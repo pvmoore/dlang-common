@@ -83,7 +83,8 @@ version(DigitalMars) {
             ret;
         }
     }
-}
+} // version(DigitalMars)
+
 version(LDC) {
     import ldc.llvmasm;
     import ldc.attributes;
@@ -100,7 +101,7 @@ version(LDC) {
      * xmm5 = f
      * Subsequent parameters are on the stack
      */
-    float testFloatParameters(float a, float b, float c, float d, float e, float f) nothrow @nogc @naked {
+    float testFloatParameters(float a, float b, float c, float d, float e, float f) nothrow @nogc {
         return __asm!float(`
             addss %xmm5, %xmm0
             addss %xmm4, %xmm0
@@ -120,7 +121,7 @@ version(LDC) {
      * r9  = d
      * Subsequent parameters are on the stack
      */
-    ulong testLongParameters(ulong a, ulong b, ulong c, ulong d) nothrow @nogc @naked {
+    ulong testLongParameters(ulong a, ulong b, ulong c, ulong d) nothrow @nogc {
         return __asm!ulong(`
             mov %rcx, %rax
             add %rdx, %rax

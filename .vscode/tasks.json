@@ -21,6 +21,10 @@
             "windows": {
                 "command": "run_unittest_build.bat test"
             },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
@@ -126,6 +130,9 @@
             "windows": {
                 "command": "asm\\build.bat",
             },
+            "group": {
+                "kind": "build"
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
@@ -133,10 +140,14 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Build Library ****",
+            "label": "**** Build Library (Release) ****",
             "type": "shell",
             "windows": {
-                "command": "dub build --build=debug --config=library --compiler=dmd --arch=x86_64"
+                "command": "run_release_build.bat library"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
             },
             "presentation": {
                 "reveal": "always",
