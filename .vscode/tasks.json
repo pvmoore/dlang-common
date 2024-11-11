@@ -4,6 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "**** Test (DMD) Debug ****",
             "type": "dub",
             "run": true,
             "compiler": "dmd",
@@ -11,35 +12,17 @@
             "buildType": "debug",
             "configuration": "test",
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             }
         },
         {
             "label": "**** Run Unit Tests ****",
             "type": "shell",
             "windows": {
-                "command": "run_unittest_build.bat test"
+                "command": "scripts/run_build.bat dmd unittest test"
             },
             "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "**** Test ****",
-            "type": "shell",
-            "windows": {
-                "command": "dub run --build=debug --config=test --compiler=dmd --arch=x86_64"
-            },
-            "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             },
             "presentation": {
                 "reveal": "always",
@@ -51,7 +34,7 @@
             "label": "**** Test DMD Release ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=release --config=test --compiler=dmd --arch=x86_64"
+                "command": "scripts/run_build.bat dmd release test"
             },
             "presentation": {
                 "reveal": "always",
@@ -60,15 +43,13 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Test (LDC) Debug !! ****",
+            "label": "**** Test (LDC) Debug ****",
             "type": "shell",
             "windows": {
-                "command": "run_ldc_build.bat",
-                "args": ["debug", "test"]
+                "command": "scripts/run_build.bat ldc2 debug test"
             },
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             },
             "presentation": {
                 "reveal": "always",
@@ -80,11 +61,10 @@
             "label": "**** Test (LDC) Release****",
             "type": "shell",
             "windows": {
-                "command": "run_release_build.bat test"
+                "command": "scripts/run_build.bat ldc2 release test"
             },
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             },
             "presentation": {
                 "reveal": "always",
@@ -96,11 +76,10 @@
             "label": "**** Bench (LDC) Release ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=release --config=bench --compiler=ldc2 --arch=x86_64"
+                "command": "scripts/run_build.bat ldc2 release bench"
             },
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             },
             "presentation": {
                 "reveal": "always",
@@ -112,11 +91,10 @@
             "label": "**** Bench (DMD) Release ****",
             "type": "shell",
             "windows": {
-                "command": "dub run --build=release --config=bench --compiler=dmd --arch=x86_64"
+                "command": "scripts/run_build.bat dmd release bench"
             },
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             },
             "presentation": {
                 "reveal": "always",
@@ -143,11 +121,10 @@
             "label": "**** Build Library (Release) ****",
             "type": "shell",
             "windows": {
-                "command": "run_release_build.bat library"
+                "command": "scripts/run_build.bat ldc2 release library"
             },
             "group": {
-                "kind": "build",
-                "isDefault": true
+                "kind": "build"
             },
             "presentation": {
                 "reveal": "always",
