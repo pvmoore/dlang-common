@@ -164,6 +164,18 @@ version(LDC) {
             "={eax}"
         );
     }
+    // Example: Copy 64 bytes from src to dest
+    void copy(void* dest, void* src) nothrow @nogc {
+        __asm(`
+        vmovaps (%rdx), %ymm0
+        vmovaps %ymm0, (%rcx)
+        addq $2, %rdx
+        addq $2, %rcx
+        vmovaps (%rdx), %ymm0
+        vmovaps %ymm0, (%rcx)
+        `, "{rcx},{rdx},i", dest, src, 32                                    
+        );
+}
 } // version(LDC)
 
 version(DigitalMars) {
