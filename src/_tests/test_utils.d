@@ -611,21 +611,13 @@ void testAsmUtils() {
     version(LDC) {
         writefln("LDC");
 
-        // dumpYMM!(ulong,0)();
-        // dumpYMM!(ulong,1)();
-        // dumpYMM!(uint,0)();
-        // dumpYMM!(ushort,0)();
-        // dumpYMM!(ubyte,0)();
-        // dumpYMM!(float,0)();
-
-
         align(32) double[4] ymmd;
         ymmd = [3.14, 1.0, 7.5, 10.9];
         setYMM!4(ymmd);
         dumpYMM!(double,4)();
 
         align(32) float[8] ymmf;
-        ymmf = [3.14, 4.14, 5.14, 6.14, 7.14, 8.14, 9.14, 10.14];
+        ymmf = [3579123.14, 4.14, 5.14, 6.14, 7.14, 8.14, 9.14, 10.14];
         setYMM!4(ymmf);
         dumpYMM!(float,4)();
 
@@ -645,6 +637,10 @@ void testAsmUtils() {
                                 17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32];
         setYMM!4(ymmb);
         dumpYMM!(byte,4);
+
+        getYMM!(long,0)(ymml);
+        setYMM!4(ymml);
+        dumpYMM!(long,4);
 
     } // version(LDC)
     else version(DigitalMars) {

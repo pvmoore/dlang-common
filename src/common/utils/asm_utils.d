@@ -1,9 +1,10 @@
 module common.utils.asm_utils;
 
-import std.stdio              : writefln;
-import std.format             : format;
-import std.conv               : to;
-import common.utils.utilities : as;
+import std.stdio                 : writefln;
+import std.format                : format;
+import std.conv                  : to;
+import common.utils.utilities    : as;
+import common.utils.string_utils : repeat;
 
 /**
  * Win64 calling convention:
@@ -28,37 +29,41 @@ import common.utils.utilities : as;
  *      RAX, RCX, RDX, R8, R9, R10, R11, XMM0-5, and the upper portions of YMM0-15 and ZMM0-15
  *      On AVX512VL: the ZMM, YMM, and XMM registers 16-31
  */
-
-
 version(LDC) {
+    // https://wiki.dlang.org/LDC_inline_assembly_expressions
+    // https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html
     import ldc.llvmasm;
     import ldc.attributes;
 
     void setYMM(uint INDEX)(ref byte[32] values) {
-        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }
     void setYMM(uint INDEX)(ref short[16] values) {
-        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }
     void setYMM(uint INDEX)(ref int[8] values) {
-        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }    
     void setYMM(uint INDEX)(ref long[4] values) {
-        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }     
     void setYMM(uint INDEX)(ref float[8] values) {
-        enum str = "vmovaps (%rcx), %ymm" ~ to!(char[])(INDEX);
+        enum str = "vmovaps $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }    
     void setYMM(uint INDEX)(ref double[4] values) {
-        enum str = "vmovapd (%rcx), %ymm" ~ to!(char[])(INDEX);
+        enum str = "vmovapd $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }
-
+    void getYMM(T, uint INDEX)(ref T[32/T.sizeof] dest) {
+        enum instr = is(T==double) ? "vmovapd" : is(T==float) ? "vmovaps" : "vmovdqa";
+        enum code = "%s %%ymm%s, $0".format(instr, INDEX);
+        mixin("__asm(`%s`, \"*m\", dest.ptr);".format(code));  
+    }
     void dumpYMM(T,uint INDEX)() { 
         align(32) T[32/T.sizeof] ymm;
         enum instr = is(T==double) ? "vmovapd" : is(T==float) ? "vmovaps" : "vmovdqa";
@@ -84,23 +89,24 @@ version(LDC) {
                              ymm[23], ymm[22], ymm[21], ymm[20], ymm[19], ymm[18], ymm[17], ymm[16],
                              ymm[15], ymm[14], ymm[13], ymm[12], ymm[11], ymm[10], ymm[9], ymm[8],
                              ymm[7], ymm[6], ymm[5], ymm[4], ymm[3], ymm[2], ymm[1], ymm[0]);     
-        } else static if(is(T==float)) {
-            writefln("f32   [       7] [      6] [      5] [      4] [      3] [      2] [      1] [       0]"); 
-            writefln("ymm%s: [%09.3f %09.3f %09.3f %09.3f %09.3f %09.3f %09.3f %09.3f]", INDEX, ymm[7], ymm[6], ymm[5], ymm[4], ymm[3], ymm[2], ymm[1], ymm[0]); 
-        } else static if(is(T==double)) {
-            writefln("f64   [             3] [            2] [            1] [             0]"); 
-            writefln("ymm%s: [%015.4f %015.4f %015.4f %015.4f]", INDEX, ymm[3], ymm[2], ymm[1], ymm[0]); 
-        } else {
-            writefln("ymm%s: %s", INDEX, ymm);     
-        } 
+        } else static if(is(T==float) || is(T==double)) {
+            enum M = 32/T.sizeof;    
+            enum FMT = M == 8 ? "%.5f" : "%.8f";
+            enum NAME = M == 8 ? "f32" : "f64";
+            string hdr;
+            string val;
+            foreach_reverse(i; 0..M) {
+                string s = FMT.format(ymm[i]);
+                hdr ~= "[%s%s] ".format(repeat(" ", s.length - 3), i); 
+                val ~= s ~ " ";
+            }    
+            writefln("%s   %s", NAME, hdr);
+            writefln("ymm%s: %s", INDEX, val);
+        } else static assert(false);
     }
 
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 private:
-
-    // https://wiki.dlang.org/LDC_inline_assembly_expressions
-    // https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html
-
     /**
      * Note that LDC actually uses the xmm4 and xmm5 clobbered regs as extra parameters 
      * xmm0 = a
@@ -252,9 +258,9 @@ public:
  *  256 bit AVX2
  */
 void dumpYMMfloat(int index) {
-	asm pure nothrow {
-		// rcx = index
-		lea RDX, f1;
+    asm pure nothrow {
+	// rcx = index
+	lea RDX, f1;
 
         dec ECX;
         jns _1;
