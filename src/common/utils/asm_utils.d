@@ -1,6 +1,9 @@
 module common.utils.asm_utils;
 
-import std.stdio : writefln;
+import std.stdio              : writefln;
+import std.format             : format;
+import std.conv               : to;
+import common.utils.utilities : as;
 
 /**
  * Win64 calling convention:
@@ -26,68 +29,75 @@ import std.stdio : writefln;
  *      On AVX512VL: the ZMM, YMM, and XMM registers 16-31
  */
 
-private:
-
-version(DigitalMars) {
-    /** 
-     * Note this is the opposite order of the Win64 ABI)
-     * xmm0 = d
-     * xmm1 = c
-     * xmm2 = b
-     * xmm3 = a
-     * Extra parameters are on the stack starting from param 0 
-     */
-    float testFloatParameters(float a, float b, float c, float d) {
-        asm pure nothrow @nogc {
-            naked;
-            addss XMM0, XMM3;
-            addss XMM0, XMM2;
-            addss XMM0, XMM1;
-            ret;
-        }
-    }
-    /**
-     * Note this is the opposite order of the Win64 ABI)
-     * rcx = d
-     * rdx = c
-     * r8  = b
-     * r9  = a
-     * Extra parameters are on the stack starting from param 0 
-     */
-    ulong testLongParameters(ulong a, ulong b, ulong c, ulong d) {
-        asm pure nothrow @nogc {
-            naked;
-            mov RAX, RCX;
-            add RAX, RDX;
-            add RAX, R8;
-            add RAX, R9;
-            ret;
-        }
-    }
-    /**
-     * Note this is the opposite order of the Win64 ABI)
-     * rcx  = d
-     * xmm1 = c
-     * r8   = b
-     * xmm3 = a
-     * Extra parameters are on the stack starting from param 0 
-     */
-    float testMixedParameters(float a, ulong b, float c, ulong d) {
-        asm pure nothrow @nogc {
-            naked;
-            cvtsi2ss XMM0, ECX;
-            cvtsi2ss XMM2, R8D;
-            addss XMM0, XMM1;
-            addss XMM0, XMM2;
-            addss XMM0, XMM3;
-            ret;
-        }
-    }
-} // version(DigitalMars)
 
 version(LDC) {
     import ldc.llvmasm;
     import ldc.attributes;
+
+    void setYMM(uint INDEX)(ref byte[32] values) {
+        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        __asm(str, "*m", values.ptr); 
+    }
+    void setYMM(uint INDEX)(ref short[16] values) {
+        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        __asm(str, "*m", values.ptr); 
+    }
+    void setYMM(uint INDEX)(ref int[8] values) {
+        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        __asm(str, "*m", values.ptr); 
+    }    
+    void setYMM(uint INDEX)(ref long[4] values) {
+        enum str = "vmovdqa (%rcx), %ymm" ~ to!(char[])(INDEX);
+        __asm(str, "*m", values.ptr); 
+    }     
+    void setYMM(uint INDEX)(ref float[8] values) {
+        enum str = "vmovaps (%rcx), %ymm" ~ to!(char[])(INDEX);
+        __asm(str, "*m", values.ptr); 
+    }    
+    void setYMM(uint INDEX)(ref double[4] values) {
+        enum str = "vmovapd (%rcx), %ymm" ~ to!(char[])(INDEX);
+        __asm(str, "*m", values.ptr); 
+    }
+
+    void dumpYMM(T,uint INDEX)() { 
+        align(32) T[32/T.sizeof] ymm;
+        enum instr = is(T==double) ? "vmovapd" : is(T==float) ? "vmovaps" : "vmovdqa";
+        enum code = "%s %%ymm%s, $0".format(instr, INDEX);
+        mixin("__asm(`%s`, \"*m\", ymm.ptr);".format(code));   
+
+        static if(is(T==ulong) || is(T==long)) {
+            writefln("i64   [255         192] [191        128] [127         64] [63            0]"); 
+            writefln("ymm%s: [%016x %016x %016x %016x]", INDEX, ymm[3], ymm[2], ymm[1], ymm[0]); 
+        } else static if(is(T==uint) || is(T==int)) {
+            writefln("i32   [    224] [   192] [   160] [   128] [    96] [    64] [    32] [      0]"); 
+            writefln("ymm%s: [%08x %08x %08x %08x %08x %08x %08x %08x]", INDEX, ymm[7], ymm[6], ymm[5], ymm[4], ymm[3], ymm[2], ymm[1], ymm[0]);     
+        } else static if(is(T==ushort) || is(T==short)) {
+            writefln("i16   [ 15] [14] [13] [12] [11] [10] [ 9] [ 8] [ 7] [ 6] [ 5] [ 4] [ 3] [ 2] [ 1] [  0]"); 
+            writefln("ymm%s: [%04x %04x %04x %04x %04x %04x %04x %04x %04x %04x %04x %04x %04x %04x %04x %04x]", INDEX, 
+                ymm[15], ymm[14], ymm[13], ymm[12], ymm[11], ymm[10], ymm[9], ymm[8],
+                ymm[7], ymm[6], ymm[5], ymm[4], ymm[3], ymm[2], ymm[1], ymm[0]);     
+        } else static if(is(T==ubyte) || is(T==byte)) {
+            writefln("i8     31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0]"); 
+            writefln("ymm%s: [%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x " ~
+                             "%02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x]", INDEX, 
+                             ymm[31], ymm[30], ymm[29], ymm[28], ymm[27], ymm[26], ymm[25], ymm[24],
+                             ymm[23], ymm[22], ymm[21], ymm[20], ymm[19], ymm[18], ymm[17], ymm[16],
+                             ymm[15], ymm[14], ymm[13], ymm[12], ymm[11], ymm[10], ymm[9], ymm[8],
+                             ymm[7], ymm[6], ymm[5], ymm[4], ymm[3], ymm[2], ymm[1], ymm[0]);     
+        } else static if(is(T==float)) {
+            writefln("f32   [       7] [      6] [      5] [      4] [      3] [      2] [      1] [       0]"); 
+            writefln("ymm%s: [%09.3f %09.3f %09.3f %09.3f %09.3f %09.3f %09.3f %09.3f]", INDEX, ymm[7], ymm[6], ymm[5], ymm[4], ymm[3], ymm[2], ymm[1], ymm[0]); 
+        } else static if(is(T==double)) {
+            writefln("f64   [             3] [            2] [            1] [             0]"); 
+            writefln("ymm%s: [%015.4f %015.4f %015.4f %015.4f]", INDEX, ymm[3], ymm[2], ymm[1], ymm[0]); 
+        } else {
+            writefln("ymm%s: %s", INDEX, ymm);     
+        } 
+    }
+
+//──────────────────────────────────────────────────────────────────────────────────────────────────
+private:
+
     // https://wiki.dlang.org/LDC_inline_assembly_expressions
     // https://www.ibiblio.org/gferg/ldp/GCC-Inline-Assembly-HOWTO.html
 
@@ -179,86 +189,64 @@ version(LDC) {
 } // version(LDC)
 
 version(DigitalMars) {
+    /** 
+     * Note this is the opposite order of the Win64 ABI)
+     * xmm0 = d
+     * xmm1 = c
+     * xmm2 = b
+     * xmm3 = a
+     * Extra parameters are on the stack starting from param 0 
+     */
+    float testFloatParameters(float a, float b, float c, float d) {
+        asm pure nothrow @nogc {
+            naked;
+            addss XMM0, XMM3;
+            addss XMM0, XMM2;
+            addss XMM0, XMM1;
+            ret;
+        }
+    }
+    /**
+     * Note this is the opposite order of the Win64 ABI)
+     * rcx = d
+     * rdx = c
+     * r8  = b
+     * r9  = a
+     * Extra parameters are on the stack starting from param 0 
+     */
+    ulong testLongParameters(ulong a, ulong b, ulong c, ulong d) {
+        asm pure nothrow @nogc {
+            naked;
+            mov RAX, RCX;
+            add RAX, RDX;
+            add RAX, R8;
+            add RAX, R9;
+            ret;
+        }
+    }
+    /**
+     * Note this is the opposite order of the Win64 ABI)
+     * rcx  = d
+     * xmm1 = c
+     * r8   = b
+     * xmm3 = a
+     * Extra parameters are on the stack starting from param 0 
+     */
+    float testMixedParameters(float a, ulong b, float c, ulong d) {
+        asm pure nothrow @nogc {
+            naked;
+            cvtsi2ss XMM0, ECX;
+            cvtsi2ss XMM2, R8D;
+            addss XMM0, XMM1;
+            addss XMM0, XMM2;
+            addss XMM0, XMM3;
+            ret;
+        }
+    }
 
 __gshared float f1,f2,f3,f4,f5,f6,f7,f8;
 
 public:
-
-/**
- *  128 bit AVX
- */
-void dumpXMMfloat(int index) {
-	asm pure nothrow {
-		// rcx = index
-		lea RDX, f1;
-
-        dec ECX;
-        jns _1;
-        movups [RDX], XMM0;
-        jmp _end;
-_1:		dec ECX;
-        jns _2;
-        movups [RDX], XMM1;
-        jmp _end;
-_2:		dec ECX;
-        jns _3;
-        movups [RDX], XMM2;
-        jmp _end;
-_3:		dec ECX;
-        jns _4;
-        movups [RDX], XMM3;
-        jmp _end;
-_4:		dec ECX;
-        jns _5;
-        movups [RDX], XMM4;
-        jmp _end;
-_5:		dec ECX;
-        jns _6;
-        movups [RDX], XMM5;
-        jmp _end;
-_6:		dec ECX;
-        jns _7;
-        movups [RDX], XMM6;
-        jmp _end;
-_7:		dec ECX;
-        jns _8;
-        movups [RDX], XMM7;
-        jmp _end;
-_8:		dec ECX;
-        jns _9;
-        movups [RDX], XMM8;
-        jmp _end;
-_9:		dec ECX;
-        jns _10;
-        movups [RDX], XMM9;
-        jmp _end;
-_10:	dec ECX;
-        jns _11;
-        movups [RDX], XMM10;
-        jmp _end;
-_11:	dec ECX;
-        jns _12;
-        movups [RDX], XMM11;
-        jmp _end;
-_12:	dec ECX;
-        jns _13;
-        movups [RDX], XMM12;
-        jmp _end;
-_13:	dec ECX;
-        jns _14;
-        movups [RDX], XMM13;
-        jmp _end;
-_14:	dec ECX;
-        jns _15;
-        movups [RDX], XMM14;
-        jmp _end;
-_15:	dec ECX;
-        jns _end;
-        movups [RDX], XMM15;
-_end:;
-	}
-   	writefln("[XMM%2s] %12s %12s %12s %12s", index, f1, f2, f3, f4);
-}
 
 /**
  *  256 bit AVX2

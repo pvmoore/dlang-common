@@ -2,7 +2,7 @@ name "common"
 platforms "windows"
 
 buildType "debug" {
-	buildOptions "debugMode" "debugInfo" "alwaysStackFrame" "stackStomping" "warningsAsErrors"
+	buildOptions "debugMode" "debugInfo" "warningsAsErrors" "stackStomping" #"alwaysStackFrame" 
 }
 buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"

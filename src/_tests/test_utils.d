@@ -5,8 +5,8 @@ import std : writefln, writeln, format;
 import common.all;
 
 void testUtils() {
-    static if(false) {
-   
+    static if(true) {
+        testAsmUtils();
     } else {
         testAsmUtils();
         testArrayUtils();
@@ -16,7 +16,6 @@ void testUtils() {
         testStaticUtils();
         testStringUtils();
         testUtilities();
-        testAsmUtils();
         testRangeUtils();
     }
 }
@@ -610,6 +609,42 @@ void testAsmUtils() {
     writefln("========--\nTesting asm utils\n==--");
 
     version(LDC) {
+        writefln("LDC");
+
+        // dumpYMM!(ulong,0)();
+        // dumpYMM!(ulong,1)();
+        // dumpYMM!(uint,0)();
+        // dumpYMM!(ushort,0)();
+        // dumpYMM!(ubyte,0)();
+        // dumpYMM!(float,0)();
+
+
+        align(32) double[4] ymmd;
+        ymmd = [3.14, 1.0, 7.5, 10.9];
+        setYMM!4(ymmd);
+        dumpYMM!(double,4)();
+
+        align(32) float[8] ymmf;
+        ymmf = [3.14, 4.14, 5.14, 6.14, 7.14, 8.14, 9.14, 10.14];
+        setYMM!4(ymmf);
+        dumpYMM!(float,4)();
+
+        align(32) long[4] ymml = [1,2,3,4];
+        setYMM!4(ymml);
+        dumpYMM!(long,4);
+
+        align(32) int[8] ymmi = [1,2,3,4,5,6,7,8];
+        setYMM!4(ymmi);
+        dumpYMM!(int,4);
+
+        align(32) short[16] ymms = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16];
+        setYMM!4(ymms);
+        dumpYMM!(short,4);
+
+        align(32) byte[32] ymmb = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,
+                                17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32];
+        setYMM!4(ymmb);
+        dumpYMM!(byte,4);
 
     } // version(LDC)
     else version(DigitalMars) {
