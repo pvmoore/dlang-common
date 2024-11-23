@@ -642,6 +642,36 @@ void testAsmUtils() {
         setYMM!4(ymml);
         dumpYMM!(long,4);
 
+        {   // bextr
+            ulong a = 0xff00_0102_0304_0506; 
+
+            throwIf(bextr(&a, 0, 8) != 0x06);
+            throwIf(bextr(&a, 8, 8) != 0x05);
+            throwIf(bextr(&a, 16, 8) != 0x04);
+            throwIf(bextr(&a, 8, 16) != 0x0405);
+
+            throwIf(bextr(a, 0, 8) != 0x06);
+            throwIf(bextr(a, 8, 8) != 0x05);
+            throwIf(bextr(a, 16, 8) != 0x04);
+            throwIf(bextr(a, 8, 16) != 0x0405);
+        }
+        {   // pext
+            ulong a = 0b11101010;
+            throwIf(pext(a, 0b11) != 0b10);
+            throwIf(pext(a, 0b11111111) != 0b11101010);
+
+            ulong mask = 0b11;
+            ulong mask2 = 0b11111111;
+            throwIf(pext(a, &mask) != 0b10);
+            throwIf(pext(a, &mask2) != 0b11101010);
+        }
+        {   // pdep
+            ulong a = 0b11001010;
+            ulong mask = 0b1111_11110000;
+            throwIf(pdep(a, 0b1111_11110000) != 0b110010100000);
+            throwIf(pdep(a, &mask) != 0b110010100000);
+
+        }
     } // version(LDC)
     else version(DigitalMars) {
 

@@ -1,4 +1,4 @@
-rem @echo off
+@echo off
 
 set COMPILER_TYPE=%1%
 set BUILD_TYPE=%2%

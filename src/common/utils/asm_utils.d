@@ -35,31 +35,31 @@ version(LDC) {
     import ldc.llvmasm;
     import ldc.attributes;
 
-    void setYMM(uint INDEX)(ref byte[32] values) {
+    void setYMM(uint INDEX)(ref byte[32] values) nothrow @nogc {
         enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }
-    void setYMM(uint INDEX)(ref short[16] values) {
+    void setYMM(uint INDEX)(ref short[16] values) nothrow @nogc {
         enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }
-    void setYMM(uint INDEX)(ref int[8] values) {
+    void setYMM(uint INDEX)(ref int[8] values) nothrow @nogc {
         enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }    
-    void setYMM(uint INDEX)(ref long[4] values) {
+    void setYMM(uint INDEX)(ref long[4] values) nothrow @nogc {
         enum str = "vmovdqa $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }     
-    void setYMM(uint INDEX)(ref float[8] values) {
+    void setYMM(uint INDEX)(ref float[8] values) nothrow @nogc {
         enum str = "vmovaps $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }    
-    void setYMM(uint INDEX)(ref double[4] values) {
+    void setYMM(uint INDEX)(ref double[4] values) nothrow @nogc {
         enum str = "vmovapd $0, %ymm" ~ to!(char[])(INDEX);
         __asm(str, "*m", values.ptr); 
     }
-    void getYMM(T, uint INDEX)(ref T[32/T.sizeof] dest) {
+    void getYMM(T, uint INDEX)(ref T[32/T.sizeof] dest) nothrow @nogc {
         enum instr = is(T==double) ? "vmovapd" : is(T==float) ? "vmovaps" : "vmovdqa";
         enum code = "%s %%ymm%s, $0".format(instr, INDEX);
         mixin("__asm(`%s`, \"*m\", dest.ptr);".format(code));  
@@ -104,6 +104,56 @@ version(LDC) {
             writefln("ymm%s: %s", INDEX, val);
         } else static assert(false);
     }
+    uint rol(uint value, uint cl) nothrow @nogc {
+        return __asm!uint(`roll %cl, $0`, "={eax},{eax},{ecx}", value, cl);
+    }
+    uint ror(uint value, uint cl) nothrow @nogc {
+        return __asm!uint(`rorl %cl, $0`, "={eax},{eax},{ecx}", value, cl);
+    }
+
+    /**
+     * BMI1 instructions (Haswell and later):
+     *   - andn
+     *   - bextr 
+     *   - blsi
+     *   - blsmsk
+     *   - blsr
+     *   - tzcnt
+     */ 
+    ulong bextr(ulong src, ulong start, ulong len) nothrow @nogc {
+        return __asm!ulong(`bextrq $2, $1, $0`, "=r,r,r", src, start | (len << 8));
+    } 
+    ulong bextr(ulong* src, ulong start, ulong len) nothrow @nogc {
+        // bextr src:m64, startlen:r64 dest:r64
+        return __asm!ulong(`bextrq $2, $1, $0`, "=r,*m,r", src, start | (len << 8));
+    } 
+
+    /**
+     * BMI2 instructions (Haswell and later):
+     *   - bzhi 
+     *   - mulx
+     *   - pdep Parallel bits deposit
+     *   - pext Parallel bits extract
+     *   - rorx
+     *   - sarx
+     *   - shrx
+     *   - shlx
+     */
+    ulong pext(ulong src, ulong mask) nothrow @nogc {
+        // pext mask:r64, src:r64, dest:r64
+        return __asm!ulong(`pextq $1, $2, $0`, "=r,r,r", mask, src);
+    } 
+    ulong pext(ulong src, ulong* mask) nothrow @nogc {
+        // pext mask:m64, src:r64, dest:r64
+        return __asm!ulong(`pextq $1, $2, $0`, "=r,*m,r", mask, src);
+    } 
+    ulong pdep(ulong src, ulong mask) {
+        return __asm!ulong(`pdepq $1, $2, $0`, "=r,r,r", mask, src);
+    }
+    ulong pdep(ulong src, ulong* mask) {
+        return __asm!ulong(`pdepq $1, $2, $0`, "=r,*m,r", mask, src);
+    }
+ 
 
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 private:
