@@ -153,7 +153,27 @@ version(LDC) {
     ulong pdep(ulong src, ulong* mask) {
         return __asm!ulong(`pdepq $1, $2, $0`, "=r,*m,r", mask, src);
     }
- 
+    /** 
+     * AVX2 instructions (Haswell and later): !!Subset
+     *   - vbroadcast[ss|sd|f128]
+     *   - vpbroadcast[b|w|d|q|i128]
+     *   - vinsert[f128|i128]
+     *   - vextract[f128|i128]
+     *   - vgather[dpd|qpd|dps|qps]
+     *   - vpgather[dd|dq|qd|qq]
+     *   - vmaskmov[ps|pd]
+     *   - vpmaskmov[d|q]
+     *   - vperm[ps|d|pd|q]
+     *   - vpermil[ps|pd]
+     *   - vperm2f128
+     *   - vpblend[d]
+     *   - vpsllv[d|q]
+     *   - vpsrlv[q|q]
+     *   - vpsrav[d]
+     *   - vtest[ps|pd]
+     *   - vzeroall
+     *   - vzeroupper
+     */
 
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 private:
