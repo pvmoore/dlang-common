@@ -17,7 +17,7 @@ private:
     T freeBytes;
     uint _numAllocs;
     uint _numFrees;
-    Array!FreeRegion array;
+    FreeRegion[] array;
 
     static final struct FreeRegion {
         T offset;
@@ -59,7 +59,7 @@ public:
     /// Returns 0 if there are no allocations
     T offsetOfLastAllocatedByte() {
         if(empty()) return 0;
-        if(array.empty) return sizeBytes-1;
+        if(array.isEmpty()) return sizeBytes-1;
 
         auto lastFreeRegion = array.last();
         if(lastFreeRegion.end()==sizeBytes) return lastFreeRegion.offset-1;
@@ -68,7 +68,6 @@ public:
 
     this(T sizeBytes) {
         this.sizeBytes = sizeBytes;
-        this.array     = new Array!FreeRegion;
         freeAll();
     }
     Signed!T alloc(T size, uint alignment=1) {
@@ -185,10 +184,10 @@ public:
     /// Free all allocations.
     ///
     void freeAll() {
-        array.clear();
+        array.length = 0;
         freeBytes = sizeBytes;
 
-        array.add(FreeRegion(0,sizeBytes));
+        array ~= FreeRegion(0,sizeBytes);
     }
     ///
     /// Set a new size. Setting a larger size always works. Setting a
@@ -197,7 +196,7 @@ public:
     ///
     void resize(T newSize) {
         bool thereIsAnEmptyRegionAtEnd() {
-            return array.length>0 && array.last.end==sizeBytes;
+            return array.length>0 && array.last().end==sizeBytes;
         }
 
         if(newSize > sizeBytes) {
@@ -205,10 +204,10 @@ public:
 
             if(thereIsAnEmptyRegionAtEnd()) {
                 // expand end free region
-                array.last.size += difference;
+                array.last().size += difference;
             } else {
                 // create new free region at the end
-                array.add(FreeRegion(sizeBytes,difference));
+                array ~= FreeRegion(sizeBytes,difference);
             }
             freeBytes += difference;
             sizeBytes += difference;

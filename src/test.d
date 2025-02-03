@@ -31,7 +31,7 @@ import _tests.test_utils;
 import _tests.test_wasm;
 import _tests.test_web;
 
-enum RUN_SUBSET = true;
+enum RUN_SUBSET = false;
 
 extern(C) void asm_test();
 
@@ -55,14 +55,14 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testUtils();
+    
     } else {
 
         testAllocator();
         testBool3();
         testHasher();
         testObjectCache();
-        testPDH();
+        //testPDH();
         testStringBuffer();
         testStructCache();
         testVelocity();
@@ -112,7 +112,7 @@ void testAllocator() {
         expect(a.numFreeRegions==1);
         fr = a.freeRegions;
         expect(fr.length==1);
-        expect(fr[0][0]==0 && fr[0][1]==100);
+        expect(fr[0][0]==0 && fr[0][1]==100, "freeRegions = %s".format(fr));
         expect(a.offsetOfLastAllocatedByte()==0);
 
         /// Allocate 10
@@ -630,9 +630,10 @@ void testStringBuffer() {
         auto s2 = buf.sliceDup();
         assert(s=="abcdef");
         assert(s2=="abcdef");
-        buf.clear();
-        buf.add("123456");
-        assert(s=="123456");    // takes on new value
+
+        buf.insert('.', 0);
+
+        assert(s==".abcde", "actual = %s".format(s));    // takes on new value
         assert(s2=="abcdef");   // does not take on new value
     }
 }

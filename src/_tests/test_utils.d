@@ -6,7 +6,7 @@ import common.all;
 
 void testUtils() {
     static if(true) {
-        testAsmUtils();
+        testArrayUtils();
     } else {
         testAsmUtils();
         testArrayUtils();
@@ -129,7 +129,37 @@ void testMapUtils() {
 void testArrayUtils() {
     writefln("--== Testing array_utils ==--");
 
-    { // contains
+    {
+        writefln("- first()");
+        uint[] a = [1,2,3];
+        assert(a.first() == 1);
+
+        string[] b = ["1","2"];
+        assert(b.first() == "1");
+
+        immutable(ubyte)[] c = [1,2,3];
+        assert(c.first() == 1);
+    }
+    {
+        writefln("- last()");
+
+        uint[] a = [1,2,3];
+        assert(a.last() == 3);
+
+        string[] b = ["1","2"];
+        assert(b.last() == "2");
+    }
+    {
+        writefln("- isEmpty");
+        uint[] a;
+        assert(a.isEmpty());
+        assert([].isEmpty());
+
+        uint[] b = [1,2,3];
+        assert(!b.isEmpty());
+    }
+    { 
+        writefln("- contains");
         uint[] a = [1,2,3,4];
         assert(a.contains(1));
         assert(a.contains(2));
@@ -137,14 +167,16 @@ void testArrayUtils() {
         assert(a.contains(4));
         assert(!a.contains(5));
     }
-    { // indexOf
+    { 
+        writefln("- indexOf");
         float[] a = [1,2,3];
         assert(a.indexOf(1) == 0);
         assert(a.indexOf(2) == 1);
         assert(a.indexOf(3) == 2);
         assert(a.indexOf(4) == -1);
     }
-    { // insertAt
+    { 
+        writefln("- insertAt");
         ubyte[] a;
         a.insertAt(0, 1);
         assert(a==[1]);
@@ -161,18 +193,21 @@ void testArrayUtils() {
         a.insertAt(1, [8,7]);
         assert(a==[0,8,7,4,1,2,3,9]);
     }
-    { // onlyContains
+    { 
+        writefln("- onlyContains");
         uint[] a = [1,1,1];
         uint[] b = [0,0,1];
         assert(a.onlyContains(1));
         assert(!b.onlyContains(0));
     }
-    { // push
+    { 
+        writefln("- push");
         uint[] a = [1,2,3];
         a.push(4);
         assert(a == [1,2,3,4]);
     }
-    { // pop
+    { 
+        writefln("- pop");
         uint[] a = [1,2];
         assert(2 == a.pop());
         assert(a==[1]);
@@ -181,7 +216,8 @@ void testArrayUtils() {
         assert(uint.init == a.pop());
         assert(a==[]);
     }
-     { // remove
+     { 
+        writefln("- remove");
         ubyte[] a = [1,2,3,4,5];
         assert(1 == a.remove(1));
         assert(a == [2,3,4,5]);
@@ -192,7 +228,8 @@ void testArrayUtils() {
         assert(3 == a.remove(3));
         assert(a == [2,4]);
     }
-    { // removeAt
+    { 
+        writefln("- removeAt");
         ubyte[] a = [1,2,3];
         assert(1 == a.removeAt(0));
         assert(a == [2,3]);
@@ -201,7 +238,8 @@ void testArrayUtils() {
         assert(2 == a.removeAt(0));
         assert(a == []);
     }
-    { // removeRange
+    { 
+        writefln("- removeRange");
         ubyte[] a = [1,2,3,4,5,6,7,8,9];
         a.removeRange(0, 1);
         assert(a == [3,4,5,6,7,8,9]);
@@ -212,7 +250,8 @@ void testArrayUtils() {
         a.removeRange(1,2);
         assert(a==[3,7]);
     }
-    {   // add(T,U)(T[], U[])
+    {   
+        writefln("- add");
         ubyte[] bytes = [cast(ubyte)0,1,2,3,4];
         uint[] ints = [5,6]; // 5,0,0,0,6,0,0,0
         short[] shorts = [7,8]; // 7,0,8,0
@@ -686,13 +725,13 @@ void testAsmUtils() {
             movups XMM0, [RBP+a];
         }
 
-        dumpXMMfloat(0);
+        dumpYMMfloat(0);
 
         asm pure nothrow @nogc {
             movss XMM0, [RBP+b];
         }
 
-        dumpXMMfloat(0);
+        dumpYMMfloat(0);
     }
 
     {

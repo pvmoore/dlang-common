@@ -3,6 +3,30 @@ module common.utils.array_utils;
 import std.array			  : insertInPlace;
 import std.traits   		  : isSomeString, isSomeChar;
 import common.utils.utilities : throwIf;
+
+/** 
+ * Return the first element of the array. Assumes the array is not empty
+ */
+ref T first(T)(T[] array) {
+	assert(array.length > 0);
+	return array[0];
+}
+
+/** 
+ * Return the last element of the array. Assumes the array is not empty
+ */
+ref T last(T)(T[] array) {
+	assert(array.length > 0);
+	return array[$-1];
+}
+
+/** 
+ * Return true if the array length == 0
+ */
+bool isEmpty(T)(T[] array) {
+	return array.length == 0;
+}
+
 /**
  *  eg.
  *  int[] intArray;
@@ -11,6 +35,13 @@ import common.utils.utilities : throwIf;
 bool contains(T)(T[] values, T value) if(!isSomeChar!T) {
     foreach(v; values) if(v==value) return true;
 	return false;
+}
+/// returns true if the entire array only contains values
+bool onlyContains(T)(T[] array, T value) nothrow {
+	foreach(v; array) {
+        if(v!=value) return false;
+    }
+	return true;
 }
 
 // bool equals(T)(T[] array, T value) {
@@ -40,13 +71,8 @@ void insertAt(T)(ref T[] array, long atPos, T[] extra) {
 	throwIf(atPos>array.length, "%s > %s", atPos, array.length);
 	array.insertInPlace(atPos, extra);
 }
-/// returns true if the entire array only contains values
-bool onlyContains(T)(T[] array, T value) nothrow {
-	foreach(v; array) {
-        if(v!=value) return false;
-    }
-	return true;
-}
+
+
 void push(T)(ref T[] array, T value) {
 	array ~= value;
 }

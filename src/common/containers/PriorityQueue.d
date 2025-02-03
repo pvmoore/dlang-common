@@ -16,13 +16,13 @@ final class PriorityQueue(T,bool HI) : IQueue!T
     if(isOrderingComparable!T && isEqualityComparable!T)
 {
 private:
-    Array!T array;
+    T[] array;
 
     this() {
-        array = new Array!T;
+        
     }
 public:
-    bool empty() { return array.empty; }
+    bool empty() { return array.isEmpty(); }
     int length() { return array.length.as!int; }
 
     /**
@@ -54,13 +54,13 @@ public:
         return 0;
     }
     PriorityQueue!(T,HI) clear() {
-        array.clear();
+        array.length = 0;
         return this;
     }
 private:
     void insert(T value) {
         if(array.length==0) {
-            array.add(value);
+            array ~= value;
             return;
         }
         if(array.length==1) {

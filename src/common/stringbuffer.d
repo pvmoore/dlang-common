@@ -11,16 +11,15 @@ alias DtringBuffer  = StringBuffer_t!dchar;
 
 final class StringBuffer_t(T) if(isSomeChar!T) {
 private:
-    Array!T array;
+    T[] array;
 public:
     ulong length() const { return array.length; }
     bool isEmpty() const { return length==0; }
 
     this() {
-        this.array = new Array!T;
+    
     }
     this(inout(T)[] str) {
-        this();
         add(str);
     }
     // override size_t toHash() {
@@ -71,7 +70,7 @@ public:
         }
     }
     auto add(T ch) {
-        array.add(ch);
+        array ~= ch;
         return this;
     }
     auto add(inout(T)[] str) {
@@ -87,31 +86,32 @@ public:
         return array[i];
     }
     immutable(T)[] opSlice() const {
-        return array[];
+        return cast(immutable(T)[])array;
     }
     immutable(T)[] opSlice(ulong from, ulong to) const {
-        return array[from..to];
+        return cast(immutable(T)[])array[from..to];
     }
     long opDollar() const {
         return array.length;
     }
     auto clear() {
-        array.clear();
+        array.length = 0;
         return this;
     }
-    int indexOf(T val) const {
-        return array.indexOf(val);
-    }
-    int indexOf(inout(T)[] str) const {
+    long indexOf(T val) const {
         static import std.string;
-        return cast(int)std.string.indexOf(array[], str);
+        return std.string.indexOf(array, val);
+    }
+    long indexOf(inout(T)[] str) const {
+        static import std.string;
+        return std.string.indexOf(array, str);
     }
     bool contains(T val) const {
         return indexOf(val)!=-1;
     }
     bool contains(inout(T)[] str) const {
         static import std.string;
-        return std.string.indexOf(array[], str) != -1;
+        return std.string.indexOf(array, str) != -1;
     }
     auto insert(T ch, ulong index) {
         array.insertAt(index, ch);

@@ -9,7 +9,7 @@ import common.all;
 final class StructCache(T) if(is(T == struct)) {
 private:
     int ELEMENT_SIZE;
-    Array!MemBlock blocks;
+    MemBlock[] blocks;
     int len;
 
     class MemBlock {
@@ -70,7 +70,6 @@ public:
     }
 
     this(int initialNumElements, int alignment=1) {
-        this.blocks = new Array!MemBlock;
         calculateElementSize(alignment);
         addMemBlock(initialNumElements);
     }
@@ -130,7 +129,7 @@ private:
     }
     MemBlock addMemBlock(int size) {
         auto b = new MemBlock(size);
-        blocks.add(b);
+        blocks ~= b;
         return b;
     }
     int countEmptyMemBlocks() {
