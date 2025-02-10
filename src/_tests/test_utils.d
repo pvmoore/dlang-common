@@ -168,6 +168,13 @@ void testArrayUtils() {
         assert(!a.contains(5));
     }
     { 
+        writefln("- onlyContains");
+        uint[] a = [1,1,1];
+        uint[] b = [0,0,1];
+        assert(a.onlyContains(1));
+        assert(!b.onlyContains(0));
+    }
+    { 
         writefln("- indexOf");
         float[] a = [1,2,3];
         assert(a.indexOf(1) == 0);
@@ -176,7 +183,7 @@ void testArrayUtils() {
         assert(a.indexOf(4) == -1);
     }
     { 
-        writefln("- insertAt");
+        writefln("- insertAt(T)");
         ubyte[] a;
         a.insertAt(0, 1);
         assert(a==[1]);
@@ -190,24 +197,44 @@ void testArrayUtils() {
         assert(a == [0,4,1,2,3]);
         a.insertAt(5,9);
         assert(a==[0,4,1,2,3,9]);
+    }
+    {
+        writefln("- insertAt(T[])");
+        int[] a = [1,2,3,4];
+
         a.insertAt(1, [8,7]);
-        assert(a==[0,8,7,4,1,2,3,9]);
+        assert(a==[1,8,7,2,3,4]);
+
+        a.insertAt(6, [9])
+         .insertAt(7, [10,11]);
+        assert(a==[1,8,7,2,3,4,9,10,11]);
+    }
+    {
+        writefln("- replaceAt(T[])");
+        int[] a = [1,2,3,4,5];
+        a.replaceAt(0, [6,7]);
+        assert(a == [6,7,3,4,5]);
+
+        a.replaceAt(1, [8,9]);
+        assert(a == [6,8,9,4,5]);
+
+        a.replaceAt(3, [10]);
+        assert(a == [6,8,9,10,5]);
+
+        a.replaceAt(1, [11,12,13])  // [6,11,12,13,5]
+         .replaceAt(2, [14,15]);    // [6,11,14,15,5]
+
+        assert(a == [6,11,14,15,5]);
     }
     { 
-        writefln("- onlyContains");
-        uint[] a = [1,1,1];
-        uint[] b = [0,0,1];
-        assert(a.onlyContains(1));
-        assert(!b.onlyContains(0));
-    }
-    { 
-        writefln("- push");
+        writefln("- push(T)");
         uint[] a = [1,2,3];
-        a.push(4);
-        assert(a == [1,2,3,4]);
+        a.push(4)
+         .push(5);
+        assert(a == [1,2,3,4,5]);
     }
     { 
-        writefln("- pop");
+        writefln("- pop(T)");
         uint[] a = [1,2];
         assert(2 == a.pop());
         assert(a==[1]);
@@ -221,7 +248,10 @@ void testArrayUtils() {
         ubyte[] a = [1,2,3,4,5];
         assert(1 == a.remove(1));
         assert(a == [2,3,4,5]);
+
         assert(ubyte.init == a.remove(0));
+        assert(99 == a.remove(0, 99));
+
         assert(a== [2,3,4,5]);
         assert(5 == a.remove(5));
         assert(a == [2,3,4]);

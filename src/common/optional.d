@@ -11,26 +11,30 @@ import common.all;
  *
  * auto value = data.orElse(0);
  *
- * data.let(it=>{
+ * data.let((it) {
  *
  * });
  */
 struct Opt(T)
     if(isStruct!T || isPrimitiveType!T)
 {
-    T value;
-    bool exists;
+public:
+    bool exists() { return _exists; }
+    T value() { return _value; }
 
     this(T value) {
-        this.value = value;
-        exists = true;
+        this._value = value;
+        this._exists = true;
     }
     T orElse(T other) {
-        return exists ? value : other;
+        return _exists ? _value : other;
     }
     void let(void delegate(T value) functor) {
-        functor(value);
+        functor(_value);
     }
+private:
+    T _value;
+    bool _exists;
 }
 
 /**

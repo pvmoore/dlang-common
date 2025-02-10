@@ -1,7 +1,7 @@
 module common.utils.map_utils;
 
-import std.traits 				: isAssociativeArray;
-import std.typecons 			: Tuple, tuple;
+import std.traits 	: isAssociativeArray;
+import std.typecons : Tuple, tuple;
 
 
 /// mymap.contains(myvalue)

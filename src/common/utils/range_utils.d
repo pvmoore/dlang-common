@@ -9,3 +9,4 @@ import std.range;
 T frontOrElse(T,Range)(Range r, T defaultValue) {
     return cast(T)(r.empty ? defaultValue : r.front);
 }
+

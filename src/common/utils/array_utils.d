@@ -1,8 +1,7 @@
 module common.utils.array_utils;
 
-import std.array			  : insertInPlace;
-import std.traits   		  : isSomeString, isSomeChar;
-import common.utils.utilities : throwIf;
+import std.array  : insertInPlace;
+import std.traits : isSomeString, isSomeChar;
 
 /** 
  * Return the first element of the array. Assumes the array is not empty
@@ -36,7 +35,8 @@ bool contains(T)(T[] values, T value) if(!isSomeChar!T) {
     foreach(v; values) if(v==value) return true;
 	return false;
 }
-/// returns true if the entire array only contains values
+
+/// returns true if the entire array only contains 'value'
 bool onlyContains(T)(T[] array, T value) nothrow {
 	foreach(v; array) {
         if(v!=value) return false;
@@ -50,49 +50,82 @@ bool onlyContains(T)(T[] array, T value) nothrow {
 //     }
 //     return true;
 // }
-bool equals(T)(T[] array, T[] values) {
-    if(array.length != values.length) return false;
-    for(auto i=0; i<array.length; i++) {
-        if(array[i] != values[i]) return false;
-    }
-    return true;
-}
+// bool equals(T)(T[] array, T[] values) {
+//     if(array.length != values.length) return false;
+//     for(auto i=0; i<array.length; i++) {
+//         if(array[i] != values[i]) return false;
+//     }
+//     return true;
+// }
 
 int indexOf(T)(T[] array, T value) if(!isSomeChar!T) {
     foreach(i, v; array) if(v==value) return cast(int)i;
     return -1;
 }
 
-void insertAt(T)(ref T[] array, long atPos, T extra) {
-	throwIf(atPos>array.length, "%s > %s", atPos, array.length);
+/** 
+ * array.insertAt(1, 50)
+ *      .insertAt(3, 30);
+ */
+ref T[] insertAt(T)(return ref T[] array, ulong atPos, T extra) {
+	assert(atPos <= array.length);
 	array.insertInPlace(atPos, extra);
+	return array;
 }
-void insertAt(T)(ref T[] array, long atPos, T[] extra) {
-	throwIf(atPos>array.length, "%s > %s", atPos, array.length);
+ref T[] insertAt(T)(return ref T[] array, ulong atPos, T[] extra) {
+	assert(atPos <= array.length);
 	array.insertInPlace(atPos, extra);
+	return array;
 }
 
+/** 
+ * array.replaceAt(1, [50, 60])
+ *      .replaceAt(6, [30, 40]);
+ */
+ref T[] replaceAt(T)(return ref T[] array, ulong atPos, T[] values) {
+	assert(atPos < array.length);
+	assert(atPos+values.length <= array.length);
+	array[atPos..atPos+values.length] = values;
+	return array;
+}
 
-void push(T)(ref T[] array, T value) {
+/** 
+ * Add a value to the end of the array.
+ * eg.
+ * array.push(1).push(2).push(3);
+ */
+ref T[] push(T)(return ref T[] array, T value) {
 	array ~= value;
+	return array;
 }
+
+/** 
+ * Remove and return the last element of the array.
+ * eg.
+ * T p = array.pop();
+ */
 T pop(T)(ref T[] array) {
 	if(array.length==0) return T.init;
 	T value = array[$-1];
 	array.length = array.length - 1;
 	return value;
 }
-T remove(T)(ref T[] array, T value) {
+
+/** 
+ * Remove and return the first instance of 'value' in the array. 'defaultValue' is returned if 'value' is not found.
+ */
+T remove(T)(ref T[] array, T value, T defaultValue = T.init) {
 	foreach(i, v; array) {
-        if(v is value) {
+        if(v == value) {
             return array.removeAt(i);
         }
     }
-    return T.init;
+    return defaultValue;
 }
-/** array.removeAt(i) */
-T removeAt(T)(ref T[] array, long index) {
-	throwIf(index>=array.length, "%s >= %s", index, array.length);
+
+/** auto v = array.removeAt(i) */
+T removeAt(T)(ref T[] array, ulong index) {
+	assert(index < array.length);
 
 	T element = array[index];
 	foreach(ref v; array[index+1..$]) {
@@ -101,9 +134,11 @@ T removeAt(T)(ref T[] array, long index) {
 	array.length = array.length - 1;
 	return element;
 }
+
 /** array.removeRange(start,end) inclusive */
-void removeRange(T)(ref T[] array, long start, long end) {
-	throwIf(start > end, "%s > %s", start, end);
+void removeRange(T)(ref T[] array, ulong start, ulong end) {
+	assert(start <= end);
+	assert(end < array.length);
 
 	long span = (end-start)+1;
 	foreach(v; array[end+1..$]) {
