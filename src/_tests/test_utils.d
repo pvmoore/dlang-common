@@ -3,10 +3,11 @@ module _tests.test_utils;
 import std : writefln, writeln, format;
 
 import common.all;
+import test : RUN_SUBSET;
 
 void testUtils() {
-    static if(true) {
-        testArrayUtils();
+    static if(RUN_SUBSET) {
+        testUtilities();
     } else {
         testAsmUtils();
         testArrayUtils();
@@ -419,6 +420,29 @@ void testStaticUtils() {
     assert(!hasMethod!(A,"bar", void, int, int));
     assert(!hasMethod!(A,"bar", void, bool));
 
+    {
+        writefln("isInteger");
+        assert(isInteger!byte);
+        assert(isInteger!ubyte);
+        assert(isInteger!short);
+        assert(isInteger!ushort);
+        assert(isInteger!int);
+        assert(isInteger!uint);
+        assert(isInteger!long);
+        assert(isInteger!ulong);
+        assert(!isInteger!float);
+        assert(!isInteger!double);
+        assert(!isInteger!string);
+    }
+    {
+        writefln("isEnum");
+
+        enum E1 { ONE, TWO }
+
+        assert(isEnum!E1);
+        assert(!isEnum!int);
+    }
+
 
     writefln("OK");
 }
@@ -615,7 +639,25 @@ void testUtilities() {
     }
 
     {
-        writefln("bitfieldExtract(uint, uint, uint)");
+        writefln(" - bitCount");
+        assert(bitCount(0) == 0);
+        assert(bitCount(1) == 1);
+        assert(bitCount(2) == 1);
+        assert(bitCount(3) == 2);
+
+        assert(bitCount(cast(ulong)0b1111_1111) == 8);
+
+        enum E1 {
+            ZERO = 0,
+            ONE = 1,
+            TWO = 2,
+            THREE = 3
+        }
+        assert(bitCount(E1.THREE) == 2);
+    }
+
+    {
+        writefln("- bitfieldExtract(uint, uint, uint)");
         uint bits = 0b11111111_00000000_11001100_00110011;
 
         assert(bitfieldExtract(bits, 0, 4) == 0b0011);
@@ -631,7 +673,7 @@ void testUtilities() {
         assert(bitfieldExtract(bits, 1, 100) == bits >>> 1);
     }
     {
-        writefln("bitfieldExtract(ubyte[], uint, uint)");
+        writefln("- bitfieldExtract(ubyte[], uint, uint)");
 
         ubyte[] bits = [
             0b01100101, 0b11110000, // 0  - 15

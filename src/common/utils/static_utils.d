@@ -39,6 +39,10 @@ template isInteger(T) {
 
         is(T==const(int));
 }
+template isEnum(T) {
+    const bool isEnum = is(T==enum);
+}
+
 /**
  * assert(hasProperty!(A,"foo"));
  */

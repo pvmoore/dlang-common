@@ -374,6 +374,15 @@ R dynamicDispatchRet(string FUNCNAME="visit", O, R, T, ARGS...)
 //	throw new Error("visit(%s) not implemented".format(fqn));
 //}
 
+
+/*
+ * Returns the number of bits set to 1 in the input value.
+ */
+uint bitCount(T)(T value) if(isInteger!T || isEnum!T) {
+    import core.bitop : popcnt;
+    return popcnt(value);
+}
+
 /**
  * Return up to 32 bits from _bits_.
  * Works identically to the GLSL function of the same name.
