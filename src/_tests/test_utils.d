@@ -7,9 +7,10 @@ import test : RUN_SUBSET;
 
 void testUtils() {
     static if(RUN_SUBSET) {
-        testUtilities();
+        testBitUtils();
     } else {
         testAsmUtils();
+        testBitUtils();
         testArrayUtils();
         testMapUtils();
         testAsyncUtils();
@@ -511,14 +512,6 @@ void testStringUtils() {
 void testUtilities() {
     writefln("========--\nTesting utilities\n==--");
 
-    // bitcast
-    double d = 37.554;
-    ulong l  = d.bitcastTo!ulong;
-    double d2 = l.bitcastTo!double;
-    writefln("d=%s, l=%s, d2=%s", d,l,d2);
-
-    assert(bitcastTo!ulong(37.554).bitcastTo!double==37.554);
-
     // isObject
     class MyClass {}
     writefln("%s", isObject!MyClass);
@@ -636,71 +629,6 @@ void testUtilities() {
         let!Object(obj, (o) {});
 
         obj.let!Object(o=>writefln("%s", o));
-    }
-
-    {
-        writefln(" - bitCount");
-        assert(bitCount(0) == 0);
-        assert(bitCount(1) == 1);
-        assert(bitCount(2) == 1);
-        assert(bitCount(3) == 2);
-
-        assert(bitCount(cast(ulong)0b1111_1111) == 8);
-
-        enum E1 {
-            ZERO = 0,
-            ONE = 1,
-            TWO = 2,
-            THREE = 3
-        }
-        assert(bitCount(E1.THREE) == 2);
-    }
-
-    {
-        writefln("- bitfieldExtract(uint, uint, uint)");
-        uint bits = 0b11111111_00000000_11001100_00110011;
-
-        assert(bitfieldExtract(bits, 0, 4) == 0b0011);
-        assert(bitfieldExtract(bits, 0, 8) == 0b00110011);
-        assert(bitfieldExtract(bits, 2, 8) == 0b00001100);
-        assert(bitfieldExtract(bits, 3, 8) == 0b10000110);
-        assert(bitfieldExtract(bits, 5, 1) == 0b1);
-        assert(bitfieldExtract(bits, 6, 1) == 0b0);
-        assert(bitfieldExtract(bits, 6, 0) == 0b0);
-
-        assert(bitfieldExtract(bits, 0, 32) == bits);
-        assert(bitfieldExtract(bits, 0, 100) == bits);
-        assert(bitfieldExtract(bits, 1, 100) == bits >>> 1);
-    }
-    {
-        writefln("- bitfieldExtract(ubyte[], uint, uint)");
-
-        ubyte[] bits = [
-            0b01100101, 0b11110000, // 0  - 15
-            0b11001100, 0b01010101, // 16 - 31
-            0b11111111, 0b00001111, // 32 - 47
-            0b00110011, 0b10101010  // 48 - 63
-        ];
-
-        assert(bitfieldExtract(bits, 0, 0) == 0);
-        assert(bitfieldExtract(bits, 0, 4) == 0b0101);
-        assert(bitfieldExtract(bits, 0, 8) == 0b01100101);
-        assert(bitfieldExtract(bits, 0, 14) == 0b110000_01100101);
-
-        assert(bitfieldExtract(bits, 1, 4) == 0b0010);
-        assert(bitfieldExtract(bits, 1, 8) == 0b00110010);
-        assert(bitfieldExtract(bits, 1, 12) == 0b1000_00110010);
-        assert(bitfieldExtract(bits, 1, 16) == 0b01111000_00110010);
-        assert(bitfieldExtract(bits, 1, 19) == 0b11001111000_00110010);
-        assert(bitfieldExtract(bits, 1, 21) == 0b00110_01111000_00110010);
-        assert(bitfieldExtract(bits, 1, 24) == 0b11100110_01111000_00110010);
-        assert(bitfieldExtract(bits, 1, 27) == 0b010_11100110_01111000_00110010);
-        assert(bitfieldExtract(bits, 1, 30) == 0b101010_11100110_01111000_00110010);
-        assert(bitfieldExtract(bits, 1, 32) == 0b1_01010101_11001100_11110000_0110010_);
-
-        assert(bitfieldExtract(bits, 9, 10) == 0b_1001111000);
-
-        assert(bitfieldExtract(bits, 30, 4) == 0b1101);
     }
     {   // getAlignedValue
         assert(getAlignedValue(0, 4) == 0);
@@ -834,5 +762,167 @@ void testRangeUtils() {
 
         assert(4 == r.filter!(it=>it > 3).frontOrElse(0));
         assert(0 == r.filter!(it=>it > 4).frontOrElse(0));
+    }
+}
+void testBitUtils() {
+    writefln("========--\nTesting bit utils\n==--");  
+
+    {
+        writefln(" - bitCount");
+        assert(bitCount(0) == 0);
+        assert(bitCount(1) == 1);
+        assert(bitCount(2) == 1);
+        assert(bitCount(3) == 2);
+        assert(bitCount(4) == 1);
+        assert(bitCount(5) == 2);
+        assert(bitCount(255) == 8);
+
+        assert(bitCount(cast(ulong)0b1111_1111) == 8);
+
+        enum E1 {
+            ZERO = 0,
+            ONE = 1,
+            TWO = 2,
+            THREE = 3
+        }
+        assert(bitCount(E1.THREE) == 2);
+    }
+    {
+        writefln(" - nextHighestPowerOf2");
+        assert(nextHighestPowerOf2(1) == 1);
+        assert(nextHighestPowerOf2(2) == 2);
+        assert(nextHighestPowerOf2(3) == 4);
+        assert(nextHighestPowerOf2(4) == 4);
+        assert(nextHighestPowerOf2(5) == 8);
+        assert(nextHighestPowerOf2(250) == 256);
+        assert(nextHighestPowerOf2(4611686022722355456UL) == 9223372036854775808UL);
+    }   
+    {
+        writefln(" - isPowerOf2");
+        assert(isPowerOf2(1));
+        assert(isPowerOf2(2));
+        assert(!isPowerOf2(3));
+        assert(isPowerOf2(4));
+        assert(!isPowerOf2(5));
+        assert(!isPowerOf2(250));
+        assert(isPowerOf2(1UL << 63));
+        assert(!isPowerOf2(1UL << 63 | 1UL));
+    }
+    enum Flags {
+        A = 1,
+        B = 2,
+        C = 4,
+        D = 8,
+    }
+    {
+        writefln(" - isSet");
+        assert(isSet(0b1000, 8));
+        assert(!isSet(0b1000, 2));
+        assert(isSet(8, Flags.D));
+        assert(!isSet(8, Flags.B));
+        assert(isSet(Flags.A, 1));
+        assert(!isSet(Flags.A, 2));
+    }
+    {
+        writefln(" - isUnset");
+        assert(isUnset(0b1000, 2));
+        assert(!isUnset(0b1000, 8));
+        assert(isUnset(8, Flags.B));
+        assert(!isUnset(4, Flags.C));
+        assert(isUnset(Flags.A, 2));
+        assert(!isUnset(Flags.A, 1));
+    }
+    {
+        writefln(" - getAlignedValue");
+        assert(getAlignedValue(0, 4) == 0);
+        assert(getAlignedValue(1, 4) == 4);
+        assert(getAlignedValue(2, 4) == 4);
+        assert(getAlignedValue(3, 4) == 4);
+        assert(getAlignedValue(4, 4) == 4);
+        assert(getAlignedValue(5, 4) == 8);
+        assert(getAlignedValue(6, 16) == 16);
+        assert(getAlignedValue(15, 16) == 16);
+        assert(getAlignedValue(16, 16) == 16);
+        assert(getAlignedValue(17, 16) == 32);
+    }
+    {
+        writefln(" - bitcastTo");
+        double d = 37.554;
+        ulong l  = d.bitcastTo!ulong;
+        double d2 = l.bitcastTo!double;
+        writefln("d=%s, l=%s, d2=%s", d,l,d2);
+
+        assert(bitcastTo!ulong(37.554).bitcastTo!double==37.554);
+    }
+    {
+        writefln(" - bitfieldExtract(T,uint,uint)");
+        ubyte a = 0b00001011;
+        assert(bitfieldExtract(a, 0, 2) == 0b11);
+        assert(bitfieldExtract(a, 1, 2) == 0b01);
+
+        uint b = 0b10110110_00110010;
+        //                ^
+        //                |
+        //                8
+        assert(bitfieldExtract(b, 0, 4) == 0b0010);
+        assert(bitfieldExtract(b, 3, 4) == 0b0110);
+        assert(bitfieldExtract(b, 7, 3) == 0b100);
+        assert(bitfieldExtract(b, 11, 5) == 0b10110);
+        assert(bitfieldExtract(b, 11, 6) == 0b010110);
+        assert(bitfieldExtract(b, 11, 7) == 0b0010110);
+        assert(bitfieldExtract(b, 11, 8) == 0b00010110);
+        assert(bitfieldExtract(0b10110110_00110010, 3, 5) == 0b0_00110);
+
+        ulong c = 0b10110110_00110010_00000000_01101010_00000000_00000000_00000000_00000000;
+        //                                            ^
+        //                                            |
+        //                                            32
+        assert(bitfieldExtract(c, 33, 8) == 0b0_0110101);
+
+        assert(bitfieldExtract(cast(uint)10, 0, 33) == 10);
+
+        uint bits2 = 0b11111111_00000000_11001100_00110011;
+
+        assert(bitfieldExtract(bits2, 0, 4) == 0b0011);
+        assert(bitfieldExtract(bits2, 0, 8) == 0b00110011);
+        assert(bitfieldExtract(bits2, 2, 8) == 0b00001100);
+        assert(bitfieldExtract(bits2, 3, 8) == 0b10000110);
+        assert(bitfieldExtract(bits2, 5, 1) == 0b1);
+        assert(bitfieldExtract(bits2, 6, 1) == 0b0);
+        assert(bitfieldExtract(bits2, 6, 0) == 0b0);
+
+        assert(bitfieldExtract(bits2, 0, 32) == bits2);
+        assert(bitfieldExtract(bits2, 0, 100) == bits2);
+        assert(bitfieldExtract(bits2, 1, 100) == bits2 >>> 1);
+    }
+    {
+        writefln("- bitfieldExtract(ubyte[], uint, uint)");
+
+        ubyte[] bits = [
+            0b01100101, 0b11110000, // 0  - 15
+            0b11001100, 0b01010101, // 16 - 31
+            0b11111111, 0b00001111, // 32 - 47
+            0b00110011, 0b10101010  // 48 - 63
+        ];
+
+        assert(bitfieldExtract(bits, 0, 0) == 0);
+        assert(bitfieldExtract(bits, 0, 4) == 0b0101);
+        assert(bitfieldExtract(bits, 0, 8) == 0b01100101);
+        assert(bitfieldExtract(bits, 0, 14) == 0b110000_01100101);
+
+        assert(bitfieldExtract(bits, 1, 4) == 0b0010);
+        assert(bitfieldExtract(bits, 1, 8) == 0b00110010);
+        assert(bitfieldExtract(bits, 1, 12) == 0b1000_00110010);
+        assert(bitfieldExtract(bits, 1, 16) == 0b01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 19) == 0b11001111000_00110010);
+        assert(bitfieldExtract(bits, 1, 21) == 0b00110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 24) == 0b11100110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 27) == 0b010_11100110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 30) == 0b101010_11100110_01111000_00110010);
+        assert(bitfieldExtract(bits, 1, 32) == 0b1_01010101_11001100_11110000_0110010_);
+
+        assert(bitfieldExtract(bits, 9, 10) == 0b_1001111000);
+
+        assert(bitfieldExtract(bits, 30, 4) == 0b1101);
     }
 }

@@ -3,6 +3,7 @@ module common.utils;
 public:
 
 import common.utils.array_utils;
+import common.utils.bit_utils;
 import common.utils.asm_utils;
 import common.utils.async_utils;
 import common.utils.cpu_utils;
