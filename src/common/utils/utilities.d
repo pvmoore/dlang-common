@@ -156,11 +156,9 @@ bool isZeroMem(void* ptr, ulong numBytes) nothrow {
 //int toInt(float f) pure nothrow { return cast(int)f; }
 //int toFloat(int i) pure nothrow { return cast(float)i; }
 
-wstring[] getCommandLineArgs() {
+wstring[] getWCommandLineArgs() {
     version(Win64) {
-        import core.sys.windows.windows :
-            CommandLineToArgvW,
-            GetCommandLineW;
+        import core.sys.windows.windows : CommandLineToArgvW,GetCommandLineW;
 
         wchar* cmd = GetCommandLineW();
         int numArgs;
@@ -171,6 +169,29 @@ wstring[] getCommandLineArgs() {
         }
         return w;
 
+    } else assert(false);
+}
+/**
+ *  getArgs()[0] should always be the program name
+ */
+string[] getCommandLineArgs() {
+    version(Win64) {
+        import core.sys.windows.windows : CommandLineToArgvW, GetCommandLineW;
+        import std.string : fromStringz;
+        import std.utf	  : toUTF8;
+
+        int nArgs;
+        auto ptr = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+
+        string[] arguments;
+        if(ptr !is null && nArgs>0) {
+            foreach(i; 0..nArgs) {
+                auto arg = fromStringz!wchar(*ptr);
+                arguments ~= arg.toUTF8;
+                ptr++;
+            }
+        }
+        return arguments;
     } else assert(false);
 }
 
