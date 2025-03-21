@@ -154,3 +154,11 @@ T[] add(T,U)(return ref T[] dest, U[] array) {
 	dest ~= cast(T[])array;
 	return dest;
 }
+
+/** 
+ * Append a value to array T[] and return a pointer to the value
+ */
+T* appendAndReturnPtr(T)(ref T[] dest, T value) {
+	dest ~= value;
+	return &dest[$-1];
+}
