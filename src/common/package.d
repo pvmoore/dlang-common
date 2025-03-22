@@ -5,7 +5,6 @@ version(D_InlineAsm_X86_64) {} else { pragma(msg,"Inline assembler required"); s
 
 public:
 
-import common.allocator;
 import common.archive;
 import common.boxing;
 import common.attributes;
