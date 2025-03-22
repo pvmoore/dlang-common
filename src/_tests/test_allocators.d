@@ -17,9 +17,9 @@ void testBasicAllocator() {
     writefln("--== Testing Basic Allocator ==--");
 
     void testEmptyAllocator() {
-        auto a = new BasicAllocator!uint(0);
-        expect(a.empty);
-        expect(a.length==0);
+        auto a = new BasicAllocator(0);
+        expect(a.isEmpty());
+        expect(a.size()==0);
         expect(a.numBytesFree==0);
         expect(a.numBytesUsed==0);
         expect(a.numFreeRegions==1);
@@ -33,8 +33,8 @@ void testBasicAllocator() {
 
         /// resize
         a.resize(100);
-        expect(a.empty);
-        expect(a.length==100);
+        expect(a.isEmpty());
+        expect(a.size()==100);
         expect(a.numBytesFree==100);
         expect(a.numBytesUsed==0);
         expect(a.numFreeRegions==1);
@@ -46,8 +46,8 @@ void testBasicAllocator() {
         /// Allocate 10
         expect(0 == a.alloc(10));
 
-        expect(!a.empty);
-        expect(a.length==100);
+        expect(!a.isEmpty());
+        expect(a.size()==100);
         expect(a.numBytesFree==90);
         expect(a.numBytesUsed==10);
         expect(a.numFreeRegions==1);
@@ -59,7 +59,7 @@ void testBasicAllocator() {
         writefln("Empty Allocator OK");
     }
     void testFreeing() {
-        auto a = new BasicAllocator!uint(100);
+        auto a = new BasicAllocator(100);
         expect(0==a.alloc(50));
         expect(a.numFreeRegions==1);
         expect(a.offsetOfLastAllocatedByte()==49);
@@ -86,7 +86,7 @@ void testBasicAllocator() {
     ubyte[10_000] data;
     Regn[] allocked;
 
-    auto at = new BasicAllocator!ulong(data.length);
+    auto at = new BasicAllocator(data.length);
     //writefln("offset=%s", at.alloc(77,4));
     //writefln("offset=%s", at.alloc(8,1));
     //writefln("offset=%s", at.alloc(10,4));
@@ -208,7 +208,7 @@ void testBasicAllocator() {
 
         data[] = 0;
         allocked.length = 0;
-        at.freeAll();
+        at.reset();
 
         // allocate as much as possible
         while(true) {
@@ -248,7 +248,7 @@ void testBasicAllocator() {
     }
 
     {   // basic properties
-        auto a = new BasicAllocator!ulong(100);
+        auto a = new BasicAllocator(100);
 
         expect(a.numBytesFree==100);
         expect(a.numBytesUsed==0);
@@ -257,7 +257,7 @@ void testBasicAllocator() {
     }
 
     {   // resize
-        auto a = new BasicAllocator!ulong(100);
+        auto a = new BasicAllocator(100);
         a.alloc(10);
 
         // expand where there is a free region at the end
@@ -268,7 +268,7 @@ void testBasicAllocator() {
         expect(a.numFreeRegions==1);
         expect(a.freeRegions[0]==tuple(10,190));
 
-        a.freeAll();
+        a.reset();
         expect(a.numBytesFree==200);
         expect(a.numBytesUsed==0);
         expect(a.numFreeRegions==1);
@@ -288,17 +288,17 @@ void testBasicAllocator() {
         expect(a.numBytesUsed==100);
         expect(a.numFreeRegions==2);
         expect(a.freeRegions==[tuple(0,100), tuple(200,100)]);
-        a.freeAll();
+        a.reset();
 
         // reduce where there is a free region at the end
         // | 50 used | 250 free | (size=300)
         a.alloc(50);
         expect(a.freeRegions==[tuple(50,250)]);
-        expect(a.length==300);
+        expect(a.size()==300);
 
         a.resize(250);
         // | 50 used | 200 free | (size=250)
-        expect(a.length==250);
+        expect(a.size()==250);
         expect(a.numBytesFree==200);
         expect(a.numBytesUsed==50);
         expect(a.numFreeRegions==1);
@@ -307,7 +307,7 @@ void testBasicAllocator() {
         // reduce so that the last free region is removed
         a.resize(50);
         // | 50 used | (size=50)
-        expect(a.length==50);
+        expect(a.size()==50);
         expect(a.numBytesFree==0);
         expect(a.numBytesUsed==50);
         expect(a.numFreeRegions==0);
@@ -315,7 +315,7 @@ void testBasicAllocator() {
 
         // attempt to reduce where end of alloc memory is in use
         a.resize(45);
-        expect(a.length==50);
+        expect(a.size()==50);
 
         writefln("%s", a);
     }
