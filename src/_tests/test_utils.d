@@ -3,7 +3,7 @@ module _tests.test_utils;
 import std : writefln, writeln, format;
 
 import common.all;
-import test : RUN_SUBSET;
+import _tests.test : RUN_SUBSET;
 
 void testUtils() {
     static if(RUN_SUBSET) {

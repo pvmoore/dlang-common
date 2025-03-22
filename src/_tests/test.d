@@ -1,3 +1,4 @@
+module _tests.test;
 
 import std.stdio;
 import core.stdc.stdlib : malloc, calloc;

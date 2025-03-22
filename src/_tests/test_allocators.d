@@ -8,11 +8,16 @@ import common;
 import common.allocators;
 
 void testAllocators() {
-    writefln("--== Testing Allocator ==--");
+    writefln("--== Testing Allocators ==--");
 
+    testBasicAllocator();
+}
+
+void testBasicAllocator() {
+    writefln("--== Testing Basic Allocator ==--");
 
     void testEmptyAllocator() {
-        auto a = new Allocator_t!uint(0);
+        auto a = new BasicAllocator!uint(0);
         expect(a.empty);
         expect(a.length==0);
         expect(a.numBytesFree==0);
@@ -54,7 +59,7 @@ void testAllocators() {
         writefln("Empty Allocator OK");
     }
     void testFreeing() {
-        auto a = new Allocator_t!uint(100);
+        auto a = new BasicAllocator!uint(100);
         expect(0==a.alloc(50));
         expect(a.numFreeRegions==1);
         expect(a.offsetOfLastAllocatedByte()==49);
@@ -81,7 +86,7 @@ void testAllocators() {
     ubyte[10_000] data;
     Regn[] allocked;
 
-    auto at = new Allocator(data.length);
+    auto at = new BasicAllocator!ulong(data.length);
     //writefln("offset=%s", at.alloc(77,4));
     //writefln("offset=%s", at.alloc(8,1));
     //writefln("offset=%s", at.alloc(10,4));
@@ -243,7 +248,7 @@ void testAllocators() {
     }
 
     {   // basic properties
-        auto a = new Allocator(100);
+        auto a = new BasicAllocator!ulong(100);
 
         expect(a.numBytesFree==100);
         expect(a.numBytesUsed==0);
@@ -252,7 +257,7 @@ void testAllocators() {
     }
 
     {   // resize
-        auto a = new Allocator(100);
+        auto a = new BasicAllocator!ulong(100);
         a.alloc(10);
 
         // expand where there is a free region at the end

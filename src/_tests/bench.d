@@ -1,6 +1,5 @@
-module bench;
+module _tests.bench;
 
-import common;
 import core.stdc.stdlib         : malloc, calloc;
 import core.atomic              : atomicLoad, atomicStore, atomicOp;
 import core.thread              : Thread, thread_joinAll;
@@ -18,6 +17,9 @@ import std.parallelism          : parallel, task;
 import std.file                 : tempDir, remove, exists;
 import std.conv                 : to;
 
+import common;
+import common.allocators;
+
 void main() {
     version(LDC) {
         writefln("Running benchmarks (LDC)");
@@ -30,7 +32,6 @@ void main() {
         // benchmarkAsyncQueue();
         // benchmarkAllocator();
         // benchmarkUtilities();
-        // benchmarkArray();
         // benchmarkList();
         // benchmarkStructCache();
 
@@ -206,45 +207,6 @@ void benchmarkList() {
     writefln("LL remove .. took %.2f millis", results[0].total!"nsecs"/1000000.0);
 
 }
-void benchmarkArray() {
-    writefln("========--\nBenchmarking Array\n==--");
-    const J = 20;
-
-    Array!int a;
-
-    pragma(inline,true)
-    void addValues(uint count) {
-        for(auto i=0; i<count;i++) a.add(i);
-    }
-
-    // add
-    auto results = benchmark!({
-        a = new Array!int;
-        addValues(10_000_000);
-    })(J);
-    // 730.44 -> 833.23
-    writefln("add ..... took %.2f millis", results[0].total!"nsecs"/1000000.0);
-
-    // remove
-    results = benchmark!({
-        a = new Array!int;
-        addValues(10_000);
-        // remove from the middle
-        while(a.length>5_000) a.remove(5_000);
-    })(J);
-    // 16.57 -> 17.19
-    writefln("remove .. took %.2f millis", results[0].total!"nsecs"/1000000.0);
-
-    // insert
-    results = benchmark!({
-        a = new Array!int;
-        addValues(10_000);
-        // insert in the middle
-        while(a.length<20_000) a.insertAt(99,5_000);
-    })(J);
-    // 189.76 -> 196.35
-    writefln("insert .. took %.2f millis", results[0].total!"nsecs"/1000000.0);
-}
 void benchmarkUtilities() {
     writefln("========--\nBenchmarking utilities\n==--");
     // isZeroMem
@@ -288,7 +250,7 @@ void benchmarkAllocator() {
 
     const uint N        = 1_000_000;
     const uint MAX_SIZE = 200;
-    auto at = new Allocator(N);
+    auto at = new BasicAllocator!ulong(N);
     Mt19937 rng; rng.seed(0);
     Tuple!(uint,uint)[] add1;
     Tuple!(uint,uint)[] add2;

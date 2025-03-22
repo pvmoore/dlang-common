@@ -1,16 +1,15 @@
-module common.allocators.allocator;
+module common.allocators.BasicAllocator;
 
 import common.all;
 import std.traits : isUnsigned, Signed;
 
-alias Allocator = Allocator_t!ulong;
 ///
 /// TODO - Create another class that defragments the memory.
 ///        This defrag needs to have the ability to move memory
 ///        around in the client.
 ///        Call it _AllocatorDefrag_ or similar.
 ///
-final class Allocator_t(T) {
+final class BasicAllocator(T) {
     static assert(isUnsigned!T);
 private:
     T sizeBytes;

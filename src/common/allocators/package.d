@@ -2,4 +2,4 @@ module common.allocators;
 
 public:
 
-import common.allocators.allocator;
+import common.allocators.BasicAllocator;

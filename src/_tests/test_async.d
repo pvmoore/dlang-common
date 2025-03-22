@@ -8,6 +8,7 @@ import core.sync.semaphore;
 import std.array;
 import std.algorithm.iteration : map, sum, each;
 import std.algorithm.sorting   : sort;
+
 import common;
 
 void runAsyncTests() {
