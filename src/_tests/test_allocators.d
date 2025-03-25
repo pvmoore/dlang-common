@@ -1,8 +1,9 @@
 module _tests.test_allocators;
 
 import std.stdio;
-import std.random   : uniform, Mt19937, unpredictableSeed, randomShuffle;
-import std.typecons : tuple, Tuple;
+import std.random             : uniform, Mt19937, unpredictableSeed, randomShuffle;
+import std.typecons           : tuple, Tuple;
+import std.datetime.stopwatch : StopWatch, AutoStart;
 
 import common;
 import common.allocators;
@@ -11,22 +12,24 @@ void testAllocators() {
     writefln("--== Testing Allocators ==--");
 
     testBasicAllocator();
+
+    fuzzTest();
 }
 
 void testBasicAllocator() {
     writefln("--== Testing Basic Allocator ==--");
 
-    void testEmptyAllocator() {
+    {   
+        writef(" Empty Allocator");
         auto a = new BasicAllocator(0);
         expect(a.isEmpty());
         expect(a.size()==0);
-        expect(a.numBytesFree==0);
-        expect(a.numBytesUsed==0);
-        expect(a.numFreeRegions==1);
-        auto fr = a.freeRegions;
+        expect(a.numBytesFree()==0);
+        expect(a.numBytesUsed()==0);
+        expect(a.numFreeRegions()==1);
+        auto fr = a.freeRegions();
         expect(fr.length==1);
         expect(fr[0][0]==0 && fr[0][1]==0);
-        expect(a.offsetOfLastAllocatedByte()==0);
 
         /// try to allocate 10
         expect(-1 == a.alloc(10));
@@ -35,228 +38,60 @@ void testBasicAllocator() {
         a.resize(100);
         expect(a.isEmpty());
         expect(a.size()==100);
-        expect(a.numBytesFree==100);
-        expect(a.numBytesUsed==0);
-        expect(a.numFreeRegions==1);
-        fr = a.freeRegions;
+        expect(a.numBytesFree()==100);
+        expect(a.numBytesUsed()==0);
+        expect(a.numFreeRegions()==1);
+        fr = a.freeRegions();
         expect(fr.length==1);
         expect(fr[0][0]==0 && fr[0][1]==100, "freeRegions = %s".format(fr));
-        expect(a.offsetOfLastAllocatedByte()==0);
 
         /// Allocate 10
         expect(0 == a.alloc(10));
 
         expect(!a.isEmpty());
         expect(a.size()==100);
-        expect(a.numBytesFree==90);
-        expect(a.numBytesUsed==10);
-        expect(a.numFreeRegions==1);
-        fr = a.freeRegions;
+        expect(a.numBytesFree()==90);
+        expect(a.numBytesUsed()==10);
+        expect(a.numFreeRegions()==1);
+        fr = a.freeRegions();
         expect(fr.length==1);
         expect(fr[0][0]==10 && fr[0][1]==90);
-        expect(a.offsetOfLastAllocatedByte()==9);
 
-        writefln("Empty Allocator OK");
+        writefln(" OK");
     }
-    void testFreeing() {
+    {
+        writef(" Freeing");
         auto a = new BasicAllocator(100);
         expect(0==a.alloc(50));
-        expect(a.numFreeRegions==1);
-        expect(a.offsetOfLastAllocatedByte()==49);
+        expect(a.numFreeRegions()==1);
         // |xxxxx.....|
 
         a.free(10, 20);
         // |x..xx.....|
-        expect(a.numBytesFree==70);
-        expect(a.getFreeRegionsByOffset==[tuple(10,20), tuple(50,50)]);
-        expect(a.offsetOfLastAllocatedByte()==49);
+        expect(a.numBytesFree()==70);
+        expect(a.getFreeRegionsByOffset()==[tuple(10,20), tuple(50,50)]);
 
         a.free(40,10);
         // |x..x......|
-        expect(a.numBytesFree==80);
-        expect(a.getFreeRegionsByOffset==[tuple(10,20), tuple(40,60)]);
-        expect(a.offsetOfLastAllocatedByte()==39);
-    }
-    testEmptyAllocator();
-    testFreeing();
+        expect(a.numBytesFree()==80);
+        expect(a.getFreeRegionsByOffset()==[tuple(10,20), tuple(40,60)]);
 
-
-    struct Regn { uint offset, size; }
-    // 0 represents free, 1 represents used
-    ubyte[10_000] data;
-    Regn[] allocked;
-
-    auto at = new BasicAllocator(data.length);
-    //writefln("offset=%s", at.alloc(77,4));
-    //writefln("offset=%s", at.alloc(8,1));
-    //writefln("offset=%s", at.alloc(10,4));
-    //writefln("offset=%s", at.alloc(11,1));
-    //writefln("offset=%s", at.alloc(6, 4));
-//    writefln("offset=%s", at.alloc(100));
-
-//    writefln("offset=%s", at.alloc(10000));
-//    at.free(0,1000);
-//
-//    writefln("------------");
-//   at.free(1100,100);
-   //at.free(10000-100,100);
-   //at.free(10000-300,200);
-    //at.free(300,100);
-//    at.free(300,100);
-//    at.free(400,100);
-//
-//    writefln("%s", at);
-//    flushConsole();
-//     writefln("freeBytes = %s", at.numBytesFree);
-//     writefln("%s", at.allRegions.map!(it=>
-//        "%s - %s %s".format(it[0],it[0]+it[1],it[2]?"F":"U")));
-     //writefln("%s", at.getFreeRegionsByOffset);
-     //writefln("%s", at.getFreeRegionsBySize);
-//    assert(at.regionCache.length==at.allRegions.length);
-//
-//    float f = 0.4;
-//    if(f<1) return;
-
-
-    int findFree(int start) {
-        int offset = 0;
-        while(offset<data.length && data[offset]==1) offset++;
-        return offset==data.length ? -1 : offset;
-    }
-    bool use(int size) {
-        int offset = 0;
-        while((offset = findFree(offset))!=-1) {
-            if(data.length-offset<size) return false;
-            int i = 0;
-            for(; i<size; i++) if(data[offset+i]==1) break;
-            if(i==size) {
-                //writefln("use %s bytes at offset %s", size, offset);
-                data[offset..offset+size] = 1;
-                allocked ~= Regn(offset,size);
-                return true;
-            } else {
-                offset++;
-            }
-        }
-        return false;
-    }
-    void free(long offset, long size) {
-        //writefln("free(%s,%s)",offset,size);
-        data[offset..offset+size] = 0;
-    }
-    void check() {
-        //writefln("Free regions should be:");
-        int i = 0;
-        int value = data[0];
-        int offset = 0;
-        int size = 0;
-        int freeIndex = 0;
-        auto freeRegions = at.getFreeRegionsByOffset();
-        assert(at.getFreeRegionsBySize.length==freeRegions.length);
-        long freeBytes = 0;
-
-        while(i<data.length) {
-            if(data[i]==0) freeBytes++;
-            if(value!=data[i]) {
-                // change
-                if(value==0) {
-                    // free region
-                    //writefln("[%s] %s bytes",offset, size);
-                    auto region = freeRegions[freeIndex];
-                    if(region[0]!=offset || region[1]!=size) {
-                        throw new Error("Ker-wrong @ %s (found %s,%s insead of %s,%s)".format(
-                            freeIndex, region[0], region[1], offset, size));
-                    }
-                    freeIndex++;
-                }
-                offset = i;
-                size = 0;
-                value = data[i];
-            }
-            size++;
-            i++;
-        }
-        if(value==0) {
-            //writefln("[%s] %s bytes",offset, size);
-            auto region = freeRegions[freeIndex];
-            if(region[0]!=offset || region[1]!=size) {
-                throw new Error("Ker-wrong @ %s (found %s,%s insead of %s,%s)".format(
-                    freeIndex, region[0], region[1], offset, size));
-            }
-        }
-        //writefln("free = %s, used = %s", freeBytes, data.length-freeBytes);
-        if(at.numBytesFree!=freeBytes) throw new Error("freeBytes is wrong (%s. should be %s)".format(at.numBytesFree,freeBytes));
-
-        ulong lastSize = 0;
-        foreach(fr; at.getFreeRegionsBySize) {
-            if(fr[1] < lastSize) {
-                writefln("at=%s", at);
-                throw new Error("wrong");
-            }
-            lastSize = fr[1];
-        }
-
-        //writefln("Check PASSED");
+        writefln(" OK");
     }
 
-    Mt19937 rng;
-    for(auto j=0; j<100; j++) {
-        auto seed = unpredictableSeed;
-        //seed = 1172126497;
-        rng.seed(seed);
-        writefln("seed is %s", seed);
-
-        data[] = 0;
-        allocked.length = 0;
-        at.reset();
-
-        // allocate as much as possible
-        while(true) {
-            int size = uniform(1, 20, rng);
-            if(!use(size)) break;
-            if(at.alloc(size)==-1) throw new Error("Offset was -1");
-        }
-        //writefln("%s", at); flushConsole();
-        //writefln("freeBytes=%s", at.numBytesFree);
-        check();
-        //writefln("freeing"); flushConsole();
-
-        allocked.randomShuffle(rng);
-
-        foreach(i, a; allocked) {
-            if(false && i==4) {
-                writefln("checking");
-                check();
-                writefln("%s", at);
-                flushConsole();
-                break;
-            }
-            //writefln("[%s] freeing %s %s", i, a.offset, a.size); flushConsole();
-            free(a.offset,a.size);
-
-            static if(__traits(compiles,at.free(f[0]))) {
-                at.free(a.offset);
-            } else {
-                at.free(a.offset,a.size);
-            }
-            //writefln("%s", at); flushConsole();
-            //check();
-        }
-        //writefln("%s", at); flushConsole();
-        check();
-        //writefln("%s", at);
-    }
-
-    {   // basic properties
+    {   
+        writef(" Basic properties");
         auto a = new BasicAllocator(100);
 
         expect(a.numBytesFree==100);
         expect(a.numBytesUsed==0);
         expect(a.numFreeRegions==1);
         expect(a.freeRegions[0]==tuple(0,100));
+        writefln(" OK");
     }
 
-    {   // resize
+    {   
+        writef(" Resizing");
         auto a = new BasicAllocator(100);
         a.alloc(10);
 
@@ -317,6 +152,173 @@ void testBasicAllocator() {
         a.resize(45);
         expect(a.size()==50);
 
-        writefln("%s", a);
+        writefln(" OK");
     }
+}
+
+/**
+ * Randomly allocate and free memory using the given allocator
+ */
+void fuzzTest() {
+    writefln("----------------------------------------------------------------");
+    writefln("Fuzz Testing");
+    writefln("----------------------------------------------------------------");
+
+    // Size 10000, took 23.4731 millis
+    // Size 100000, took 75.7526 millis
+    // Size 1000000, took 495.426 millis
+
+    fuzzTest(new BasicAllocator(10_000));
+    fuzzTest(new BasicAllocator(100_000));
+    fuzzTest(new BasicAllocator(1_000_000));
+}
+void fuzzTest(Allocator allocator) {
+    static struct Regn { 
+        ulong offset;
+        ulong size; 
+    }
+    static struct Data {
+        ubyte[] data;       // 0 represents free, 1 represents used
+        Regn[] alloced;
+
+        this(ulong size) {
+            data = new ubyte[size];
+        }
+        void reset() {
+            data[] = 0;
+            alloced.length = 0;
+        }
+        void allocRange(ulong offset, ulong size) {
+            foreach(i; offset..offset+size) {
+                throwIf(data[i]==1, "bad alloc: Offset %s is already allocated", i);
+            }
+            alloced ~= Regn(offset, size);
+            data[offset..offset+size] = 1;
+        }
+        // free 'size' bytes in 'data' starting at 'offset'
+        void free(ulong offset, ulong size) {
+            foreach(i; offset..offset+size) {
+                throwIf(data[i]==0, "bad free: Offset %s is already free", i);
+            }
+            import std.algorithm : remove;
+            data[offset..offset+size] = 0;
+            alloced.removeFirstMatch!Regn(it=> it.offset==offset && it.size==size);
+        }
+        void check(Allocator allocator) {
+            BasicAllocator basic = allocator.as!BasicAllocator;
+            throwIf(!basic, "Handle allocator %s", allocator);
+
+            foreach(i; 0..data.length) {
+                throwIf(isAllocated(i) != basic.isAllocated(i));
+            }
+        }
+        bool isAllocated(ulong offset) {
+            return data[offset]==1;
+        }
+        ulong numBytesFree() {
+            import std.algorithm : count;
+            return data.count!"a==0";
+        }
+        ulong numBytesUsed() {
+            return data.length - numBytesFree();
+        }
+        void dumpRegions() {
+            writefln("Allocated regions:");
+            foreach(r; alloced) {
+                writefln("  (%s - %s)", r.offset, r.offset + r.size-1);
+            }
+        }
+    }
+
+    Mt19937 rng;
+    uint seed = unpredictableSeed;
+    ulong SIZE = allocator.size(); 
+    enum ITERATIONS    = 10; 
+    enum MAX_ALIGNMENT = 16;
+    enum minAllocSize  = 1;
+    ulong maxAllocSize = SIZE / 500;
+
+    enum VERBOSE = false;
+    version(D_Optimized) {
+        enum BENCHMARK = true;
+    } else {
+        enum BENCHMARK = false;
+    }
+    Data data = Data(SIZE);
+    rng.seed(seed);
+
+    static if(VERBOSE) { 
+        writefln("Size .. %s", SIZE);
+        writefln("Seed .. %s", seed);
+    }
+
+    StopWatch watch = StopWatch(AutoStart.yes);
+
+    for(auto j=0; j<ITERATIONS; j++) {
+        static if(!BENCHMARK) {
+            writefln("===============================================================");
+            writefln("Iteration %s", j+1);
+            writefln("===============================================================");
+        }
+        for(uint alignment = 1; alignment <= MAX_ALIGNMENT; alignment *= 2) {
+            static if(!BENCHMARK) {
+                writefln("");
+                writefln(" Alignment               = %s", alignment);
+                writefln("  data.numBytesFree      = %s (%s used)", data.numBytesFree(), data.numBytesUsed());
+                writefln("  allocator.numBytesFree = %s (%s used)", allocator.numBytesFree(), allocator.numBytesUsed());
+                writefln("  ---------------------------------------------------------------");
+            }
+            // allocate as much as possible
+            static if(!BENCHMARK) writef("  Allocating randomly...");
+            
+            while(true) {
+                ulong size = uniform(minAllocSize, maxAllocSize, rng);
+
+                long offset = allocator.alloc(size, alignment);
+                if(offset == -1) { 
+                    break; 
+                }
+                static if(VERBOSE) writefln("offset %s, size = %s", offset, size);
+                try{
+                    data.allocRange(offset, size);
+                }catch(Exception e) {
+                    writefln("FAILED at offset %s, size %s", offset, size);
+                    writefln("%s", allocator);
+                    //data.dumpRegions();
+                    throw e;
+                }
+                static if(VERBOSE) writefln(" .. Alloced %s bytes at offset %s", size, offset);
+
+            }
+            static if(!BENCHMARK) writefln(" (%s alloc regions)", data.alloced.length);
+            static if(VERBOSE) writefln("%s", allocator);
+
+            data.check(allocator);
+
+            // Shuffle the list of allocated regions
+            Regn[] tempRegns = data.alloced.randomShuffle(rng).dup;
+
+            static if(VERBOSE) data.dumpRegions();
+
+            // Free ~90% of the regions
+            static if(!BENCHMARK) writef("  Freeing randomly......");
+            uint numToFree = (tempRegns.length*0.9).as!uint;
+            static if(VERBOSE) writefln("Freeing %s regions", numToFree);
+            foreach(i, a; tempRegns[0..numToFree]) {
+                static if(VERBOSE) writefln(" .. Freeing %s bytes at offset %s", a.size, a.offset);
+                allocator.free(a.offset, a.size);
+                data.free(a.offset, a.size);
+            }
+            static if(!BENCHMARK) writefln(" (%s alloc regions)", data.alloced.length);
+
+            data.check(allocator);
+            static if(!BENCHMARK) writefln("  Check passed");    
+
+            static if(VERBOSE) writefln("%s", allocator);
+        }
+    }
+    static if(!BENCHMARK) writefln("%s", allocator);
+
+    watch.stop();
+    writefln("Size %s, took %s millis", SIZE, watch.peek().total!"nsecs"/1_000_000.0);
 }

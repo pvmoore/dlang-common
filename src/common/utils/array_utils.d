@@ -135,6 +135,15 @@ T removeAt(T)(ref T[] array, ulong index) {
 	return element;
 }
 
+T removeFirstMatch(T)(ref T[] array, bool delegate(T value) pred, T defaultValue = T.init) {
+	foreach(i, v; array) {
+		if(pred(v)) {
+			return array.removeAt!T(i);
+		}
+	}
+	return defaultValue;
+}
+
 /** array.removeRange(start,end) inclusive */
 void removeRange(T)(ref T[] array, ulong start, ulong end) {
 	assert(start <= end);

@@ -3,90 +3,62 @@ module common.allocators.BasicAllocator;
 import common.all;
 import common.allocators;
 
+/**
+ * Basic implementation of the Allocator interface.
+ * 
+ * Pros:
+ *  - Relatively fast
+ *  - Implements all Allocator interface methods
+ *  - Allows freeing part of a previously allocated region
+ *
+ * Cons:
+ *  - Will become fragmented over time if there are a lot of small allocations and frees
+ *    * This will lead to slower allocations and small memory regions that cannot be allocated
+ *  - Allocates from left to right. Can be slow if the regions are fragmented and/or the
+ *    resource is nearly full
+ *  - Not thread safe
+ */
 final class BasicAllocator : Allocator {
-private:
-    ulong sizeBytes;
-    ulong freeBytes;
-    uint _numAllocs;
-    uint _numFrees;
-    FreeRegion[] array;
-
-    static struct FreeRegion {
-        ulong offset;
-        ulong size;
-
-        pragma(inline,true)
-        ulong end() const { return offset+size; }
-        string toString() { return "%s - %s".format(offset,end); }
-    }
-    static assert(FreeRegion.sizeof==ulong.sizeof*2);
 public:
-    override ulong numBytesFree() const { return freeBytes; }
-    override ulong numBytesUsed() const { return sizeBytes-freeBytes; }
-    override ulong size() const { return sizeBytes; }
-
-    bool isEmpty() const { return freeBytes==sizeBytes; }
-
-    uint numAllocs() const { return _numAllocs; }
-    uint numFrees() const { return _numFrees; }
-    uint numFreeRegions() {
-        return cast(uint)freeRegions().length;
-    }
-    Tuple!(ulong,ulong)[] getFreeRegionsByOffset() {
-        return freeRegions()
-            .map!(it=>tuple(it[0], it[1]))
-            .array;
-    }
-    Tuple!(ulong,ulong)[] getFreeRegionsBySize() {
-        return freeRegions()
-            .sort!((x,y) => x[1] < y[1])
-            .map!(it=>tuple(it[0], it[1]))
-            .array;
-    }
-    Tuple!(ulong,ulong)[] freeRegions() {
-        auto buf = appender!(Tuple!(ulong,ulong)[]);
-        foreach(ref b; array) {
-            buf ~= tuple(b.offset, b.size);
-        }
-        return buf.data;
-    }
-    /// Returns 0 if there are no allocations
-    ulong offsetOfLastAllocatedByte() {
-        if(isEmpty()) return 0;
-        if(array.isEmpty()) return sizeBytes-1;
-
-        auto lastFreeRegion = array.last();
-        if(lastFreeRegion.end()==sizeBytes) return lastFreeRegion.offset-1;
-        return sizeBytes-1;
-    }
-
     this(ulong sizeBytes) {
         this.sizeBytes = sizeBytes;
         reset();
     }
-    override long alloc(ulong size, uint alignment=1) {
+
+    override ulong numBytesFree() const { return freeBytes; }
+    override ulong numBytesUsed() const { return sizeBytes-freeBytes; }
+    override ulong size() const { return sizeBytes; }
+
+    override long alloc(ulong size, uint alignment = 1) {
         _numAllocs++;
         /// Iterate through free regions from offset 0
         /// to find a region with enough space for _size_.
         foreach(i, ref b; array) {
             if(b.size==size) {
+                // Free region is exactly the right size
                 auto offset = b.offset;
                 if(alignment>1 && (offset%alignment)!=0) continue;
                 array.removeAt(i);
                 freeBytes -= size;
                 return offset;
+
             } else if(b.size > size) {
+                // Free region is larger than requested size. Use part of this region
                 ulong offset = b.offset;
-                ulong rem;
+                uint rem;
                 if(alignment>1 && (rem=offset%alignment)!=0) {
-                    ulong inc = alignment-rem;
-                    if(b.size-inc==size) {
+                    // offset is not aligned correctly
+
+                    int inc = alignment-rem;
+
+                    if(b.size.as!long-inc < size.as!long) {
+                        // region size is no longer big enough
+                        continue;
+                    } else if(b.size-inc==size) {
                         /// we can just reuse the free block as the inc block
                         /// |+++++++++++free++++++++++|   before
                         /// |++inc++| ----- used -----|   after
                         b.size = inc;
-                    } else if(b.size-inc<size) {
-                        continue;
                     } else {
                         /// we need to create an extra small free block for inc
                         /// |++++++++++free+++++++++|    before
@@ -115,18 +87,19 @@ public:
         _numFrees++;
         ulong end = offset+size;
 
-        int i = findRegion(offset);
-        //writefln("i=%s", i); flushStdErrOut();
+        int i = findFreeRegion(offset);
+        //writefln("i=%s", i); 
 
+        // Calculate prev and next region
         FreeRegion* b;
         FreeRegion* prev;
         FreeRegion* next;
 
-        if(i==array.length) i--;
+        //if(i==array.length) i--;
 
         if(i!=-1) {
             b = &array[i];
-            //writefln("b=%s", b.toString); flushStdErrOut();
+            //writefln("b=%s", b.toString); 
         }
 
         if(!b) {
@@ -178,9 +151,9 @@ public:
     /// Free all allocations.
     ///
     override void reset() {
-        array.length = 0;
         freeBytes = sizeBytes;
 
+        array.length = 0;
         array ~= FreeRegion(0,sizeBytes);
     }
     ///
@@ -188,7 +161,7 @@ public:
     /// smaller size will only reduce down to the end of the last
     /// allocated region.
     ///
-    void resize(ulong newSize) {
+    override void resize(ulong newSize) {
         bool thereIsAnEmptyRegionAtEnd() {
             return array.length>0 && array.last().end==sizeBytes;
         }
@@ -226,42 +199,123 @@ public:
             }
         }
     }
-    string getStats() {
-        return "[allocs=%s, frees=%s]".format(_numAllocs, _numFrees);
+    //──────────────────────────────────────────────────────────────────────────────────────────────────
+    // Useful debugging functions not part of the Allocator interface.
+    //──────────────────────────────────────────────────────────────────────────────────────────────────
+    /**
+     * 
+     * Returns true if the index is within an allocated region.  
+     */
+    bool isAllocated(ulong index) {
+        return -1 == findFreeRegionContainingOffset(index);
+    }
+    bool isEmpty() { return freeBytes==sizeBytes; }
+    uint numAllocs() { return _numAllocs; }
+    uint numFrees() { return _numFrees; }
+    uint numFreeRegions() { return freeRegions().length.as!uint; }
+
+    Tuple!(ulong,ulong)[] getFreeRegionsByOffset() {
+        return freeRegions()
+            .map!(it=>tuple(it[0], it[1]))
+            .array;
+    }
+    Tuple!(ulong,ulong)[] getFreeRegionsBySize() {
+        return freeRegions()
+            .sort!((x,y) => x[1] < y[1])
+            .map!(it=>tuple(it[0], it[1]))
+            .array;
+    }
+    Tuple!(ulong,ulong)[] freeRegions() {
+        Tuple!(ulong,ulong)[] buf;
+        foreach(b; array) {
+            buf ~= tuple(b.offset, b.size);
+        }
+        return buf;
     }
     override string toString() {
-        auto buf = appender!(string[]);
-        buf ~= "--------------";
-        buf ~= "[Allocator %s/%s (%s%%) bytes used (%s free regions)] {".
-            format(sizeBytes-freeBytes, sizeBytes,
-           ((sizeBytes-freeBytes)*100.0) / sizeBytes,
-           array.length);
+        string buf = "[BasicAllocator %s/%s bytes used (%s%%), %s free region%s] {\n".format(
+            sizeBytes-freeBytes, sizeBytes,
+            ((sizeBytes-freeBytes)*100.0) / sizeBytes,
+            array.length,
+            array.length==1 ? "" : "s");
 
         foreach(r; freeRegions()) {
-            buf ~= "  %s - %s (%s bytes)".format(r[0],r[0]+r[1]-1, r[1]);
+            buf ~= "  %s - %s (%s bytes)\n".format(r[0], r[0]+r[1]-1, r[1]);
         }
 
-        buf ~= "}";
-        return buf.data.join("\n");
+        return buf ~ "}";
     }
 private:
-    int findRegion(ulong offset) {
+    ulong sizeBytes;
+    ulong freeBytes;
+    uint _numAllocs;
+    uint _numFrees;
+    FreeRegion[] array;
+
+    static struct FreeRegion { 
+        static assert(FreeRegion.sizeof==ulong.sizeof*2);
+
+        ulong offset;
+        ulong size;
+
+        ulong end() const { return offset+size; }
+        bool contains(ulong offset) { return this.offset <= offset && offset < end(); }
+
+        string toString() { return "%s - %s".format(offset,end); }
+    }
+    /**
+     * Use binary search to find the nearest free region.
+     *
+     * Returns -1 if there are no free regions.
+     */
+    int findFreeRegion(ulong offset) {
         if(array.length==0) return -1;
         if(array.length==1) return 0;
 
+        // There are at least 2 free regions. Perform a binary search
         uint min = 0;
-        uint max = cast(uint)array.length;
+        uint max = array.length.as!uint;
+
         while(min<max) {
-            auto mid = (min+max)>>1;
+            auto mid = (min+max) >> 1;
             auto r   = array[mid];
             if(r.offset==offset) {
+                // Exact match found
                 return mid;
             } else if(r.offset > offset) {
                 max = mid;
             } else {
-                min = mid+1;
+                min = mid + 1;
             }
         }
-        return min;
+        // Return FreeRegion index within array range
+        return min == array.length ? min-1 : min;
+    }
+    /**
+     * Use linear search to find the free region that contains the offset.
+     *
+     * Returns -1 if no free region contains the offset.
+     */
+    int findFreeRegionContainingOffset(ulong offset) {
+        if(array.length==0) return -1;
+        if(array.length==1) return array[0].contains(offset) ? 0 : -1;
+
+        // There are at least 2 free regions. Perform a linear search
+        uint min = 0;
+        uint max = array.length.as!uint;
+
+        while(min<max) {
+            auto mid = (min+max) >> 1;
+            auto r   = array[mid];
+            if(r.contains(offset)) {
+                // Match found
+                return mid;
+            } else if(r.offset > offset) {
+                max = mid;
+            } else {
+                min = mid + 1;
+            }
+        }
+        return -1;
     }
 }

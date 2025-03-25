@@ -4,22 +4,10 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "**** Test (DMD) Debug ****",
-            "type": "dub",
-            "run": true,
-            "compiler": "dmd",
-            "archType": "x86_64",
-            "buildType": "debug",
-            "configuration": "test",
-            "group": {
-                "kind": "build"
-            }
-        },
-        {
-            "label": "**** Run Unit Tests ****",
+            "label": "**** Test (DMD Debug) ****",
             "type": "shell",
             "windows": {
-                "command": "scripts/run_build.bat dmd unittest test"
+                "command": "scripts/run_build.bat dmd debug test"
             },
             "group": {
                 "kind": "build"
@@ -31,11 +19,14 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Test DMD Release ****",
+            "label": "**** Test (DMD Release) ****",
             "type": "shell",
             "windows": {
                 "command": "scripts/run_build.bat dmd release test"
             },
+            "group": {
+                "kind": "build"
+            },
             "presentation": {
                 "reveal": "always",
                 "panel": "shared"
@@ -43,7 +34,7 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Test (LDC) Debug ****",
+            "label": "**** Test (LDC Debug) ****",
             "type": "shell",
             "windows": {
                 "command": "scripts/run_build.bat ldc2 debug test"
@@ -58,7 +49,7 @@
             "problemMatcher": []
         },
          {
-            "label": "**** Test (LDC) Release****",
+            "label": "**** Test (LDC Release) ****",
             "type": "shell",
             "windows": {
                 "command": "scripts/run_build.bat ldc2 release test"
