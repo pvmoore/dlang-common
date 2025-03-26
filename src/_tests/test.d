@@ -33,7 +33,7 @@ import _tests.test_utils;
 import _tests.test_wasm;
 import _tests.test_web;
 
-enum RUN_SUBSET = true;
+enum RUN_SUBSET = false;
 
 extern(C) void asm_test();
 
@@ -57,7 +57,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testAllocators();
+      
     } else {
 
         asm_test();

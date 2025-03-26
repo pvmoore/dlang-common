@@ -23,5 +23,6 @@ interface Allocator {
 
 import common.allocators.ArenaAllocator;
 import common.allocators.BasicAllocator;
+import common.allocators.FreeList;
 import common.allocators.HeapStorage;
-import common.allocators.StructAllocator;
+import common.allocators.StructStorage;
