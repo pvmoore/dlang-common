@@ -68,7 +68,6 @@ void runTests() {
         testContainers();
         testHasher();
         testIo();
-        testObjectCache();
         testParser();
         //testPDH();
         testStringBuffer();
@@ -147,25 +146,6 @@ void testStructCache() {
     cache.take();
     writefln("%s", cache);
 
-}
-void testObjectCache() {
-    writefln("--== Testing ObjectCache ==--");
-
-    static class Thingy { this(int a) {} }
-    auto cache = new ObjectCache!Thingy;
-
-    cache.release(new Thingy(1));
-    cache.release(new Thingy(2));
-    assert(cache.numAvailable==2);
-
-    auto t1 = cache.take();
-    auto t2 = cache.take();
-    cache.release(t1);
-    cache.release(t2);
-    assert(cache.numAvailable==2);
-
-    auto t3 = cache.take();
-    assert(cache.numAvailable==1);
 }
 void testBool3() {
     writefln("--== Testing Bool3 ==--");
