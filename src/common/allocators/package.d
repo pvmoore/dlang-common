@@ -11,7 +11,7 @@ public:
 interface Allocator {
     long alloc(ulong size, uint alignment = 1);
 
-    // The 'size' parameter allows for partial freeing but we may not want to allow this
+    // The 'size' parameter allows for partial freeing which may not be supported by the implementation.
     void free(ulong index, ulong size);
     
     void reset();
@@ -21,5 +21,6 @@ interface Allocator {
     ulong numBytesUsed();
 }
 
+import common.allocators.ArenaAllocator;
 import common.allocators.BasicAllocator;
 import common.allocators.HeapStorage;

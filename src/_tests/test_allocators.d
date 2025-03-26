@@ -12,6 +12,7 @@ void testAllocators() {
     writefln("--== Testing Allocators ==--");
 
     testBasicAllocator();
+    testArenaAllocator();
 
     fuzzTest();
 }
@@ -153,6 +154,111 @@ void testBasicAllocator() {
         expect(a.size()==50);
 
         writefln(" OK");
+    }
+}
+
+void testArenaAllocator() {
+    writefln("--== Testing Arena Allocator ==--");
+
+    {
+        writef(" Empty Allocator");
+        auto a = new ArenaAllocator(0);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 0);
+        
+        expect(a.alloc(1) == -1);
+        writefln(" OK");
+    }
+    {
+        writef(" Alloc alignment = 1");
+        auto a = new ArenaAllocator(100);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        expect(a.alloc(10) == 0);
+        expect(a.numBytesUsed() == 10);
+        expect(a.numBytesFree() == 90);
+
+        expect(a.alloc(20) == 10);
+        expect(a.numBytesUsed() == 30);
+        expect(a.numBytesFree() == 70);
+
+        expect(a.alloc(71) == -1);
+    }
+    {
+        writef(" Alloc alignment = 4");
+        auto a = new ArenaAllocator(100);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        expect(a.alloc(10, 4) == 0);
+        expect(a.numBytesUsed() == 10);
+        expect(a.numBytesFree() == 90);
+
+        expect(a.alloc(21, 4) == 12);
+        expect(a.numBytesUsed() == 33);
+        expect(a.numBytesFree() == 67);
+
+        expect(a.alloc(5, 4) == 36);
+        expect(a.numBytesUsed() == 41);
+        expect(a.numBytesFree() == 59);
+
+        expect(a.alloc(60, 4) == -1);
+    }
+    {
+        writef(" Alloc alignment = 8");
+        auto a = new ArenaAllocator(100);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        expect(a.alloc(10, 8) == 0);
+        expect(a.numBytesUsed() == 10);
+        expect(a.numBytesFree() == 90);
+
+        expect(a.alloc(21, 8) == 16);
+        expect(a.numBytesUsed() == 37);
+        expect(a.numBytesFree() == 63);
+    }
+    {
+        writef(" Free");
+        auto a = new ArenaAllocator(100);
+
+        expect(a.alloc(20)==0);
+        expect(a.numBytesUsed() == 20);
+        expect(a.numBytesFree() == 80);
+
+        // No change
+        a.free(0, 20);
+        expect(a.numBytesUsed() == 20);
+        expect(a.numBytesFree() == 80);
+    }
+    {
+        writef(" Reset");
+        auto a = new ArenaAllocator(100);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        expect(a.alloc(20)==0);
+        expect(a.numBytesUsed() == 20);
+        expect(a.numBytesFree() == 80);
+
+        a.reset();
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+    }
+    {
+        writef(" Resize");
+        auto a = new ArenaAllocator(100);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        expect(a.alloc(20)==0);
+        expect(a.numBytesUsed() == 20);
+        expect(a.numBytesFree() == 80);
+
+        a.resize(1000);
+        expect(a.numBytesUsed() == 20);
+        expect(a.numBytesFree() == 980);
     }
 }
 
