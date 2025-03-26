@@ -66,7 +66,6 @@ void runTests() {
         testBetterc();
         testBool3();
         testContainers();
-        testFreeList();
         testHasher();
         testIo();
         testObjectCache();
