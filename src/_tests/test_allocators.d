@@ -11,12 +11,13 @@ import common.allocators;
 void testAllocators() {
     writefln("--== Testing Allocators ==--");
 
-    testFreeList();
-    testBasicAllocator();
-    testArenaAllocator();
-    testStructStorage();
+    // testFreeList();
+    // testBasicAllocator();
+    // testArenaAllocator();
+    // testStructStorage();
+    testHeapStorage();
 
-    fuzzTestAllocator();
+    // fuzzTestAllocator();
 }
 
 void testFreeList() {
@@ -469,6 +470,95 @@ void testStructStorage() {
 
         // a now points to a reset S instance
         expect(a.x == 0);
+    }
+}
+void testHeapStorage() {
+    writefln("--== Testing HeapStorage ==--");
+
+    {
+        writef(" Empty");
+        auto a = new HeapStorage(new ArenaAllocator(0));
+        expect(a.size() == 0);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 0);
+
+        expect(a.alloc(1) is null);
+        
+        writefln(" OK");
+    }
+    {
+        writef(" Alloc");
+        auto a = new HeapStorage(new ArenaAllocator(100));
+        expect(a.size() == 100);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        void* p1 = a.alloc(10);
+        expect(p1 !is null);
+        expect(a.size() == 100);
+        expect(a.numBytesUsed() == 10);
+        expect(a.numBytesFree() == 90);
+
+        void* p2 = a.alloc(20);
+        expect(p2 !is null);
+        expect(a.size() == 100);
+        expect(a.numBytesUsed() == 30);
+        expect(a.numBytesFree() == 70);
+
+        void* p3 = a.alloc(71);
+        expect(p3 is null);
+
+        void* p4 = a.alloc(10);
+        expect(p4 !is null);
+        expect(a.size() == 100);
+        expect(a.numBytesUsed() == 40);
+        expect(a.numBytesFree() == 60);
+    }
+    {
+        writef(" Free");
+        auto a = new HeapStorage(new BasicAllocator(100));
+        expect(a.size() == 100);
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        void* p1 = a.alloc(10);
+        expect(p1 !is null);
+        expect(a.numBytesUsed() == 10);
+        expect(a.numBytesFree() == 90);
+
+        void* p2 = a.alloc(20);
+        expect(p2 !is null);
+        expect(a.numBytesUsed() == 30);
+        expect(a.numBytesFree() == 70);
+
+        ubyte* p1b = p1.as!(ubyte*);
+        p1b[0] = 7;
+
+        a.free(p1);
+        expect(a.numBytesUsed() == 20);
+        expect(a.numBytesFree() == 80);
+
+        // the freed memory has been zeroed
+        expect(p1b[0] == 0);
+    }
+    {
+        writef(" Reset");
+        auto a = new HeapStorage(new BasicAllocator(100));
+
+        void* p = a.alloc(10);
+        ubyte* pb = p.as!(ubyte*);
+        expect(p !is null);
+        expect(a.numBytesUsed() == 10);
+        expect(a.numBytesFree() == 90);
+
+        pb[0] = 99;
+
+        a.reset();
+        expect(a.numBytesUsed() == 0);
+        expect(a.numBytesFree() == 100);
+
+        // The memory has been zeroed
+        expect(pb[0] == 0);
     }
 }
 

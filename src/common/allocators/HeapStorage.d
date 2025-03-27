@@ -10,25 +10,42 @@ import common.allocators;
  */
 class HeapStorage {
 public:
-    ulong size() { return _size; }
+    ulong size() { return heap.length; }
+    ulong numBytesUsed() { return allocator.numBytesUsed(); }
+    ulong numBytesFree() { return allocator.numBytesFree(); }
     
-    this(ulong size, Allocator allocator) {
+    this(Allocator allocator) {
         this.allocator = allocator;
-        this._size = size;
-        this.heap = new ubyte[size];
+        this.heap = new ubyte[allocator.size()];
     }
     void reset() {
         allocator.reset();
+        allocations.clear();
+        heap[] = 0;
     }
-    void* allocate(ulong size, uint alignment = 1) {
-        long pos = allocator.alloc(size, alignment);
-        return null;
+    void* alloc(ulong size, uint alignment = 1) {
+        long offset = allocator.alloc(size, alignment);
+        if(offset == -1) return null;
+
+        allocations[offset] = size;
+        return &heap[offset];
     }
     void free(void* ptr) {
-        //allocator.free(ptr);
+        assert(ptr);
+        assert(ptr >= heap.ptr && ptr < heap.ptr + heap.length);
+
+        ulong offset = (heap.ptr - ptr.as!(ubyte*)).as!ulong; 
+        ulong size = allocations.get(offset, -1);
+        throwIf(size == -1, "Freeing ptr that was not allocated: 0xX", ptr);
+
+        allocator.free(offset, size);
+        allocations.remove(offset);
+
+        // zero the freed memory
+        heap[offset .. offset + size] = 0;
     }
 private:
     Allocator allocator;
-    ulong _size;
     ubyte[] heap;
+    ulong[ulong] allocations;
 }

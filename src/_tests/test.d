@@ -57,7 +57,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-      
+        testAllocators();
     } else {
 
         asm_test();
