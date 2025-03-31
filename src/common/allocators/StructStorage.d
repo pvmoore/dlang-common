@@ -3,6 +3,12 @@ module common.allocators.StructStorage;
 import common.all;
 import common.allocators;
 
+/**
+ * Struct storage using a free list to manage allocations.
+ *
+ * There is no resize function since that is likely to reallocate memory and invalidate
+ * the client pointers.
+ */
 final class StructStorage(T) if(is(T == struct)) {
 public:
     uint numUsed() { return freeList.numUsed(); }

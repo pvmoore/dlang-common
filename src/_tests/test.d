@@ -7,18 +7,18 @@ import core.time        : dur;
 import core.thread      : Thread, thread_joinAll;
 import core.memory      : GC;
 
-import std.random       : randomShuffle,uniform, Mt19937, unpredictableSeed;
-import std.format       : format;
-import std.conv         : to;
-import std.typecons     : Tuple,tuple;
-import std.range        : array,stride,join,iota;
-import std.parallelism  : parallel, task;
-import std.file         : exists, tempDir, remove;
-import std.array        : join;
-import std.datetime.stopwatch   : benchmark, StopWatch;
-import std.algorithm.iteration  : permutations, map, sum, each;
-import std.algorithm.sorting    : sort;
-import std.algorithm.mutation   : reverse;
+import std.random              : randomShuffle,uniform, Mt19937, unpredictableSeed;
+import std.format              : format;
+import std.conv                : to;
+import std.typecons            : Tuple,tuple;
+import std.range               : array,stride,join,iota;
+import std.parallelism         : parallel, task;
+import std.file                : exists, tempDir, remove;
+import std.array               : join;
+import std.datetime.stopwatch  : benchmark, StopWatch;
+import std.algorithm.iteration : permutations, map, sum, each;
+import std.algorithm.sorting   : sort;
+import std.algorithm.mutation  : reverse;
 
 import common;
 
@@ -32,23 +32,30 @@ import _tests.test_threads;
 import _tests.test_utils;
 import _tests.test_wasm;
 import _tests.test_web;
+import _tests.bench.bench;
 
-enum RUN_SUBSET = false;
+enum RUN_SUBSET = true;
 
 extern(C) void asm_test();
 
-void main() {
-    runTests();
+void main(string[] args) {
+    string mode = args.length > 1 ? args[1] : "TEST";
 
-    static if(!RUN_SUBSET) {
-        
+    switch(mode) {
+        case "BENCHMARK": {
+            runBenchmarks();
+            return;
+        }
+        default:
+            runTests();
+            
+            version(assert) {
+
+            } else {
+                writefln("WARNING!!! Running tests in release mode - asserts are disabled\n");  
+            }
+            break;
     }
-    version(assert) {
-
-    } else {
-        writefln("WARNING!! running test in release mode - asserts are disabled");
-    }
-
 }
 
 void runTests() {
@@ -57,7 +64,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testAllocators();
+        testContainers();
     } else {
 
         asm_test();

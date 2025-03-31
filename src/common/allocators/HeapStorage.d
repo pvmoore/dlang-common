@@ -6,7 +6,8 @@ import common.allocators;
 /**
  * Simple RAM heap storage 
  *
- *
+ * There is no resize function since that is likely to reallocate memory and invalidate
+ * the client pointers.
  */
 class HeapStorage {
 public:

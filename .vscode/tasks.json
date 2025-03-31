@@ -64,10 +64,10 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Bench (LDC) Release ****",
+            "label": "**** Benchmark (LDC) Release ****",
             "type": "shell",
             "windows": {
-                "command": "scripts/run_build.bat ldc2 release bench"
+                "command": "scripts/run_build.bat ldc2 release test BENCHMARK"
             },
             "group": {
                 "kind": "build"
@@ -79,10 +79,10 @@
             "problemMatcher": []
         },
         {
-            "label": "**** Bench (DMD) Release ****",
+            "label": "**** Benchmark (DMD) Release ****",
             "type": "shell",
             "windows": {
-                "command": "scripts/run_build.bat dmd release bench"
+                "command": "scripts/run_build.bat dmd release test BENCHMARK"
             },
             "group": {
                 "kind": "build"

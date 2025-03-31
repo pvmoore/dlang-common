@@ -2,13 +2,14 @@ module _tests.test_containers;
 
 import std.stdio  : writef, writefln;
 import std.format : format;
+import std.random : uniform, uniform01, Mt19937, unpredictableSeed;
 
 import common.all;
 import _tests.test : RUN_SUBSET;
 
 void testContainers() {
     static if(RUN_SUBSET) {
-       
+       testUnorderedMap();
     } else {
         testCircularBuffer();
         testList();
@@ -16,6 +17,7 @@ void testContainers() {
         testQueue();
         testSet();
         testMap();
+        testUnorderedMap();
         testSparseArray();
         testStack();
         testTreeList();
@@ -261,56 +263,6 @@ void testCircularBuffer() {
             buf.take();
             assert(false);
         }catch(Exception e) {}
-    }
-}
-void testMap() {
-    writefln("==-- Testing Map --==");
-
-    {
-        auto m = new Map!(string,int);
-        assert(m.length==0 && m.isEmpty);
-
-        m.add("a", 1);
-        assert(m.length==1 && !m.isEmpty);
-        assert(m.containsKey("a") && m.containsValue(1));
-        assert(*m["a"] == 1);
-
-        m["b"] = 2;
-        assert(m.length==2);
-        assert(m.containsKey("b"));
-        assert(m.containsValue(2));
-        assert(!m.containsKey("z"));
-        assert(!m.containsValue(99));
-        assert(*m["b"] == 2);
-
-        auto m2 = new Map!(string,int);
-        m2.add("c", 3)
-          .add("d", 4);
-
-        // containsAllKeys
-        // containsAnyKeys
-        m.add(m2);
-        assert(m.length==4);
-        assert(m.containsAllKeys("a", "b", "c", "d"));
-        assert(!m.containsAllKeys("a", "z"));
-        assert(m.containsAnyKeys("z", "a"));
-        assert(!m.containsAnyKeys("z", "h"));
-
-        // remove
-        assert(m.remove("b"));
-        assert(!m.remove("z"));
-        assert(m.length==3);
-        assert(m.containsAllKeys("a", "c", "d"));
-
-        // update
-        m.update("c", ()=>33, (i) { return i+10; });
-        m.update("e", ()=>33, (i) { return i+10; });
-        assert(*m["c"]==13);
-        assert(*m.get("e")==33);
-
-        // clear
-        m.clear();
-        assert(m.isEmpty() && m.length==0);
     }
 }
 void testList() {
@@ -706,4 +658,276 @@ void testAsyncQueue() {
         assert(q.length()==0);
         assert(sink3 == [7,8,9,10,11]);
     }
+}
+void testMap() {
+    writefln("----------------------------------------------------------------");
+    writefln(" Testing Map");
+    writefln("----------------------------------------------------------------");
+
+    {
+        auto m = new Map!(string,int);
+        assert(m.length==0 && m.isEmpty);
+
+        m.add("a", 1);
+        assert(m.length==1 && !m.isEmpty);
+        assert(m.containsKey("a") && m.containsValue(1));
+        assert(*m["a"] == 1);
+
+        m["b"] = 2;
+        assert(m.length==2);
+        assert(m.containsKey("b"));
+        assert(m.containsValue(2));
+        assert(!m.containsKey("z"));
+        assert(!m.containsValue(99));
+        assert(*m["b"] == 2);
+
+        auto m2 = new Map!(string,int);
+        m2.add("c", 3)
+          .add("d", 4);
+
+        // containsAllKeys
+        // containsAnyKeys
+        m.add(m2);
+        assert(m.length==4);
+        assert(m.containsAllKeys("a", "b", "c", "d"));
+        assert(!m.containsAllKeys("a", "z"));
+        assert(m.containsAnyKeys("z", "a"));
+        assert(!m.containsAnyKeys("z", "h"));
+
+        // remove
+        assert(m.remove("b"));
+        assert(!m.remove("z"));
+        assert(m.length==3);
+        assert(m.containsAllKeys("a", "c", "d"));
+
+        // update
+        m.update("c", ()=>33, (i) { return i+10; });
+        m.update("e", ()=>33, (i) { return i+10; });
+        assert(*m["c"]==13);
+        assert(*m.get("e")==33);
+
+        // clear
+        m.clear();
+        assert(m.isEmpty() && m.length==0);
+    }
+}
+void testUnorderedMap() {
+    writefln("----------------------------------------------------------------");
+    writefln(" Testing UnorderedMap");
+    writefln("----------------------------------------------------------------");
+
+    // {
+    //     ulong hash1(ulong x) {
+    //         x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9L;
+    //         x = (x ^ (x >> 27)) * 0x94d049bb133111ebL;
+    //         x = x ^ (x >> 31);
+    //         return x;
+    //     }
+    //     static struct List {
+    //         uint[] values;
+    //     }
+    //     List[] slots = new List[16];
+    //     foreach(i; 0..100) {
+    //         uint s = (hash1(i) % 16).as!uint;
+    //         slots[s].values ~= i;
+    //     }
+    //     foreach(i, s; slots) {
+    //         writefln("%s: %s", i, slots[i].values.map!(it=>"%s".format(it)).join(","));
+    //     }
+    // }
+
+    {
+        auto m = new UnorderedMap!(ulong,ulong)(16, 1.0f);
+        assert(m.isEmpty());
+        assert(m.size()==0);
+        assert(m.capacity()==16);
+
+        // These should not be found
+        assert(m.get(7) == 0);
+        assert(m.get(0, 7) == 7);
+
+        // Slots | Keys
+        // ------|----------------------------------
+        // 0     | 0,3,50,69,73,83
+        // 1     | 13,18,57
+        // 2     | 20,28,29,30,36,42,93
+        // 3     | 39,45,64,74
+        // 4     | 4,7,48,53,56,67,72
+        // 5     | 1,23,31,32,40,41,60,63,68,86
+        // 6     | 90,92
+        // 7     | 9,19,33,44,52,78,85,89
+        // 8     | 8,24,25,37,58,77
+        // 9     | 10,14,15,21,51,71,79,84,87,96,97,99
+        // 10    | 2,43,80,95
+        // 11    | 22,26,46,55,62,65,82
+        // 12    | 5,6,12,27,34,47,54,70,81
+        // 13    | 11,16,75,76,94
+        // 14    | 17,35,38,59
+        // 15    | 49,61,66,88,91,98
+
+        // These hash to the same slot [0]
+        m.insert(0, 90);         
+        m.insert(3, 40);      
+
+        assert(!m.isEmpty());
+        assert(m.size()==2);
+        assert(m.capacity()==16);
+        assert(m.get(0)==90);
+        assert(m.get(3)==40);
+
+        // These hash to the same slot [0]
+        m.insert(3, 50);
+        m.insert(0, 60); 
+        assert(m.size()==2);
+        assert(m.get(3)==50);
+        assert(m.get(0)==60);
+
+        // These hash to the same slot [0]
+        m.insert(0, 70); 
+        m.insert(3, 80);
+        assert(m.size()==2);
+        assert(m.get(3)==80);
+        assert(m.get(0)==70);
+
+        // These hash to the same slot [16] and will wrap round to start filling from [2]
+        m.insert(20, 1);
+        m.insert(28, 2);   
+        m.insert(29, 3);    
+        m.insert(30, 4);   
+        assert(m.size()==6);
+        assert(m.get(20)==1);
+        assert(m.get(28)==2);
+        assert(m.get(29)==3);
+        assert(m.get(30)==4);
+        assert(*m.getPtr(30)==4);
+
+        assert(m.remove(900) == false);
+        assert(m.size()==6);
+
+        m.dump();
+
+        assert(m.remove(3));
+        assert(m.size()==5);
+
+        //m.put(81, 3);
+
+        m[81] = 3;
+        assert(m.size()==6);
+        assert(m[81]==3);
+
+        m[81] = 4;
+        m[82] = 5;
+        m[83] = 6;
+        m[84] = 7;
+        m[85] = 8;
+        m[86] = 9;
+        m[87] = 10;
+        m[88] = 11;    
+        m[89] = 12;
+        m[90] = 13;
+
+        // This will cause a resize
+        //m[91] = 14;
+
+        m.dump();
+    }
+    
+    foreach(i; 0..10) {
+        fuzzTestUnorderedMap(5000);
+    }
+}
+void fuzzTestUnorderedMap(uint iterations) {
+    writefln("----------------------------------------------------------------");
+    writefln(" Fuzz Testing UnorderedMap (%s iterations)", iterations);
+    writefln("----------------------------------------------------------------");
+
+    Mt19937 rng;
+    auto seed = unpredictableSeed();
+    //seed = 3413898126;
+    rng.seed(seed);
+    writefln("seed = %s", seed);
+
+    auto um = new UnorderedMap!(ulong,ulong)(16, 0.95);
+    ulong[ulong] dmap;
+
+    void dumpMaps() {
+        import std.algorithm : sort;
+        um.dump();
+        writefln("----------------------------------------------------------------");
+        writefln("Dumping UnorderedMap (size = %s)", um.size());
+        writefln("----------------------------------------------------------------");
+        auto sortedKeys = um.keys().sort();
+        foreach(k; sortedKeys) {
+            writefln("%s = %s", k, um.get(k));
+        }
+        writefln("----------------------------------------------------------------");
+        writefln("Dumping dmap (length = %s)", dmap.length);
+        writefln("----------------------------------------------------------------");
+        sortedKeys = dmap.keys.sort();
+        foreach(k; sortedKeys) {
+            writefln("%s = %s", k, dmap[k]);
+        }
+    }
+
+    ulong[] keys;
+
+    ulong getKey() {
+        if(keys.length == 0) return 0;
+        if(keys.length == 1) return keys[0];
+        return keys[uniform(0, keys.length, rng)];
+    }
+
+    ulong numInserts = 0;
+    ulong numUpdates = 0;
+    ulong numRemoves = 0;
+
+    try{
+        foreach(i; 0..iterations) {
+
+            auto r = uniform01(rng);
+
+            if(r < 0.7) {
+                // Add a new key
+                ulong key = uniform(0L, 1000000000L, rng);
+                keys ~= key;
+                //writefln("Adding %s = %s", key, i);
+
+                um.insert(key, i);
+                dmap[key] = i;
+                numInserts++;
+            } else if(keys.length > 0 && r < 0.85) {
+                // Update a key
+                ulong key = getKey();
+                //writefln("Updating %s = %s", key, i);
+
+                um.insert(key, i);
+                dmap[key] = i;
+                numUpdates++;
+            } else {
+                // Remove a key
+                ulong key = getKey();
+                //writefln("Removing %s", key);
+
+                bool a = um.remove(key);
+                bool b = dmap.remove(key);
+                numRemoves++;
+                throwIfNot(a == b, "remove %s failed, a = %s, b = %s", key, a, b);
+            }
+            // Check size
+            throwIfNot(um.size()==dmap.length);
+            // Check key, values
+            foreach(k; um.keys()) {
+                throwIfNot(um.get(k) == dmap[k]);
+            }
+            foreach(k; dmap.keys) {
+                throwIfNot(um.get(k) == dmap[k]);
+            }
+        }
+    }catch(Exception e) {
+        writefln("Failed: %s", e);
+        dumpMaps();
+        throw e;
+    }
+    writefln(" Passed: %s keys, %s inserts, %s updates, %s removes", um.size(), numInserts, numUpdates, numRemoves);
+    //um.dump();
 }
