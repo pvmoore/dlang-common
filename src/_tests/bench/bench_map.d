@@ -16,16 +16,16 @@ private:
 auto getMaps(T)() {
     return [
         cast(Map!T)new BuiltinMap!T(),
-        new UnorderedMapWrapper!(T, 0)(0.9),
-        new UnorderedMapWrapper!(T, 3)(0.9), 
-        new UnorderedMapWrapper!(T, 0)(0.8),
-        new UnorderedMapWrapper!(T, 3)(0.8),
-        new UnorderedMapWrapper!(T, 0)(0.75),
-        new UnorderedMapWrapper!(T, 3)(0.75),
-        new UnorderedMapWrapper!(T, 0)(0.6),
-        new UnorderedMapWrapper!(T, 3)(0.6),
-        new UnorderedMapWrapper!(T, 0)(0.5),
-        new UnorderedMapWrapper!(T, 3)(0.5),
+        new UnorderedMapWrapper!(T, 0)(16, 0.9),
+        new UnorderedMapWrapper!(T, 3)(16, 0.9), 
+        new UnorderedMapWrapper!(T, 0)(16, 0.8),
+        new UnorderedMapWrapper!(T, 3)(16, 0.8),
+        new UnorderedMapWrapper!(T, 0)(16, 0.75),
+        new UnorderedMapWrapper!(T, 3)(16, 0.75),
+        new UnorderedMapWrapper!(T, 0)(16, 0.6),
+        new UnorderedMapWrapper!(T, 3)(16, 0.6),
+        new UnorderedMapWrapper!(T, 0)(16, 0.5),
+        new UnorderedMapWrapper!(T, 3)(16, 0.5),
     ];
 }
 auto getBenchmarks(T)(ulong numKeys) {
@@ -185,7 +185,7 @@ final class BuiltinMap(T) : Map!T {
     uint[T] map;
 
     string name() {
-        return "BuiltinMap ..........";
+        return "BuiltinMap ..............";
     }
     string colour() {
         return Ansi.BLUE_BOLD;
@@ -207,16 +207,18 @@ final class BuiltinMap(T) : Map!T {
     }
 }
 final class UnorderedMapWrapper(T, uint HASH) : Map!T {
+    ulong capacity;
     float loadFactor;
     UnorderedMap!(T, uint, HASH) map;
 
-    this(float loadFactor) {
+    this(ulong capacity, float loadFactor) {
+        this.capacity = capacity;
         this.loadFactor = loadFactor;
         reset();
     }
 
     string name() {
-        return "UnorderedMap!%s (%.2f)".format(HASH, loadFactor);
+        return "UnorderedMap!%s (%s, %.2f)".format(HASH, capacity, loadFactor);
     }
     string colour() {
         return Ansi.GREEN_BOLD;
@@ -234,7 +236,7 @@ final class UnorderedMapWrapper(T, uint HASH) : Map!T {
         return map.size();
     }
     void reset() {
-        map = new UnorderedMap!(T, uint, HASH)(16, loadFactor);
+        map = new UnorderedMap!(T, uint, HASH)(capacity, loadFactor);
     }
 }
 //──────────────────────────────────────────────────────────────────────────────────────────────────

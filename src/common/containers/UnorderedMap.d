@@ -7,18 +7,18 @@ import common.all;
  */
 final class UnorderedMap(K, V, uint HASH = 0) {
 public:
-    this(ulong initialCapacity = 16, float loadFactor = 0.75) {
-        throwIf(!isPowerOf2(initialCapacity), "capacity must be a power of 2");
-        throwIf(loadFactor <= 0.0 || loadFactor > 1.0, "loadFactor must be > 0.0 and  <= 1.0");
+    this(ulong capacity = 16, float loadFactor = 0.75) {
+        throwIf(!isPowerOf2(capacity), "capacity must be a power of 2");
+        throwIf(loadFactor <= 0.0 || loadFactor > 1.0, "loadFactor must be > 0.0 and <= 1.0");
 
         this.loadFactor       = loadFactor;
-        this.mask             = initialCapacity - 1;
+        this.mask             = capacity - 1;
 
-        this.slots.length     = initialCapacity;
-        this.flags.length     = initialCapacity / 32 + 1;
-        this.pageIndex.length = initialCapacity;
+        this.slots.length     = capacity;
+        this.flags.length     = capacity / 32 + 1;
+        this.pageIndex.length = capacity;
 
-        this.numKeysThreshold = calculateLoadFactorThreshold(initialCapacity, loadFactor);
+        this.numKeysThreshold = calculateLoadFactorThreshold(capacity, loadFactor);
 
         addPage();
     }
@@ -51,6 +51,7 @@ public:
      * Add or replace a Key,Value in the map
      */
     void insert(K key, V value) {
+        static if(isObject!K) assert(key !is null);
         uint slot = getSlot(key);
 
         // Find a free slot for this key. Or update the value in an existing slot
@@ -74,19 +75,10 @@ public:
         }
     }
     /** 
-     * Add or replace a Key,Value in the map, applying one of the two mapping functions
-     *
-     * If the key is not found then the createFunc is called to create the value. Return true to add the value
-     * to the map.
-     * If the key is found then the updateFunc is called. Return true to update the value in the map.
-     */
-    void compute(K key, bool delegate(K, V*) createFunc, bool delegate(K, V*) updateFunc) {
-        todo("not implemented");
-    }
-    /** 
      * Get a value from the map. Returns defaultValue if the key is not found
      */
     V get(K key, V defaultValue = V.init) {
+        static if(isObject!K) assert(key !is null);
         if(V* v = getPtr(key)) {
             return *v;
         }
@@ -97,6 +89,7 @@ public:
      * The pointer is guaranteed to remain valid (even after rehashing or the map is deleted)
      */
     V* getPtr(K key) {
+        static if(isObject!K) assert(key !is null);
         long slot = findSlotForKey(key);
         if(slot != -1) {
             return getValue(slot.as!uint);
@@ -107,12 +100,14 @@ public:
      * Returns true if the key is in the map
      */
     bool containsKey(K key) {
+        static if(isObject!K) assert(key !is null);
         return getPtr(key) !is null;
     }
     /** 
      * Remove a key from the map. Returns true if the key was found and removed
      */
     bool remove(K key) {
+        static if(isObject!K) assert(key !is null);
         long foundSlot = findSlotForKey(key);
         if(foundSlot == -1) {
             // Key not found
@@ -156,6 +151,48 @@ public:
         }
 
         return true;
+    }
+    /** 
+     * Add or replace a Key,Value in the map, applying one of the two mapping functions.
+     *
+     * params:
+     *    createFunc: Function to call if the key is not found. Modify the value as required and
+     *                then return true to add the value to the map.
+     *                Note that the value ptr is not the canonical ptr to the value and should not be copied
+     * 
+     *    updateFunc: Function to call if the key is found. Modify the value as required
+     *                then return true to update the value in the map or false to remove it
+     *
+     * Returns a pointer to the value in the map (or null if the key is no longer in the map)
+     */
+    V* compute(K key, bool delegate(K, V*) createFunc, bool delegate(K, V*) updateFunc) {
+        static if(isObject!K) assert(key !is null);
+        assert(createFunc !is null);
+        assert(updateFunc !is null);
+
+        long slot = findSlotForKey(key);
+        if(slot == -1) {
+            // Create the value (if required)
+            V value;
+            if(createFunc(key, &value)) {
+
+                // Since we know that this key is not in the map we can just find the next free slot
+                uint slot2 = getSlot(key);
+                while(isOccupied(slot2)) {
+                    slot2 = nextSlot(slot2);
+                }
+                // This slot is free
+                return addKeyValue(slot2, key, value);
+            }
+            return null;
+        } 
+        // Update the value in the map
+        V* valuePtr = getValue(slot.as!uint);
+        if(updateFunc(key, valuePtr)) {
+            return valuePtr;
+        }
+        remove(key);
+        return null;
     }
     /** 
      * Return a new array containing all keys in the map (in undefined order)
@@ -252,7 +289,8 @@ public:
     /** 
      * Rehash the map to optimise memory usage or change the load factor
      */
-    void rehash(float loadFactor) {
+    void rehash(ulong capacity, float loadFactor) {
+        throwIf(!isPowerOf2(capacity), "capacity must be a power of 2");
         throwIf(loadFactor <= 0.0 || loadFactor > 1.0, "loadFactor must be > 0.0 and  <= 1.0");
         todo("not implemented");
         // Here we can rehash the keys if the capacity is too large
@@ -373,10 +411,9 @@ private:
         return isOccupied(slot) ? slot : -1L;
     }
     ulong getHash(K key) {
-        // todo - Test using uint for hash. Is this as good as ulong?
+        // Call toHash if K implements it
         static if(__traits(compiles, key.toHash())) {
             ulong hash = key.toHash();
-            //writefln(" toHash -> %s", hash);
         } else static if(is(K : ulong)) {
             static if(HASH == 0) {
                 ulong hash = hash0(key);
@@ -391,15 +428,12 @@ private:
             } else static if(HASH == 5) {
                 ulong hash = hash5(key);
             } else static assert(false);
-            //writefln(" ulong -> %s", hash);
         } else static if(is(K==string)) {
             ulong hash = djb2_hash(key);
-            //writefln(" djb2_hash -> %s", hash);
         } else {
             // todo - We could hash the raw bytes of this type here
             TypeInfo t = typeid(typeof(key));
             ulong hash = t.getHash(&key);
-            //writefln(" typeid.getHash -> %s", hash);
         }
         return hash;
     }

@@ -716,26 +716,6 @@ void testUnorderedMap() {
     writefln(" Testing UnorderedMap");
     writefln("----------------------------------------------------------------");
 
-    // {
-    //     ulong hash1(ulong x) {
-    //         x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9L;
-    //         x = (x ^ (x >> 27)) * 0x94d049bb133111ebL;
-    //         x = x ^ (x >> 31);
-    //         return x;
-    //     }
-    //     static struct List {
-    //         uint[] values;
-    //     }
-    //     List[] slots = new List[16];
-    //     foreach(i; 0..100) {
-    //         uint s = (hash1(i) % 16).as!uint;
-    //         slots[s].values ~= i;
-    //     }
-    //     foreach(i, s; slots) {
-    //         writefln("%s: %s", i, slots[i].values.map!(it=>"%s".format(it)).join(","));
-    //     }
-    // }
-
     {
         auto m = new UnorderedMap!(ulong,ulong)(16, 1.0f);
         assert(m.isEmpty());
@@ -832,6 +812,25 @@ void testUnorderedMap() {
         m.dump();
     }
     {
+        writefln("  containsKey()");
+        auto m = new UnorderedMap!(ulong,ulong);
+        m.insert(19, 80);
+        m.insert(11, 60); 
+        m.insert(3, 40);      
+        m.insert(7, 50);
+        m.insert(15, 70); 
+        m.insert(0, 90);         
+        assert(m.size()==6);
+        assert(m.containsKey(19));
+        assert(m.containsKey(11));
+        assert(m.containsKey(3));
+        assert(m.containsKey(7));
+        assert(m.containsKey(15));
+        assert(m.containsKey(0));
+        assert(!m.containsKey(99));
+        assert(!m.containsKey(16));
+    }
+    {
         writefln(" keys(), values(), byKey(), byValue(), byKeyValue()");
         auto m = new UnorderedMap!(ulong,ulong)(16, 1.0f);
         m.insert(19, 80);
@@ -864,11 +863,37 @@ void testUnorderedMap() {
         }
         
         m.dump();
+    }
+    {
+        writefln("  compute()");
+        auto m = new UnorderedMap!(ulong,ulong)(16, 1.0f);
+        m.insert(19, 80);
+        assert(m.size()==1);
 
+        // Key is in the map. Call updateFunc and set v = 3 and return true to update the value
+        m.compute(19, (k,v) { assert(false); return false;}, (k,v) { *v = 3; return true; });
+        assert(m.get(19) == 3);
+        assert(m.size()==1);
+
+        // Key is in the map. Call updateFunc and set v = 4 and return false to remove the key
+        m.compute(19, (k,v) { assert(false); return false; }, (k,v) { *v = 4; return false; });
+        assert(!m.containsKey(19));
+        assert(m.size()==0);
+
+
+        // Key is not in the map. Call insertFunc, set v = 4 and return true to insert the key,value
+        m.compute(11, (k,v) { *v = 4; return true; }, (k,v) { assert(false); return false; });
+        assert(m.get(11) == 4);
+        assert(m.size()==1);
+
+        // Key is not in the map. Call insertFunc, set v = 5 and return false to not insert the key,value
+        m.compute(12, (k,v) { *v = 5; return false; }, (k,v) { assert(false); return false; });
+        assert(!m.containsKey(12));
+        assert(m.size()==1);
     }
     
     foreach(i; 0..10) {
-        //fuzzTestUnorderedMap(5000);
+        fuzzTestUnorderedMap(5000);
     }
 }
 void fuzzTestUnorderedMap(uint iterations) {
