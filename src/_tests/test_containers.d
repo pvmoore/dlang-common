@@ -829,9 +829,42 @@ void testUnorderedMap() {
         // This will cause a resize
         //m[91] = 14;
 
-        
-
         m.dump();
+    }
+    {
+        writefln(" keys(), values(), byKey(), byValue(), byKeyValue()");
+        auto m = new UnorderedMap!(ulong,ulong)(16, 1.0f);
+        m.insert(19, 80);
+        m.insert(11, 60); 
+        m.insert(3, 40);      
+        m.insert(7, 50);
+        m.insert(15, 70); 
+        m.insert(0, 90);         
+        assert(m.size()==6);
+
+        ulong[] keys = m.keys();
+        keys.sort();
+        assert(keys == [0,3,7,11,15,19]);
+        
+        ulong[] values = m.values();
+        values.sort();
+        assert(values == [40,50,60,70,80,90]);
+
+        writefln("byKeyValue:");
+        foreach(e; m.byKeyValue()) {
+            writefln("%s = %s", e.key, e.value);
+        }
+        writefln("byKey:");
+        foreach(e; m.byKey()) {
+            writefln("%s", e);
+        }
+        writefln("byValue:");
+        foreach(e; m.byValue()) {
+            writefln("%s", e);
+        }
+        
+        m.dump();
+
     }
     
     foreach(i; 0..10) {

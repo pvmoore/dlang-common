@@ -158,7 +158,7 @@ public:
         return true;
     }
     /** 
-     * Return an array containing all keys in the map (in undefined order)
+     * Return a new array containing all keys in the map (in undefined order)
      */
     K[] keys() {
         K[] result;
@@ -170,7 +170,7 @@ public:
         return result;
     }
     /** 
-     * Return an array containing all values in the map (in undefined order)
+     * Return a new array containing all values in the map (in undefined order)
      */
     V[] values() {
         V[] result;
@@ -180,6 +180,56 @@ public:
             }
         }
         return result;
+    }
+    /** 
+     * Return a forward range of keys (in undefined order).
+     * This range uses a copy of the keys so underlying changes to the map are not reflected in the range
+     */
+    auto byKey() {
+        static struct FwdRange {
+            K[] keys;
+            uint i;
+            auto front() { return keys[i]; }
+            bool empty() { return i >= keys.length; }
+            void popFront() { i++; }
+            auto save() { return this; }
+        }
+        return FwdRange(keys()); 
+    }
+    /** 
+     * Return a forward range of values (in undefined order).
+     * This range uses a copy of the values so underlying changes to the map are not reflected in the range
+     */
+    auto byValue() {
+        static struct FwdRange {
+            V[] values;
+            uint i;
+            auto front() { return values[i]; }
+            bool empty() { return i >= values.length; }
+            void popFront() { i++; }
+            auto save() { return this; }
+        }
+        return FwdRange(values()); 
+    }
+    /** 
+     * Return a forward range of key,value entries (in undefined order).
+     * This range uses a copy of the keys and values so underlying changes to the map are not reflected in the range
+     */
+    auto byKeyValue() {
+        static struct Entry {
+            K key;
+            V value;
+        }
+        static struct FwdRange {
+            K[] keys;
+            V[] values;
+            uint i;
+            auto front() { return Entry(keys[i], values[i]); }
+            bool empty() { return i >= keys.length; }
+            void popFront() { i++; }
+            auto save() { return this; }
+        }
+        return FwdRange(keys(), values()); 
     }
     /** 
      * Remove all keys from the map. Key memory is zeroed. 
