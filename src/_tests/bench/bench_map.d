@@ -22,10 +22,12 @@ auto getMaps(T)() {
         new UnorderedMapWrapper!(T, 3)(16, 0.8),
         new UnorderedMapWrapper!(T, 0)(16, 0.75),
         new UnorderedMapWrapper!(T, 3)(16, 0.75),
+        new UnorderedMapWrapper!(T, 3)(1024, 0.75),  
         new UnorderedMapWrapper!(T, 0)(16, 0.6),
         new UnorderedMapWrapper!(T, 3)(16, 0.6),
         new UnorderedMapWrapper!(T, 0)(16, 0.5),
         new UnorderedMapWrapper!(T, 3)(16, 0.5),
+        new UnorderedMapWrapper!(T, 3)(16, 0.25),
     ];
 }
 auto getBenchmarks(T)(ulong numKeys) {
