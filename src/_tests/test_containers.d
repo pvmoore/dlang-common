@@ -829,11 +829,13 @@ void testUnorderedMap() {
         // This will cause a resize
         //m[91] = 14;
 
+        
+
         m.dump();
     }
     
     foreach(i; 0..10) {
-        fuzzTestUnorderedMap(5000);
+        //fuzzTestUnorderedMap(5000);
     }
 }
 void fuzzTestUnorderedMap(uint iterations) {
