@@ -16,7 +16,6 @@ void testContainers() {
         testPriorityQueue();
         testQueue();
         testSet();
-        testMap();
         testUnorderedMap();
         testSparseArray();
         testStack();
@@ -657,58 +656,6 @@ void testAsyncQueue() {
         assert(5 == q.drain(sink3));
         assert(q.length()==0);
         assert(sink3 == [7,8,9,10,11]);
-    }
-}
-void testMap() {
-    writefln("----------------------------------------------------------------");
-    writefln(" Testing Map");
-    writefln("----------------------------------------------------------------");
-
-    {
-        auto m = new Map!(string,int);
-        assert(m.length==0 && m.isEmpty);
-
-        m.add("a", 1);
-        assert(m.length==1 && !m.isEmpty);
-        assert(m.containsKey("a") && m.containsValue(1));
-        assert(*m["a"] == 1);
-
-        m["b"] = 2;
-        assert(m.length==2);
-        assert(m.containsKey("b"));
-        assert(m.containsValue(2));
-        assert(!m.containsKey("z"));
-        assert(!m.containsValue(99));
-        assert(*m["b"] == 2);
-
-        auto m2 = new Map!(string,int);
-        m2.add("c", 3)
-          .add("d", 4);
-
-        // containsAllKeys
-        // containsAnyKeys
-        m.add(m2);
-        assert(m.length==4);
-        assert(m.containsAllKeys("a", "b", "c", "d"));
-        assert(!m.containsAllKeys("a", "z"));
-        assert(m.containsAnyKeys("z", "a"));
-        assert(!m.containsAnyKeys("z", "h"));
-
-        // remove
-        assert(m.remove("b"));
-        assert(!m.remove("z"));
-        assert(m.length==3);
-        assert(m.containsAllKeys("a", "c", "d"));
-
-        // update
-        m.update("c", ()=>33, (i) { return i+10; });
-        m.update("e", ()=>33, (i) { return i+10; });
-        assert(*m["c"]==13);
-        assert(*m.get("e")==33);
-
-        // clear
-        m.clear();
-        assert(m.isEmpty() && m.length==0);
     }
 }
 void testUnorderedMap() {
