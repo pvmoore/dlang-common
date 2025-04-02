@@ -3,7 +3,11 @@ module common.containers.UnorderedMap;
 import common.all;
 
 /**
- * Associative array using linear probing
+ * Associative array using linear probing.
+ *
+ * Faster than the built-in associative array in my testing.
+ *
+ * HASH: Ignore this template parameter. This sets the hash function to use for 
  */
 final class UnorderedMap(K, V, uint HASH = 0) {
 public:
@@ -219,37 +223,35 @@ public:
         return result;
     }
     /** 
-     * Return a forward range of keys (in undefined order).
+     * Return a range of keys (in undefined order).
      * This range uses a copy of the keys so underlying changes to the map are not reflected in the range
      */
     auto byKey() {
-        static struct FwdRange {
+        static struct Range {
             K[] keys;
             uint i;
             auto front() { return keys[i]; }
             bool empty() { return i >= keys.length; }
             void popFront() { i++; }
-            auto save() { return this; }
         }
-        return FwdRange(keys()); 
+        return Range(keys()); 
     }
     /** 
-     * Return a forward range of values (in undefined order).
+     * Return a range of values (in undefined order).
      * This range uses a copy of the values so underlying changes to the map are not reflected in the range
      */
     auto byValue() {
-        static struct FwdRange {
+        static struct Range {
             V[] values;
             uint i;
             auto front() { return values[i]; }
             bool empty() { return i >= values.length; }
             void popFront() { i++; }
-            auto save() { return this; }
         }
-        return FwdRange(values()); 
+        return Range(values()); 
     }
     /** 
-     * Return a forward range of key,value entries (in undefined order).
+     * Return a range of key,value entries (in undefined order).
      * This range uses a copy of the keys and values so underlying changes to the map are not reflected in the range
      */
     auto byKeyValue() {
@@ -257,16 +259,15 @@ public:
             K key;
             V value;
         }
-        static struct FwdRange {
+        static struct Range {
             K[] keys;
             V[] values;
             uint i;
             auto front() { return Entry(keys[i], values[i]); }
             bool empty() { return i >= keys.length; }
             void popFront() { i++; }
-            auto save() { return this; }
         }
-        return FwdRange(keys(), values()); 
+        return Range(keys(), values()); 
     }
     /** 
      * Remove all keys from the map. Key memory is zeroed. 
@@ -415,26 +416,31 @@ private:
         static if(__traits(compiles, key.toHash())) {
             ulong hash = key.toHash();
         } else static if(is(K : ulong)) {
-            static if(HASH == 0) {
-                ulong hash = hash0(key);
-            } else static if(HASH == 1) {
-                ulong hash = hash1(key);
-            } else static if(HASH == 2) {
-                ulong hash = hash2(key);
-            } else static if(HASH == 3) {
-                ulong hash = hash3(key);
-            } else static if(HASH == 4) {
-                ulong hash = hash4(key);
-            } else static if(HASH == 5) {
-                ulong hash = hash5(key);
-            } else static assert(false);
+            // All integer types should use this hash
+            ulong hash = ulongHash(key);
         } else static if(is(K==string)) {
             ulong hash = djb2_hash(key);
         } else {
-            // todo - We could hash the raw bytes of this type here
+            // todo - We could hash the raw bytes of this type here instead
             TypeInfo t = typeid(typeof(key));
             ulong hash = t.getHash(&key);
         }
+        return hash;
+    }
+    ulong ulongHash(ulong key) {
+        static if(HASH == 0) {
+            ulong hash = hash0(key);
+        } else static if(HASH == 1) {
+            ulong hash = hash1(key);
+        } else static if(HASH == 2) {
+            ulong hash = hash2(key);
+        } else static if(HASH == 3) {
+            ulong hash = hash3(key);
+        } else static if(HASH == 4) {
+            ulong hash = hash4(key);
+        } else static if(HASH == 5) {
+            ulong hash = hash5(key);
+        } else static assert(false);
         return hash;
     }
     static uint calculateLoadFactorThreshold(ulong capacity, float loadFactor) {

@@ -663,6 +663,74 @@ void testUnorderedMap() {
     writefln(" Testing UnorderedMap");
     writefln("----------------------------------------------------------------");
 
+    ulong hash0(ulong x) {
+        x = (x ^ (x >> 30)) * 0xbf58476d1ce4e5b9L;
+        x = (x ^ (x >> 27)) * 0x94d049bb133111ebL;
+        x = x ^ (x >> 31);
+        return x;
+    }
+    {
+        writefln("  Different key types");
+        // ulong
+        auto ulongMap = new UnorderedMap!(ulong,uint);
+        ulongMap.insert(1, 10);
+
+        // float
+        auto floatMap = new UnorderedMap!(float,uint);
+        floatMap.insert(1.0f, 10);
+        assert(floatMap.get(1.0f)==10);
+
+        // string
+        auto stringMap = new UnorderedMap!(string,uint);
+        stringMap.insert("hello", 10);
+        assert(stringMap.get("hello")==10);
+
+        // struct with toHash method (will use S.toHash and bitwise equality)
+        struct S {
+            int a;
+            int b;
+
+            ulong toHash() { return hash0(a.as!ulong << 32 | b); }
+        }
+        auto structMap = new UnorderedMap!(S,uint);
+        structMap.insert(S(1,2), 10);
+        assert(structMap.get(S(1,2))==10);
+    
+        // struct without toHash method (will use TypeInfo.getHash and S2.opEquals)
+        struct S2 {
+            int a;
+            int b;
+
+            // This will be called by the map to test equality (eg. ==)
+            // otherwise bitwise equality will be used
+            bool opEquals(S2 o) {
+                return a==o.a && b==o.b; 
+            }
+        }
+        auto structMap2 = new UnorderedMap!(S2,uint);
+        structMap2.insert(S2(1,2), 10);
+        structMap2.insert(S2(1,2), 20);
+        assert(structMap2.get(S2(1,2))==20);
+    
+        // class (will use C.getHash and C.opEquals)
+        class C { 
+            int a; 
+            int b;
+            this(int a, int b) { this.a = a; this.b = b; } 
+
+            override ulong toHash() { 
+                return hash0(a.as!ulong << 32 | b); 
+            }
+            override bool opEquals(Object o) {
+                C c = cast(C)o;
+                return a==c.a && b==c.b; 
+            }
+        }
+        auto classMap = new UnorderedMap!(C,uint);
+        classMap.insert(new C(1,2), 10);
+        classMap.insert(new C(1,2), 20);
+        assert(classMap.get(new C(1,2))==20);
+    }
     {
         auto m = new UnorderedMap!(ulong,ulong)(16, 1.0f);
         assert(m.isEmpty());

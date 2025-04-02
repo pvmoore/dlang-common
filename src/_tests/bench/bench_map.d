@@ -14,6 +14,8 @@ void benchMap() {
 private:
 
 auto getMaps(T)() {
+    // HASH = 0 uses the UnorderedMap hash0 function
+    // HASH = 3 uses the UnorderedMap hash3 function
     return [
         cast(Map!T)new BuiltinMap!T(),
         new UnorderedMapWrapper!(T, 0)(16, 0.9),
@@ -48,6 +50,14 @@ auto createUniqueKeys(T : uint)(ulong num) {
     randomShuffle(keys);
     return keys;
 }
+auto createUniqueKeys(T : float)(ulong num) {
+    T[] keys = new T[num];
+    foreach(i; 0..num) {
+        keys[i] = uniform(0.0f, uint.max.as!float);
+    }
+    randomShuffle(keys);
+    return keys;
+}
 auto createUniqueKeys(T : string)(ulong num) {
     T[] keys = new T[num];
     foreach(i; 0..num) {
@@ -60,6 +70,14 @@ auto createDuplicateKeys(T : uint)(ulong num) {
     T[] keys = new T[num];
     foreach(i; 0..num) {
         keys[i] = uniform(0, 100);
+    }
+    randomShuffle(keys);
+    return keys;
+}
+auto createDuplicateKeys(T : float)(ulong num) {
+    T[] keys = new T[num];
+    foreach(i; 0..num) {
+        keys[i] = uniform(0.0f, uint.max.as!float);
     }
     randomShuffle(keys);
     return keys;
@@ -115,6 +133,7 @@ struct Result {
 void run(uint numKeys) {
 
     executeTasks!uint(numKeys);
+    executeTasks!float(numKeys);
     executeTasks!string(numKeys);
     
     auto stats = GC.stats();
