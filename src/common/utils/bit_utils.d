@@ -55,9 +55,11 @@ ulong getAlignedValue(ulong value, uint alignment) {
 /**
  *  double a = 3.14;
  *  ulong b  = a.bitcastTo!ulong()
+ *
+ *  Note that std.conv.bitCast also now exists to do this: uint a = bitCast!uint(1.0f);
  */
 T bitcastTo(T,F)(F from) {
-    T* p =cast(T*)&from;
+    T* p = cast(T*)&from;
     return *p;
 }
 

@@ -34,7 +34,7 @@ import _tests.test_wasm;
 import _tests.test_web;
 import _tests.bench.bench;
 
-enum RUN_SUBSET = true;
+enum RUN_SUBSET = false;
 
 extern(C) void asm_test();
 
@@ -44,27 +44,25 @@ void main(string[] args) {
     switch(mode) {
         case "BENCHMARK": {
             runBenchmarks();
+
+            debug writefln("WARNING!!! Running benchmarks in debug mode\n");  
             return;
         }
         default:
             runTests();
-            
-            version(assert) {
 
-            } else {
-                writefln("WARNING!!! Running tests in release mode - asserts are disabled\n");  
-            }
+            debug {} else writefln("WARNING!!! Running tests in release mode. Asserts are disabled\n");
             break;
     }
 }
-
+//──────────────────────────────────────────────────────────────────────────────────────────────────
 void runTests() {
     writefln("Running tests");
     scope(failure) writefln("-- FAIL");
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testContainers();
+    
     } else {
 
         asm_test();

@@ -11,13 +11,13 @@ import common.allocators;
 void testAllocators() {
     writefln("--== Testing Allocators ==--");
 
-    // testFreeList();
-    // testBasicAllocator();
-    // testArenaAllocator();
-    // testStructStorage();
+    testFreeList();
+    testBasicAllocator();
+    testArenaAllocator();
+    testStructStorage();
     testHeapStorage();
 
-    // fuzzTestAllocator();
+    fuzzTestAllocator();
 }
 
 void testFreeList() {

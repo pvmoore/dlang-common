@@ -7,7 +7,7 @@ import _tests.test : RUN_SUBSET;
 
 void testUtils() {
     static if(RUN_SUBSET) {
-        testArrayUtils();
+
     } else {
         testAsmUtils();
         testBitUtils();
@@ -767,15 +767,118 @@ void testAsmUtils() {
     } // version(DigitalMars) 
 }
 void testRangeUtils() {
-    writefln("========--\nTesting range utils\n==--");
+    writefln("----------------------------------------------------------------");
+    writefln(" Testing range utils");
+    writefln("----------------------------------------------------------------");
     {
-        // frontOrElse
+        writefln(" frontOrElse()");
         int[] r = [1,2,3,4];
-
 
         assert(4 == r.filter!(it=>it > 3).frontOrElse(0));
         assert(0 == r.filter!(it=>it > 4).frontOrElse(0));
     }
+    {
+        writefln(" Range examples:");
+        final class ClassWithInputRange {
+            uint[] values;
+ 
+            auto inputRange() {
+                struct InputRange {
+                    uint[] values;
+                    ulong i;
+                    uint front() { return values[i]; }
+                    bool empty() { return i >= values.length; }
+                    void popFront() { i++; }
+                }
+                return InputRange(values); 
+            }
+            auto forwardRange() {
+                struct ForwardRange {
+                    uint[] values;
+                    ulong i;
+                    uint front() { return values[i]; }
+                    bool empty() { return i >= values.length; }
+                    void popFront() { i++; }
+                    auto save() { return ForwardRange(values, i); }
+                }
+                return ForwardRange(values); 
+            }
+            auto bidirectionalRange() {
+                struct BidirectionalRange {
+                    uint[] values;
+                    ulong i;    
+                    ulong u;    
+                    uint front() { return values[i]; }
+                    uint back() { return values[u-1]; }
+                    bool empty() { return i < u; }
+                    void popFront() { i++; }
+                    void popBack() { u--; }
+                    auto save() { return BidirectionalRange(values, i, u); }
+                }
+                return BidirectionalRange(values, 0, values.length); 
+            }
+            auto randomAccessRange() {
+                struct RandomAccessRange {
+                    uint[] values;
+                    ulong i;
+                    ulong u;
+                    uint front() { return values[i]; }
+                    uint back() { return values[u-1]; }
+                    bool empty() { return i < u; }
+                    void popFront() { i++; }
+                    void popBack() { u--; }
+                    auto save() { return RandomAccessRange(values, i, u); }
+                    uint opIndex(ulong i) { return values[i]; }
+                    ulong length() { return values.length; }
+                }
+                return RandomAccessRange(values, 0, values.length); 
+            }
+
+        }
+
+        import std.range.primitives;
+
+        auto c = new ClassWithInputRange();
+        assert(isInputRange!(typeof(c.inputRange())));
+        assert(isForwardRange!(typeof(c.forwardRange())));
+        assert(isBidirectionalRange!(typeof(c.bidirectionalRange())));
+        assert(isRandomAccessRange!(typeof(c.randomAccessRange())));
+
+        c.values = [1,2,3,4,5];
+        foreach(v; c.inputRange()) {
+            writefln("v = %d", v);
+        }
+        foreach(v; c.forwardRange()) {
+            writefln("v = %d", v);
+        }
+    }
+    {
+        writefln(" Sorting");
+        auto r = [1,2,3,4,5,6,7,8,9,10];
+        
+        // Sort in place
+        r.sort!((a,b) => a > b);
+        assert(r == [10,9,8,7,6,5,4,3,2,1]);
+
+        // Return sorted range
+        auto sortedRange = r.sort!((a,b) => a < b);
+        auto s = sortedRange.array;
+        assert(s == [1,2,3,4,5,6,7,8,9,10]);
+
+        // Sort using inferred comparison function
+        auto r2 = [8,9,10,7,4,5,6,3,1,2];
+        r2.sort();
+        assert(r2 == [1,2,3,4,5,6,7,8,9,10]);
+    }
+    {
+        // Note that 'uniq' only works on consecutive unique elements so the input is expected to be sorted
+        writefln(" Uniq");
+        import std.algorithm : uniq;
+        auto r = [1,2,1,3,4,5,2,6,7,7,8,9,10,7,8];
+        writefln("uniq = %s", r.sort().uniq().array);
+        assert(r.sort().uniq().array == [1,2,3,4,5,6,7,8,9,10]);        
+    }
+
 }
 void testBitUtils() {
     writefln("========--\nTesting bit utils\n==--");  

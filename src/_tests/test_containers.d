@@ -9,7 +9,7 @@ import _tests.test : RUN_SUBSET;
 
 void testContainers() {
     static if(RUN_SUBSET) {
-       testUnorderedMap();
+
     } else {
         testCircularBuffer();
         testList();
