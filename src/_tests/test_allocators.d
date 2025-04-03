@@ -7,17 +7,22 @@ import std.datetime.stopwatch : StopWatch, AutoStart;
 
 import common;
 import common.allocators;
+import _tests.test : RUN_SUBSET;
 
 void testAllocators() {
     writefln("--== Testing Allocators ==--");
+    static if(RUN_SUBSET) {
 
-    testFreeList();
-    testBasicAllocator();
-    testArenaAllocator();
-    testStructStorage();
-    testHeapStorage();
+    } else {
+        testFreeList();
+        testStaticFreeList();
+        testBasicAllocator();
+        testArenaAllocator();
+        testStructStorage();
+        testHeapStorage();
 
-    fuzzTestAllocator();
+        fuzzTestAllocator();
+    }
 }
 
 void testFreeList() {
@@ -179,6 +184,168 @@ void testFreeList() {
         _fuzzit(100, 0.75);
     }
 }
+
+void testStaticFreeList() {
+    writefln("--== Testing StaticFreeList ==--");
+
+    {
+        writef(" Create");
+        StaticFreeList!8 fl;
+        assert(fl.numUsed() == 0);
+        assert(fl.numFree() == 8);
+        assert(fl.size() == 8);
+        writefln(" OK");
+    }
+    {
+        writef(" Acquire");
+        StaticFreeList!4 fl;
+        assert(fl.acquire() == 0);
+        assert(fl.numUsed() == 1);
+        assert(fl.numFree() == 3);
+
+        assert(fl.acquire() == 1);
+        assert(fl.numUsed() == 2);
+        assert(fl.numFree() == 2);
+
+        assert(fl.acquire() == 2);
+        assert(fl.numUsed() == 3);
+        assert(fl.numFree() == 1);
+
+        assert(fl.acquire() == 3);
+        assert(fl.numUsed() == 4);
+        assert(fl.numFree() == 0);
+
+        try{
+            fl.acquire();
+            assert(false);
+        }catch(Exception e) {}
+        writefln(" OK");
+    }
+    {
+        writefln(" Acquire/Release forward");
+        StaticFreeList!4 fl;
+        uint a = fl.acquire();
+        uint b = fl.acquire();
+        uint c = fl.acquire();
+        uint d = fl.acquire();
+        assert(fl.numUsed() == 4);
+        assert(fl.numFree() == 0);
+
+        fl.release(a);
+        fl.release(b);
+        fl.release(c);
+        fl.release(d); 
+        assert(fl.numUsed() == 0);
+        assert(fl.numFree() == 4);  
+    }
+    {
+        writefln(" Acquire/Release reverse");
+        StaticFreeList!4 fl;
+        uint a = fl.acquire();
+        uint b = fl.acquire();
+        uint c = fl.acquire();
+        uint d = fl.acquire();
+        assert(fl.numUsed() == 4);
+        assert(fl.numFree() == 0);
+
+        fl.release(d);
+        fl.release(c);
+        fl.release(b);
+        fl.release(a); 
+        assert(fl.numUsed() == 0);
+        assert(fl.numFree() == 4);
+    }
+    {
+        writefln(" Acquire/Release mixed");
+        StaticFreeList!4 fl;
+        uint a = fl.acquire();
+        uint b = fl.acquire();
+        uint c = fl.acquire();
+        uint d = fl.acquire();
+        assert(fl.numUsed() == 4);
+        assert(fl.numFree() == 0);
+
+        fl.release(c);
+        fl.release(a);
+        fl.release(d);
+        fl.release(b); 
+        assert(fl.numUsed() == 0);
+        assert(fl.numFree() == 4);
+    }
+    {
+        writefln(" Acquire/Release mixed 2");
+        StaticFreeList!4 fl;
+        uint a = fl.acquire();
+        uint b = fl.acquire();
+        assert(fl.numUsed() == 2);
+        assert(fl.numFree() == 2);
+
+        fl.release(b);
+        assert(fl.numUsed() == 1);
+        assert(fl.numFree() == 3);
+
+        uint c = fl.acquire();
+        assert(fl.numUsed() == 2);
+        assert(fl.numFree() == 2);
+
+        fl.release(a);
+        assert(fl.numUsed() == 1);
+        assert(fl.numFree() == 3);
+
+        uint d = fl.acquire();
+        assert(fl.numUsed() == 2);
+        assert(fl.numFree() == 2);
+
+        fl.release(c);
+        assert(fl.numUsed() == 1);
+        assert(fl.numFree() == 3);
+    }
+    {
+        void _fuzzit(uint SIZE)(float pivot) {
+            writef(" - Fuzzing FreeList(%s) pivot %s".format(SIZE, pivot));
+            StaticFreeList!SIZE fl;
+            bool[] used = new bool[SIZE];
+            uint[] acquired;
+            uint iterations = SIZE*100;
+
+            for(auto i=0; i<iterations; i++) {
+                auto r = uniform01();
+
+                if(r < pivot) {
+                    // release
+                    if(acquired.length > 0) {
+                        uint n = uniform(0, acquired.length.as!uint);
+                        uint k = acquired[n];
+                        fl.release(k);
+                        acquired.removeAt(n);
+
+                        assert(used[k] == true);
+                        used[k] = false;
+                    }
+                } else {
+                    // acquire
+                    if(fl.numFree() > 0) {
+                        uint k = fl.acquire();
+                        assert(used[k] == false);
+                        used[k] = true;
+                        acquired ~= k;
+
+                    }
+                }
+            }
+            writefln("  :: (%s iteratioms), Used %s slots".format(iterations, fl.numUsed()));
+        }
+        writefln(" Fuzz");
+        _fuzzit!10(0.25);
+        _fuzzit!10(0.5);
+        _fuzzit!10(0.75);
+
+        _fuzzit!100(0.25);
+        _fuzzit!100(0.5);
+        _fuzzit!100(0.75);
+    }
+}
+
 void testBasicAllocator() {
     writefln("--== Testing Basic Allocator ==--");
 
