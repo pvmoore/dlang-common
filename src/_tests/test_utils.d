@@ -7,7 +7,7 @@ import _tests.test : RUN_SUBSET;
 
 void testUtils() {
     static if(RUN_SUBSET) {
-
+      
     } else {
         testAsmUtils();
         testBitUtils();
@@ -455,6 +455,90 @@ void testStaticUtils() {
 
         assert(isEnum!E1);
         assert(!isEnum!int);
+    }
+    struct B {
+        int foo;
+        int bar;
+        int baz;
+
+        this(int foo, int bar, int baz) {
+            this.foo = foo;
+            this.bar = bar;
+            this.baz = baz;
+        }
+        ~this() {}
+        void fn1() {}
+        int fn2(int a) { return a; }
+    }
+    class C {
+        int foo;
+        int bar;
+        int baz;
+
+        this(int foo, int bar, int baz) {
+            this.foo = foo;
+            this.bar = bar;
+            this.baz = baz;
+        }
+        ~this() {}
+        void fn1() {}
+        int fn2(int a) { return a; }
+    }
+    final class D : C {
+        this(int foo, int bar, int baz) {
+            super(foo, bar, baz);
+        }
+    }
+    {
+        writefln(" getAllProperties()");
+        
+        string[] props = getAllProperties!(B);
+        assert(props.length == 3);
+        foreach(p; props) {
+            writefln("\t%s", p);
+        }
+        assert(props.contains("foo"));
+        assert(props.contains("bar"));
+        assert(props.contains("baz"));
+
+        string[] props2 = getAllProperties!(C);
+        assert(props2.length == 3);
+        foreach(p; props2) {
+            writefln("\t%s", p);
+        }
+        assert(props2.contains("foo"));
+        assert(props2.contains("bar"));
+        assert(props2.contains("baz"));
+    }
+    {
+        writefln(" getAllFunctions()");
+
+        string[] bFuncs = getAllFunctions!(B);
+        writefln("B functions:");
+        foreach(p; bFuncs) {
+            writefln("\t%s", p);
+        }
+        assert(bFuncs.contains("fn1"));
+        assert(bFuncs.contains("fn2"));
+        // May also contain "opAssign"
+
+        string[] cFuncs = getAllFunctions!(C);
+        writefln("C functions:");
+        foreach(p; cFuncs) {
+            writefln("\t%s", p);
+        }
+        assert(cFuncs.contains("fn1"));
+        assert(cFuncs.contains("fn2"));
+        // May also contain "toString", "opEquals", "opCmp", "toHash"
+
+        string[] dFuncs = getAllFunctions!(D);
+        writefln("D functions:");
+        foreach(p; dFuncs) {
+            writefln("\t%s", p);
+        }
+        assert(dFuncs.contains("fn1"));
+        assert(dFuncs.contains("fn2"));
+        // May also contain "toString", "opEquals", "opCmp", "toHash"
     }
 
 

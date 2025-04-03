@@ -135,11 +135,18 @@ string[] getAllProperties(T)() if(isStruct!T || isObject!T)
 	return props;
 }
 
-string[] getAllFunctions(T)() if(isStruct!T || isObject!T)
-{
+/**
+ * Returns a list of all functions in the type.
+ * 
+ * Filters out some magic functions.
+ */
+string[] getAllFunctions(T)() if(isStruct!T || isObject!T) {
+    import common.utils.array_utils;
+    static immutable ignore = ["__ctor", "__dtor", "__xdtor", "factory"];
 	string[] funcs;
 	foreach(m; __traits(allMembers, T)) {
-		static if(isSomeFunction!(__traits(getMember, T, m)) && m!="factory") {
+        enum isIgnored = ignore.indexOf(m) != -1;
+		static if(isSomeFunction!(__traits(getMember, T, m)) && !isIgnored) {
 			funcs ~= m;
 		}
 	}
