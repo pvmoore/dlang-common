@@ -7,7 +7,7 @@ import common.all;
  *
  * Faster than the built-in associative array in my testing.
  *
- * HASH: Ignore this template parameter. This sets the hash function to use for 
+ * HASH: Ignore this template parameter. This sets the hash function to use for benchmarking.
  */
 final class UnorderedMap(K, V, uint HASH = 0) {
 public:
@@ -224,7 +224,6 @@ public:
     }
     /** 
      * Return a range of keys (in undefined order).
-     * This range uses a copy of the keys so underlying changes to the map are not reflected in the range
      */
     auto byKey() {
         static struct Range {
@@ -238,7 +237,6 @@ public:
     }
     /** 
      * Return a range of values (in undefined order).
-     * This range uses a copy of the values so underlying changes to the map are not reflected in the range
      */
     auto byValue() {
         static struct Range {
@@ -252,7 +250,6 @@ public:
     }
     /** 
      * Return a range of key,value entries (in undefined order).
-     * This range uses a copy of the keys and values so underlying changes to the map are not reflected in the range
      */
     auto byKeyValue() {
         static struct Entry {

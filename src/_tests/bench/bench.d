@@ -6,7 +6,7 @@ import core.stdc.stdlib       : malloc, calloc;
 import core.atomic            : atomicLoad, atomicStore, atomicOp;
 import core.thread            : Thread, thread_joinAll;
 import core.memory            : GC;
-import std.stdio              : File, writeln, writefln;
+import std.stdio              : File, writeln, writef, writefln;
 import std.datetime.stopwatch : benchmark, StopWatch, AutoStart;
 import std.random             : randomShuffle,uniform, Mt19937, unpredictableSeed;
 import std.format             : format;
@@ -19,12 +19,14 @@ import std.conv               : to;
 
 import common;
 import _tests.bench.bench_map;
+import _tests.bench.bench_sparse_array_indexes;
 
 void runBenchmarks() {
     version(LDC) {
         writefln("Running benchmarks (LDC)");
 
-        benchMap();
+        //benchMap();
+        benchSparseArray();
 
         //testStringAppending();
         // testSimd();

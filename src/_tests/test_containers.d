@@ -17,7 +17,6 @@ void testContainers() {
         testQueue();
         testSet();
         testUnorderedMap();
-        testSparseArray();
         testStack();
         testTreeList();
         testAsyncQueue();
@@ -563,10 +562,6 @@ void testStack() {
         s.pop();
         assert(s.peek()==0);
     }
-}
-void testSparseArray() {
-    writefln("--== Testing SparseArray ==--");
-
 }
 void testTreeList() {
     writefln("--== Testing TreeList ==--");
