@@ -902,6 +902,41 @@ void testSparseArrayIndexes() {
     writefln("----------------------------------------------------------------");
 
     {
+        auto s = new SparseArrayIndexes();
+        s.add(10);
+        assert(s.numItems() == 1);
+        assert(s.capacity() == 64);
+        s.dump();
+
+        s.add(65);
+        s.add(100);
+        assert(s.numItems() == 3);
+        assert(s.capacity() == 128);
+        s.dump();
+
+        s.add(130);
+        s.add(150);
+        assert(s.numItems() == 5);
+        assert(s.capacity() == 256);
+        s.dump();
+
+        assert(s.sparseIndexOf(10) == 0);
+        assert(s.sparseIndexOf(65) == 1);
+        assert(s.sparseIndexOf(100) == 2);
+        assert(s.sparseIndexOf(130) == 3);
+        assert(s.sparseIndexOf(150) == 4);
+        assert(s.sparseIndexOf(151) == 5);
+
+        s.remove(100);
+        assert(s.numItems() == 4);
+        s.dump();
+
+
+        //if(1f < 2f) return;
+    }
+    //──────────────────────────────────────────────────────────────────────────────────────────────────
+
+    {
         writefln(" Default Initialisation");
         auto s = new SparseArrayIndexes();
         assert(s.isEmpty());
@@ -1143,6 +1178,7 @@ void testSparseArrayIndexes() {
             assert(s.capacity() <= capacity);
             writefln(" --> adds %s, removes %s", numAdds, numRemoves);
         }
+
         fuzzTest(20, 65536);
         fuzzTest(1000, 1024);
         foreach(j; 0..100) {

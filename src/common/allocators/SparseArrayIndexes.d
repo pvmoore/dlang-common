@@ -50,19 +50,18 @@ import core.bitop : bsf, bsr, popcnt;
  *         00000000          // row 2
  *         0000000000000000] // row 3 (length = capacity/64)
  *
- * Capacity   | Num bytes used
- * -----------|----------------|
- * 1,024      | 368            |
- * 2,048      | 752            |
- * 4,096      | 1,520          |
- * 8,192      | 3,056          |
- * 16,384     | 6,128          |
- * 65,536     | 24,560         |
- * 1,048,576  | 393,200        |
- * 2,097,152  | 786,416        |
- * 4,194,304  | 1,572,848      |
- * 8,388,608  | 3,145,712      |
- * 16,777,216 | 6,291,440      |
+ * Capacity   | Num bytes used | Using L0 ubytes |
+ * -----------|----------------|-----------------|
+ * 1,024      | 368            | 256             |
+ * 2,048      | 752            | 528             |
+ * 4,096      | 1,520          | 1,072           |
+ * 8,192      | 3,056          | 2,160           |
+ * 16,384     | 6,128          | 4,336           |
+ * 65,536     | 24,560         | 17,392          |
+ * 2,097,152  | 786,416        | 557,040         |
+ * 4,194,304  | 1,572,848      | 1,114,096       |
+ * 8,388,608  | 3,145,712      | 2,228,208       |
+ * 16,777,216 | 6,291,440      | 4,456,432       |
  */
 final class SparseArrayIndexes {
 public:
@@ -76,7 +75,7 @@ public:
         return bits.length * 64;
     }
     ulong numBytesUsed() {
-        return bits.length*8 + countsTree.length*8;
+        return bits.length*8 + countsTree.length*8 + layer0Counts.length*1;
     }
 
     this() {}
@@ -96,14 +95,15 @@ public:
         // Update bits
         setBit(index);
 
-        // Update the counts if there are any
+        ulong indexDiv = index >>> 6;
+        
+        // Update the L1..n counts if there are any
         if(countsTree.length > 0) {
-            ulong indexDiv = index >>> 6;
             uint offset    = 0;
             uint num       = 2;
             uint div       = capacityDiv;
 
-            while(num <= bits.length) { 
+            while(num < bits.length) { 
                 ulong v = indexDiv >>> div;
 
                 countsTree[offset+v]++;
@@ -113,6 +113,12 @@ public:
                 div--;
             }
         }
+
+        // Update the layer0 counts if there are any
+        if(layer0Counts.length > 0) {
+            layer0Counts[indexDiv]++;
+        }
+
         _numItems++;
     }
     /**
@@ -127,14 +133,15 @@ public:
         // Update bits
         clearBit(index);
 
-        // Update the counts if there are any
+        ulong indexDiv = index >>> 6;
+        
+        // Update the L1..n counts if there are any
         if(countsTree.length > 0) {
-            ulong indexDiv = index >>> 6;
             uint offset    = 0;
             uint num       = 2;
             uint div       = capacityDiv;
 
-            while(num <= bits.length) { 
+            while(num < bits.length) { 
                 ulong v = indexDiv >>> div;
 
                 countsTree[offset+v]--;
@@ -144,6 +151,12 @@ public:
                 div--;
             }
         }
+
+        // Update the layer0 counts if there are any
+        if(layer0Counts.length > 0) {
+            layer0Counts[indexDiv]--;
+        }
+
         _numItems--;
         return true;
     }
@@ -161,6 +174,15 @@ public:
         ulong indexDiv = index >>> 6; 
         ulong indexRem = index & 63;
 
+        ulong getCount(ulong offset, ulong index) {
+            if(size == layer0Counts.length) {
+                // L0
+                return layer0Counts[index];
+            }
+            // L1..n
+            return countsTree[offset + index];
+        }
+
         // Calculate count from countsTree
         while(size <= bits.length) {
 
@@ -168,7 +190,7 @@ public:
 
             if(goRight) {
                 auto n     = (pivot >>> shift) & ~1UL; 
-                auto value = countsTree[treeOffset + n];
+                auto value = getCount(treeOffset, n);
                 count += value;
                 pivot += window;
             } else {
@@ -190,17 +212,18 @@ public:
     void clear() {
         _numItems = 0;
         countsTree = null;
+        layer0Counts = null;
         bits = null;
     }
     void dump() {
         writefln("┌───────────────────────────────────────────────────────────────────────────");
         writefln("│ numItems = %s, capacity = %s, (%s bytes used)", _numItems, bits.length*64, numBytesUsed());
         
-        if(countsTree.length > 0) {
-            writefln("│ COUNTS (%s):", countsTree.length);
+        //if(countsTree.length > 0) {
+            writefln("│ L1..n (%s):", countsTree.length);
             uint num = 2;
             uint prev = 0;
-            while(num <= bits.length) {
+            while(num < bits.length) {
                 writef("│ [%2s] ", prev);
                 foreach(i; prev..prev+num) {
                     writef(" %s", countsTree[i]);
@@ -209,6 +232,15 @@ public:
                 prev += num;
                 num <<= 1;
             }
+        //}
+
+        writefln("│ L0 (%s):", layer0Counts.length);
+        if(layer0Counts.length > 0) {
+            writef("│ ");
+            foreach(i; 0..layer0Counts.length) {
+                writef(" %s", layer0Counts[i]);
+            }
+        writefln("");
         }
 
         writefln("│ BITS (%s*ulong = %s bits):", bits.length, bits.length*64);
@@ -219,7 +251,8 @@ public:
                     writef("%s", isBitSet(j*64+i) ? 1 : 0);
                 }
                 writefln("");
-            }
+            } else {
+                writefln("│  [%2s]", j);            }
         }
         writefln("└───────────────────────────────────────────────────────────────────────────");
     }
@@ -269,8 +302,7 @@ private:
     //ushort[] layer1To8Counts;
 
     // Layer [0] = max 128 (64*2)
-    //ubyte[] layer0Counts;
-
+    ubyte[] layer0Counts;
 
     // todo- We can turn this into a sparse array using the bottom row of the counts tree
     //       to indicate whether a bits block is used or not
@@ -305,20 +337,24 @@ private:
         bool propagateRequired = bits.length > 0;
 
         // This will reallocate the array if necessary
-        bits.length = newCapacity >>> 6;
+        bits.length = newCapacity/64;
 
         this.capacityDiv = bsf(bits.length) - 1; 
 
         // Calculate the new countsTree length
         uint countsLength = 0;
         uint num = 2;
-        while(num <= bits.length) {
+        while(num < bits.length) {
             countsLength += num;
             num <<= 1;
         }
 
         // Create a new tree on the heap
         this.countsTree = new ulong[countsLength];
+
+        // Create the bottom layer of counts (which may be length 0)
+        ulong layer0CountsLength = bits.length & ~1UL;
+        this.layer0Counts = new ubyte[layer0CountsLength];
 
         // Propagate the old counts up the tree 
         if(propagateRequired) {
@@ -328,19 +364,28 @@ private:
     /** Iterate up the tree from the bottom, populating the counts of the upper tree nodes */
     void propagateTree() {
         // There are no tree counts
-        if(bits.length == 0) return;
+        if(layer0Counts.length == 0) return;
 
-        // Write popcnts into the bottom layer
-        foreach(i; 0..bits.length) {
-            countsTree[countsTree.length-bits.length+i] = popcnt(bits[i]);
+        // Write popcnts into layer 0
+        assert(layer0Counts.length == bits.length);
+        foreach(i; 0..layer0Counts.length) {
+            uint pc = popcnt(bits[i]);
+            assert(pc <= 64);
+            layer0Counts[i] = pc.as!ubyte;
         }
 
         // There are no upper tree layers
-        if(bits.length <= 2) return;
+        if(countsTree.length == 0) return;
+
+        // Propagate layer 0 to layer 1
+        ulong dest = countsTree.length - layer0Counts.length/2;
+        foreach(i; 0..layer0Counts.length/2) {
+            countsTree[dest + i] = layer0Counts[i*2] + layer0Counts[i*2+1];
+        }
 
         // Propagate the counts to the upper tree layers
-        ulong size      = bits.length >>> 1;
-        ulong srcIndex  = countsTree.length - bits.length;
+        ulong size      = layer0Counts.length >>> 2;
+        ulong srcIndex  = countsTree.length - layer0Counts.length/2;
         ulong destIndex = srcIndex - size;
 
         while(size > 1) {
