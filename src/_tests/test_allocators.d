@@ -903,32 +903,116 @@ void testSparseArrayIndexes() {
 
     {
         auto s = new SparseArrayIndexes();
+     
+        // capacity = 64, layers = 0
         s.add(10);
         assert(s.numItems() == 1);
         assert(s.capacity() == 64);
         s.dump();
+        assert(s.sparseIndexOf(10) == 0);
+        assert(s.sparseIndexOf(11) == 1);
 
+        // capacity = 128, layers = 1
         s.add(65);
         s.add(100);
         assert(s.numItems() == 3);
         assert(s.capacity() == 128);
         s.dump();
+        assert(s.sparseIndexOf(65) == 1);
+        assert(s.sparseIndexOf(66) == 2);
+        assert(s.sparseIndexOf(100) == 2);
+        assert(s.sparseIndexOf(101) == 3);
 
+        // capacity = 256, layers = 2
         s.add(130);
         s.add(150);
         assert(s.numItems() == 5);
         assert(s.capacity() == 256);
         s.dump();
-
-        assert(s.sparseIndexOf(10) == 0);
-        assert(s.sparseIndexOf(65) == 1);
-        assert(s.sparseIndexOf(100) == 2);
         assert(s.sparseIndexOf(130) == 3);
+        assert(s.sparseIndexOf(131) == 4);
         assert(s.sparseIndexOf(150) == 4);
         assert(s.sparseIndexOf(151) == 5);
 
-        s.remove(100);
-        assert(s.numItems() == 4);
+        // s.remove(100);
+        // assert(s.numItems() == 4);
+        // s.dump();
+
+        // capacity = 512, layers = 3
+        s.add(500);
+        assert(s.numItems() == 6);
+        assert(s.capacity() == 512);
+        s.dump();
+        assert(s.sparseIndexOf(500) == 5);
+        assert(s.sparseIndexOf(501) == 6);
+
+        // capacity = 1024, layers = 4
+        s.add(1000);
+        assert(s.numItems() == 7);
+        assert(s.capacity() == 1024);
+        s.dump();
+        assert(s.sparseIndexOf(1000) == 6);
+        assert(s.sparseIndexOf(1001) == 7);
+
+        // capacity = 2048, layers = 5
+        s.add(2000);
+        assert(s.numItems() == 8);
+        assert(s.capacity() == 2048);
+        s.dump();
+        assert(s.sparseIndexOf(2000) == 7);
+        assert(s.sparseIndexOf(2001) == 8);
+
+        // capacity = 4096, layers = 6
+        s.add(4000);
+        assert(s.numItems() == 9);
+        assert(s.capacity() == 4096);
+        s.dump();
+        assert(s.sparseIndexOf(4000) == 8);
+        assert(s.sparseIndexOf(4001) == 9);
+
+        // capacity = 8192, layers = 7
+        s.add(8000);
+        assert(s.numItems() == 10);
+        assert(s.capacity() == 8192);
+        s.dump();
+        assert(s.sparseIndexOf(8000) == 9);
+        assert(s.sparseIndexOf(8001) == 10);
+
+        // capacity = 16384, layers = 8
+        s.add(16000);
+        assert(s.numItems() == 11);
+        assert(s.capacity() == 16384);
+        s.dump();
+        assert(s.sparseIndexOf(16000) == 10);
+        assert(s.sparseIndexOf(16001) == 11);
+
+        // capacity = 32768, layers = 9
+        s.add(32000);
+        assert(s.numItems() == 12);
+        assert(s.capacity() == 32768);
+        s.dump();
+        assert(s.sparseIndexOf(32000) == 11);
+        assert(s.sparseIndexOf(32001) == 12);
+
+        // capacity = 65536, layers = 10
+        s.add(65000);
+        assert(s.numItems() == 13);
+        assert(s.capacity() == 65536);
+        s.dump();
+        assert(s.sparseIndexOf(65000) == 12);
+        assert(s.sparseIndexOf(65001) == 13);
+
+        // capacity = 131072, layers = 11
+        s.add(130000);
+        assert(s.numItems() == 14);
+        assert(s.capacity() == 131072);
+        s.dump();
+        assert(s.sparseIndexOf(130000) == 13);
+        assert(s.sparseIndexOf(130001) == 14);
+
+        s.remove(10);
+        assert(s.numItems() == 13);
+        assert(s.capacity() == 131072);
         s.dump();
 
 

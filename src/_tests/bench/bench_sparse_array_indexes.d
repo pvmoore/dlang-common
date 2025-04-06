@@ -47,7 +47,7 @@ void run() {
         watch.stop();
     }
     writefln("        --> %.2f ms", watch.peek().total!"nsecs"/1000000.0);
-    // [1438] [1187]
+    // [1438] [1187] [988]
 
     writef("Removing %s indexes", numIndexes);
     StopWatch watch2 = StopWatch(AutoStart.no);
@@ -65,7 +65,7 @@ void run() {
         watch2.stop();
     }
     writefln("      --> %.2f ms", watch2.peek().total!"nsecs"/1000000.0);
-    // [1423] [1164]
+    // [1423] [1164] [967]
 
     writef("sparseIndexOf %s indexes", numIndexes);
     StopWatch watch3 = StopWatch(AutoStart.no);
@@ -84,7 +84,7 @@ void run() {
         watch3.stop();
     }
     writefln(" --> %.2f ms", watch3.peek().total!"nsecs"/1000000.0);
-    // [4203] [4500]
+    // [4203] [4500] [4600]
 
     writefln("accum = %s", accum);
 
