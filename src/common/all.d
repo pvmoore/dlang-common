@@ -5,6 +5,8 @@ public:
 import common;
 import common.containers;
 import common.io;
+import common.utils;
+import common.web;
 
 import core.stdc.string : memmove;
 import core.atomic      : atomicOp, atomicLoad, atomicStore, cas, MemoryOrder;

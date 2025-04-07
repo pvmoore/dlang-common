@@ -7,7 +7,7 @@ import std.datetime.stopwatch : StopWatch, AutoStart;
 
 import common;
 import common.allocators;
-import _tests.test : RUN_SUBSET;
+import _tests.test;
 
 void testAllocators() {
     writefln("--== Testing Allocators ==--");

@@ -2,6 +2,8 @@ module _tests.containers.test_unordered_map;
 
 import common;
 import common.containers;
+import common.utils;
+
 import _tests.test;
 
 void testUnorderedMap() {

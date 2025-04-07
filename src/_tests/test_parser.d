@@ -2,6 +2,8 @@ module _tests.test_parser;
 
 import common;
 import common.parser;
+import common.utils;
+
 import std.stdio;
 
 void testParser() {

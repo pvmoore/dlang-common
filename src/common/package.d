@@ -23,9 +23,6 @@ version(Win64) {
     import common.pdh;
 }
 
-import common.utils;
-import common.web;
-
 extern(C) {
     void dumpGPR();
     void dumpXMM_PS();
