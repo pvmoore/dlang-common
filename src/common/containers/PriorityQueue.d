@@ -1,6 +1,7 @@
 module common.containers.PriorityQueue;
 
 import common.all;
+import common.containers;
 import std.traits : isEqualityComparable, isOrderingComparable;
 
 auto makeHighPriorityQueue(T)() { return new PriorityQueue!(T, true); }

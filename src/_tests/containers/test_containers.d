@@ -4,7 +4,7 @@ import std.stdio  : writef, writefln;
 import std.format : format;
 import std.random : uniform, uniform01, Mt19937, unpredictableSeed;
 
-import common.all;
+import common.containers;
 import _tests.containers.test_sparse_array;
 import _tests.containers.test_unordered_map;
 import _tests.test : RUN_SUBSET;

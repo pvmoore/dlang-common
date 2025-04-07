@@ -1,6 +1,9 @@
 module common.containers.async_queue;
 
 import common.all;
+import common.containers;
+
+public:
 
 enum ThreadingModel {
     SPSC,   // single producer single consumer

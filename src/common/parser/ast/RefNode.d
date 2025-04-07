@@ -1,6 +1,7 @@
 module common.parser.ast.RefNode;
 
 import common.all;
+import common.containers;
 import common.parser;
 
 final class RefNode(T) : EPNode!T {

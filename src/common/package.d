@@ -23,7 +23,6 @@ version(Win64) {
     import common.pdh;
 }
 
-import common.containers;
 import common.io;
 import common.utils;
 import common.web;

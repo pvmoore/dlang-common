@@ -1,6 +1,7 @@
 module common.parser.ast.EPNode;
 
 import common.all;
+import common.containers;
 import common.parser;
 
 abstract class EPNode(T) {

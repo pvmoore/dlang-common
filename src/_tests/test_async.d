@@ -10,6 +10,7 @@ import std.algorithm.iteration : map, sum, each;
 import std.algorithm.sorting   : sort;
 
 import common;
+import common.containers;
 
 void runAsyncTests() {
     writefln("Running async tests");
