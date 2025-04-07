@@ -19,6 +19,7 @@ import std.conv               : to;
 
 import common;
 import common.containers;
+import common.io;
 
 import _tests.bench.bench_map;
 import _tests.bench.bench_sparse_array;

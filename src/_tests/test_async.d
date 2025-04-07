@@ -11,6 +11,7 @@ import std.algorithm.sorting   : sort;
 
 import common;
 import common.containers;
+import common.io;
 
 void runAsyncTests() {
     writefln("Running async tests");
