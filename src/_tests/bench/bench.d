@@ -19,7 +19,7 @@ import std.conv               : to;
 
 import common;
 import _tests.bench.bench_map;
-import _tests.bench.bench_sparse_array_indexes;
+import _tests.bench.bench_sparse_array;
 
 void runBenchmarks() {
     version(LDC) {

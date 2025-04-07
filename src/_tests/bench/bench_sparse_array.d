@@ -1,12 +1,11 @@
-module _tests.bench.bench_sparse_array_indexes;
+module _tests.bench.bench_sparse_array;
 
 import common;
-import common.allocators;
 import _tests.bench.bench;
 
 void benchSparseArray() {
     writefln("================================================================");
-    writefln(" Benchmarking SparseArrayIndexes");
+    writefln(" Benchmarking SparseArray");
     writefln("================================================================");
 
     run();
@@ -16,18 +15,8 @@ private:
 
 void run() { 
     ulong numIndexes = 1_000_000;
-    ulong capacity = 1024*1024*2;
+    ulong capacity = 1024*1024*4;
     uint J = 100;
-
-    {   // Display the number of bytes required
-        auto ss = new SparseArrayIndexes();
-        ss.add(capacity-1);
-        writefln(" capacity = %s, num bytes used = %s", ss.capacity(), ss.numBytesUsed());
-
-        // capacity | num bytes
-        // ---------|----------
-        // 2^21     | 786,416
-    }
 
     ulong[] indexes = new ulong[numIndexes];
     foreach(i; 0..numIndexes) {
@@ -38,7 +27,7 @@ void run() {
     StopWatch watch = StopWatch(AutoStart.no);
     foreach(j; 0..J) {
 
-        auto s = new SparseArrayIndexes;
+        auto s = new SparseArray;
 
         watch.start();
         foreach(x; indexes) {
@@ -47,13 +36,13 @@ void run() {
         watch.stop();
     }
     writefln("        --> %.2f ms", watch.peek().total!"nsecs"/1000000.0);
-    // [1438] [1187] [988]
+    // [1314]
 
     writef("Removing %s indexes", numIndexes);
     StopWatch watch2 = StopWatch(AutoStart.no);
     foreach(j; 0..J) {
 
-        auto s = new SparseArrayIndexes;
+        auto s = new SparseArray;
         foreach(x; indexes) {
             s.add(x);
         }
@@ -65,14 +54,14 @@ void run() {
         watch2.stop();
     }
     writefln("      --> %.2f ms", watch2.peek().total!"nsecs"/1000000.0);
-    // [1423] [1164] [967]
+    // [1294]
 
     writef("sparseIndexOf %s indexes", numIndexes);
     StopWatch watch3 = StopWatch(AutoStart.no);
     ulong accum = 0;
     foreach(j; 0..J) {
 
-        auto s = new SparseArrayIndexes;
+        auto s = new SparseArray;
         foreach(x; indexes) {
             s.add(x);
         }
@@ -84,7 +73,7 @@ void run() {
         watch3.stop();
     }
     writefln(" --> %.2f ms", watch3.peek().total!"nsecs"/1000000.0);
-    // [4203] [4500] [4600]
+    // [4958]
 
     writefln("accum = %s", accum);
 

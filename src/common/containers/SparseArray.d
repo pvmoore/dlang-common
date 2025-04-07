@@ -1,10 +1,10 @@
-module common.allocators.SparseArrayIndexes;
+module common.containers.SparseArray;
 
 import common.all;
 import core.bitop : bsf, bsr, popcnt;
 
 /**
- * SparseArrayIndexes keeps a record of positions of items in a sparsely populated array in a way that
+ * SparseArray keeps a record of positions of items in a sparsely populated array in a way that
  * uses less memory than a simple flat array.
  * 
  * It does this by using a smaller array of bit flags to mark the positions of items. This bit array
@@ -16,12 +16,12 @@ import core.bitop : bsf, bsr, popcnt;
  *
  * Example:
  *
- * A SparseArrayIndexes of capacity 1024 can hold up to 1024 item indexes. It is optimised to hold only a few
+ * A SparseArray of capacity 1024 can hold up to 1024 item indexes. It is optimised to hold only a few
  * items so filling it up too much would be less efficient than just using a flat array. 
  * The indexes are used to lookup the actual item in a separate flat array which can be 
  * much smaller.
  *
- * ulong index = sparseArrayIndexes.sparseIndexOf(1000);
+ * ulong index = SparseArray.sparseIndexOf(1000);
  * auto item = items[index];
  *
  * ** Counts Tree **
@@ -63,7 +63,7 @@ import core.bitop : bsf, bsr, popcnt;
  * 8,388,608  | 3,145,712      | 2,228,208       | 1,444,848           |
  * 16,777,216 | 6,291,440      | 4,456,432       | 2,889,712           |
  */
-final class SparseArrayIndexes {
+final class SparseArray {
 public:
     bool isEmpty() {
         return _numItems == 0;
