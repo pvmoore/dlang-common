@@ -1,6 +1,7 @@
 module _tests.bench.bench_sparse_array;
 
 import common;
+import common.containers;
 import _tests.bench.bench;
 
 void benchSparseArray() {

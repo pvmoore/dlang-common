@@ -1,5 +1,7 @@
 module _tests.test;
 
+public: 
+
 import std.stdio;
 import core.stdc.stdlib : malloc, calloc;
 import core.atomic      : atomicLoad, atomicStore, atomicOp;
@@ -7,7 +9,7 @@ import core.time        : dur;
 import core.thread      : Thread, thread_joinAll;
 import core.memory      : GC;
 
-import std.random              : randomShuffle,uniform, Mt19937, unpredictableSeed;
+import std.random              : randomShuffle, uniform, uniform01, Mt19937, unpredictableSeed;
 import std.format              : format;
 import std.conv                : to;
 import std.typecons            : Tuple,tuple;
