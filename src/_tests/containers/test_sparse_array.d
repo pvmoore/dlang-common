@@ -10,264 +10,285 @@ void testSparseArray() {
     writefln("----------------------------------------------------------------");
 
     {
-        auto s = new SparseArray();
-     
-        // capacity = 64, layers = 0
-        s.add(10);
-        assert(s.numItems() == 1);
-        assert(s.capacity() == 64);
+        writefln(" Default Initialisation");
+        auto s = new SparseArray!uint();
+        assert(s.isEmpty());
+        assert(s.length() == 0);
+        assert(s.capacity() == 0);
         s.dump();
-        assert(s.sparseIndexOf(10) == 0);
-        assert(s.sparseIndexOf(11) == 1);
-
-        // capacity = 128, layers = 1
-        s.add(65);
-        s.add(100);
-        assert(s.numItems() == 3);
+    }
+    {
+        writefln(" Initialisation with capacity");
+        auto s = new SparseArray!uint(128);
+        assert(s.isEmpty());
+        assert(s.length() == 0);
         assert(s.capacity() == 128);
         s.dump();
-        assert(s.sparseIndexOf(65) == 1);
-        assert(s.sparseIndexOf(66) == 2);
-        assert(s.sparseIndexOf(100) == 2);
-        assert(s.sparseIndexOf(101) == 3);
+    }
+    {
+        writefln(" opIndexAssign() add");
+        auto s = new SparseArray!uint();
+
+        s[10] = 3;
+
+        assert(!s.isEmpty());
+        assert(s.length() == 1);
+        assert(s.capacity() == 64);
+        assert(s.values() == [3]);
+
+        s[50] = 4;
+        assert(s.length() == 2);
+        assert(s.capacity() == 64);
+        assert(s.values() == [3, 4]);
+        s.dump();
+
+        s[120] = 5;
+        assert(s.length() == 3);
+        assert(s.capacity() == 128);
+        assert(s.values() == [3, 4, 5]);
+        s.dump();
+
+        s[75] = 6;
+        assert(s.length() == 4);
+        assert(s.capacity() == 128);
+        assert(s.values() == [3, 4, 6, 5]);
+        s.dump();
+
+        s[0] = 99;
+        assert(s.length() == 5);
+        assert(s.capacity() == 128);
+        assert(s.values() == [99, 3, 4, 6, 5]);
+        s.dump();
+
+        s[127] = 70;
+        assert(s.length() == 6);
+        assert(s.capacity() == 128);
+        assert(s.values() == [99, 3, 4, 6, 5, 70]);
+        s.dump();
+    }
+    {
+        writefln(" opIndexAssign() replace");
+        auto s = new SparseArray!uint();
+
+        s[10] = 3;
+        s[10] = 4;
+        assert(s.length() == 1);
+        assert(s.capacity() == 64);
+        assert(s.values() == [4]);
+        s.dump();
+
+        s[20] = 5;
+        s[30] = 6;
+        assert(s.length() == 3);
+        assert(s.capacity() == 64);
+        assert(s.values() == [4, 5, 6]);
+        s.dump();
+
+        s[10] = 7;
+        assert(s.length() == 3);
+        assert(s.capacity() == 64);
+        assert(s.values() == [7, 5, 6]);
+        s.dump();
+
+        s[30] = 8;
+        assert(s.length() == 3);
+        assert(s.capacity() == 64);
+        assert(s.values() == [7, 5, 8]);
+        s.dump();
+    }
+    {
+        writefln(" clear()");
+        // if not initialised with capacity, capacity should be 0 after clear
+        auto s = new SparseArray!uint();
+        s[50] = 3;
+        s[700] = 4;
+        s[1000] = 5;
+        s.clear();
+        assert(s.isEmpty());
+        assert(s.length() == 0);
+        assert(s.capacity() == 0);
+
+        // if initialised with capacity, capacity should not be reset after clear
+        auto s2 = new SparseArray!uint(128);
+        s2[50] = 3;
+        s2[700] = 4;
+        s2[1000] = 5;
+        s2.clear();
+        assert(s2.isEmpty());
+        assert(s2.length() == 0);
+        assert(s2.capacity() == 128);
+    }
+    {
+        writefln(" opIndex()");
+        auto s = new SparseArray!uint();
+        s[50] = 3;
+        s[700] = 4;
+        s[1000] = 5;
+        assert(s.values() == [3, 4, 5]);
+        assert(s[50] == 3);
+        assert(s[700] == 4);
+        assert(s[1000] == 5);
+        assert(s[100] == 0); // T.init
+    }
+    {
+        writefln(" remove()");
+        auto s = new SparseArray!uint();
+        s[50] = 3;
+        s[700] = 4;
+        s[1000] = 5;
+        assert(s.values() == [3, 4, 5]);
+        assert(s.capacity() == 1024);
+
+        s.remove(700);
+
+        assert(s.length() == 2);
+        assert(s.capacity() == 1024);
+        assert(s.values() == [3, 5]);
+        s.dump();
+    }
+
+    {
+        auto s = new SparseArray!uint();
+     
+        // capacity = 64, layers = 0
+        s[10] = 3;
+        assert(s.length() == 1);
+        assert(s.capacity() == 64);
+        s.dump();
+        assert(s.values() == [3]);
+
+        // capacity = 128, layers = 1
+        s[65] = 4;
+        s[100] = 2;
+        assert(s.length() == 3);
+        assert(s.capacity() == 128);
+        s.dump();
+        assert(s.values() == [3, 4, 2]);
 
         // capacity = 256, layers = 2
-        s.add(130);
-        s.add(150);
-        assert(s.numItems() == 5);
+        s[130] = 1;
+        s[150] = 5;
+        assert(s.length() == 5);
         assert(s.capacity() == 256);
         s.dump();
-        assert(s.sparseIndexOf(130) == 3);
-        assert(s.sparseIndexOf(131) == 4);
-        assert(s.sparseIndexOf(150) == 4);
-        assert(s.sparseIndexOf(151) == 5);
+        assert(s.values() == [3, 4, 2, 1, 5]);
 
         // s.remove(100);
         // assert(s.numItems() == 4);
         // s.dump();
 
         // capacity = 512, layers = 3
-        s.add(500);
-        assert(s.numItems() == 6);
+        s[500] = 7;
+        assert(s.length() == 6);
         assert(s.capacity() == 512);
         s.dump();
-        assert(s.sparseIndexOf(500) == 5);
-        assert(s.sparseIndexOf(501) == 6);
+        assert(s.values() == [3, 4, 2, 1, 5, 7]);
 
         // capacity = 1024, layers = 4
-        s.add(1000);
-        assert(s.numItems() == 7);
+        s[1000] = 0;
+        assert(s.length() == 7);
         assert(s.capacity() == 1024);
         s.dump();
-        assert(s.sparseIndexOf(1000) == 6);
-        assert(s.sparseIndexOf(1001) == 7);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0]);
 
         // capacity = 2048, layers = 5
-        s.add(2000);
-        assert(s.numItems() == 8);
+        s[2000] = 11;
+        assert(s.length() == 8);
         assert(s.capacity() == 2048);
         s.dump();
-        assert(s.sparseIndexOf(2000) == 7);
-        assert(s.sparseIndexOf(2001) == 8);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11]);
 
         // capacity = 4096, layers = 6
-        s.add(4000);
-        assert(s.numItems() == 9);
+        s[4000] = 90;
+        assert(s.length() == 9);
         assert(s.capacity() == 4096);
         s.dump();
-        assert(s.sparseIndexOf(4000) == 8);
-        assert(s.sparseIndexOf(4001) == 9);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11, 90]);
 
         // capacity = 8192, layers = 7
-        s.add(8000);
-        assert(s.numItems() == 10);
+        s[8000] = 15;
+        assert(s.length() == 10);
         assert(s.capacity() == 8192);
         s.dump();
-        assert(s.sparseIndexOf(8000) == 9);
-        assert(s.sparseIndexOf(8001) == 10);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11, 90, 15]);
 
         // capacity = 16384, layers = 8
-        s.add(16000);
-        assert(s.numItems() == 11);
+        s[16000] = 100;
+        assert(s.length() == 11);
         assert(s.capacity() == 16384);
         s.dump();
-        assert(s.sparseIndexOf(16000) == 10);
-        assert(s.sparseIndexOf(16001) == 11);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11, 90, 15, 100]);
 
         // capacity = 32768, layers = 9
-        s.add(32000);
-        assert(s.numItems() == 12);
+        s[32000] = 19;
+        assert(s.length() == 12);
         assert(s.capacity() == 32768);
         s.dump();
-        assert(s.sparseIndexOf(32000) == 11);
-        assert(s.sparseIndexOf(32001) == 12);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11, 90, 15, 100, 19]);
 
         // capacity = 65536, layers = 10
-        s.add(65000);
-        assert(s.numItems() == 13);
+        s[65000] = 88;
+        assert(s.length() == 13);
         assert(s.capacity() == 65536);
         s.dump();
-        assert(s.sparseIndexOf(65000) == 12);
-        assert(s.sparseIndexOf(65001) == 13);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11, 90, 15, 100, 19, 88]);
 
         // capacity = 131072, layers = 11
-        s.add(130000);
-        assert(s.numItems() == 14);
+        s[130000] = 55;
+        assert(s.length() == 14);
         assert(s.capacity() == 131072);
         s.dump();
-        assert(s.sparseIndexOf(130000) == 13);
-        assert(s.sparseIndexOf(130001) == 14);
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11, 90, 15, 100, 19, 88, 55]);
 
         s.remove(10);
-        assert(s.numItems() == 13);
+        assert(s.length() == 13);
         assert(s.capacity() == 131072);
         s.dump();
+        assert(s.values() == [4, 2, 1, 5, 7, 0, 11, 90, 15, 100, 19, 88, 55]);
+    }
+    {
+        writefln(" opApply() opIndexApply");
+        auto s = new SparseArray!uint();
+        s[10] = 3;
+        s[65] = 4;
+        s[100] = 2;
+        s[130] = 1;
+        s[150] = 5;
 
+        foreach(v; s) {
+            writefln(" %s",  v);
+        }
+        foreach(i, v; s) {
+            writefln("[%s] %s", i, v);
+        }
+    }
+    {
+        writefln(" range()");
+        auto s = new SparseArray!uint();
+        s[10] = 3;
+        s[65] = 4;
+        s[100] = 2;
+        s[130] = 1;
+        s[150] = 5;
+
+        import std.range.primitives;
+
+        alias R = typeof(s.range());
+
+        assert(isRandomAccessRange!R);
+
+        writefln(" isInputRange = %s", isInputRange!R);
+        writefln(" isForwardRange = %s", isForwardRange!R);
+        writefln(" isBidirectionalRange = %s", isBidirectionalRange!R);
+        writefln(" isRandomAccessRange = %s", isRandomAccessRange!R);
+        writefln(" hasSwappableElements = %s", hasSwappableElements!R); 
+        writefln(" hasAssignableElements = %s", hasAssignableElements!R);
 
         //if(1f < 2f) return;
     }
+    
     //──────────────────────────────────────────────────────────────────────────────────────────────────
 
-    {
-        writefln(" Default Initialisation");
-        auto s = new SparseArray();
-        assert(s.isEmpty());
-        assert(s.numItems() == 0);
-        assert(s.capacity() == 0);
-        s.dump();
-    }
-    {
-        writefln(" Initialisation with capacity");
-        auto s = new SparseArray(128);
-        assert(s.isEmpty());
-        assert(s.numItems() == 0);
-        assert(s.capacity() == 128);
-        s.dump();
-    }
-    {
-        writefln(" add()");
-        auto s = new SparseArray();
-        s.add(10);
-        s.add(60);
-        s.add(63);
-
-        s.dump();
-        assert(s.sparseIndexOf(10) == 0);
-        assert(s.sparseIndexOf(60) == 1);
-        assert(s.sparseIndexOf(63) == 2);
-        assert(s.sparseIndexOf(64) == 3);
-    }
-    {
-        writefln(" expand()");
-        auto s = new SparseArray();
-
-        s.add(6);
-        s.add(20);
-        s.add(50);
-        s.add(32);
-        assert(!s.isEmpty());
-        assert(s.numItems() == 4);
-        assert(s.capacity() == 64);
-        assert(s.sparseIndexOf(6) == 0);
-        assert(s.sparseIndexOf(20) == 1);
-        assert(s.sparseIndexOf(32) == 2);
-        assert(s.sparseIndexOf(50) == 3);
-        assert(s.sparseIndexOf(60) == 4);
-        s.dump();
-
-        // this will expand the tree to capacity 128
-        s.add(64);
-        s.dump();
-        assert(s.numItems() == 5);
-        assert(s.capacity() == 128);
-        assert(s.sparseIndexOf(64) == 4); 
-        assert(s.sparseIndexOf(65) == 5);
-
-        // this will expand the tree to capacity 256
-        s.add(128);
-        assert(s.numItems() == 6);
-        assert(s.capacity() == 256);
-        s.dump();
-
-        // this will expand the tree to capacity 512
-        s.add(500);
-        assert(s.numItems() == 7);
-        assert(s.capacity() == 512);
-        s.dump();
-    }
-    {
-        writefln(" remove()");
-
-        // Small array without counts
-        auto s = new SparseArray();
-        s.add(10);
-        s.add(60);
-        s.add(63);
-        assert(s.numItems() == 3);
-        assert(s.capacity() == 64);
-        assert(s.sparseIndexOf(10) == 0);
-        assert(s.sparseIndexOf(11) == 1);
-        assert(s.sparseIndexOf(60) == 1);
-        assert(s.sparseIndexOf(61) == 2);
-        assert(s.sparseIndexOf(63) == 2);
-        assert(s.sparseIndexOf(64) == 3);
-
-        assert(s.remove(60));
-        assert(s.numItems() == 2);
-        assert(s.capacity() == 64);
-        assert(s.sparseIndexOf(10) == 0);
-        assert(s.sparseIndexOf(11) == 1);
-        assert(s.sparseIndexOf(60) == 1);
-        assert(s.sparseIndexOf(61) == 1);
-        assert(s.sparseIndexOf(63) == 1);
-        assert(s.sparseIndexOf(64) == 2);
-        s.dump();
-
-        // Array with counts
-        s = new SparseArray();
-        assert(s.isEmpty());
-        assert(s.numItems() == 0);
-        assert(s.capacity() == 0);
-
-        // Increase capacity to 128
-        s.add(64);
-        assert(s.numItems() == 1);
-        assert(s.capacity() == 128);
-        s.dump();
-
-        assert(!s.remove(20));   // not found
-        assert(!s.remove(6000));   // not found
-        assert(s.remove(64));
-        assert(s.isEmpty());
-        assert(s.numItems() == 0);
-        assert(s.capacity() == 128);
-        s.dump();
-
-        // Increase capacity to 256
-        s.add(220);
-        assert(s.numItems() == 1);
-        assert(s.capacity() == 256);
-        s.dump();
-
-        assert(!s.remove(10));   // not found
-        assert(s.remove(220));
-
-        assert(s.isEmpty());
-        assert(s.numItems() == 0);
-        assert(s.capacity() == 256);
-        s.dump();
-    }   
-    {
-        writefln(" clear()");
-        auto s = new SparseArray();
-        s.add(10);
-        s.add(60);
-        s.add(63);
-        s.clear();
-        assert(s.isEmpty());
-        assert(s.numItems() == 0);
-        assert(s.capacity() == 0);
-    }
     {
         writefln("----------------------------------------------------------------");
         writefln(" fuzz test");
@@ -284,7 +305,7 @@ void testSparseArray() {
             uint numAdds;
             uint numRemoves;
 
-            auto s = new SparseArray();
+            auto s = new SparseArray!bool();
 
             ulong count(uint index) {
                 if(index == 0) return 0;
@@ -296,22 +317,26 @@ void testSparseArray() {
             }
             void add(ulong index) {
                 //writefln(" - add(%s)", index);
-                s.add(index);
+
+                s[index] = true;
+
                 if(!array[index]) {
                     array[index] = true;
                     numItems++;
                 }
-                assert(s.numItems() == numItems);
+                assert(s.length() == numItems);
             }
             void remove(ulong index) {
                 //writefln(" - remove(%s)", index);
+
                 bool r = s.remove(index);
+
                 assert(r == array[index]);
                 if(array[index]) {
                     array[index] = false;
                     numItems--;
                 }
-                assert(s.numItems() == numItems);
+                assert(s.length() == numItems);
             }
             ulong selectRandomIndex() {
                 assert(numItems > 0);
@@ -324,22 +349,25 @@ void testSparseArray() {
                 }
                 assert(false);
             }
-            void checkSparseIndexes() {
-                if(capacity < 100_000) {
-                    // Check all indexes
-                    foreach(i; 0..capacity) {
-                        assert(count(i) == s.sparseIndexOf(i), "At index %s - Expected %s but was %s".format(i, count(i), s.sparseIndexOf(i)));
-                    }
-                } else {
-                    // Only check the indexes that we added otherwise we will be here all day
-                    assert(count(0) == s.sparseIndexOf(0));
-                    foreach(i; 1..capacity) {
-                        if(array[i]) {
-                            assert(count(i) == s.sparseIndexOf(i), "At index %s - Expected %s but was %s".format(i, count(i), s.sparseIndexOf(i)));
-                            assert(count(i-1) == s.sparseIndexOf(i-1), "At index %s - Expected %s but was %s".format(i-1, count(i-1), s.sparseIndexOf(i-1)));
-                        }
-                    }
+            void checkValues() {
+                foreach(i; 0..capacity) {
+                    assert(s[i] == array[i]);
                 }
+                // if(capacity < 100_000) {
+                //     // Check all indexes
+                //     foreach(i; 0..capacity) {
+                //         assert(count(i) == s.sparseIndexOf(i), "At index %s - Expected %s but was %s".format(i, count(i), s.sparseIndexOf(i)));
+                //     }
+                // } else {
+                //     // Only check the indexes that we added otherwise we will be here all day
+                //     assert(count(0) == s.sparseIndexOf(0));
+                //     foreach(i; 1..capacity) {
+                //         if(array[i]) {
+                //             assert(count(i) == s.sparseIndexOf(i), "At index %s - Expected %s but was %s".format(i, count(i), s.sparseIndexOf(i)));
+                //             assert(count(i-1) == s.sparseIndexOf(i-1), "At index %s - Expected %s but was %s".format(i-1, count(i-1), s.sparseIndexOf(i-1)));
+                //         }
+                //     }
+                // }
             }
 
             foreach(i; 0..iterations) {
@@ -366,11 +394,15 @@ void testSparseArray() {
                     numRemoves++;
                 }
             }
-            checkSparseIndexes();
+            checkValues();
             assert(s.capacity() <= capacity);
             writefln(" --> adds %s, removes %s", numAdds, numRemoves);
         }
 
+        fuzzTest(10, 1024);
+
+        fuzzTest(200, 1024*1024*64);
+        fuzzTest(500, 1024*1024*16);
         fuzzTest(20, 65536);
         fuzzTest(1000, 1024);
         foreach(j; 0..100) {
@@ -381,7 +413,7 @@ void testSparseArray() {
 
     foreach(i; 6..25) {
         ulong capacity = 1 << i;
-        auto ss = new SparseArray(capacity);
+        auto ss = new SparseArray!uint(capacity);
         assert(ss.capacity() == capacity);
         writefln(" Capacity %s, numBytes = %s", ss.capacity(), ss.numBytesUsed());
     }

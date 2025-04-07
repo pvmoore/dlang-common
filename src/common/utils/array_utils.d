@@ -128,9 +128,15 @@ T removeAt(T)(ref T[] array, ulong index) {
 	assert(index < array.length);
 
 	T element = array[index];
-	foreach(ref v; array[index+1..$]) {
-		array[index++] = v;
-	}
+
+	import core.stdc.string : memmove;
+
+	T* dest    = array.ptr + index;
+	T* src     = array.ptr + index + 1;
+	ulong size = (array.length - index) - 1;
+
+	memmove(dest, src, size * T.sizeof);
+
 	array.length = array.length - 1;
 	return element;
 }
@@ -149,6 +155,7 @@ void removeRange(T)(ref T[] array, ulong start, ulong end) {
 	assert(start <= end);
 	assert(end < array.length);
 
+	// todo - use memmove here instead. would be much faster
 	long span = (end-start)+1;
 	foreach(v; array[end+1..$]) {
 		array[start++] = v;

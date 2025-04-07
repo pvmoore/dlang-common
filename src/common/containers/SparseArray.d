@@ -4,6 +4,23 @@ import common.all;
 import core.bitop : bsf, bsr, popcnt;
 
 /**
+ * ** What is SparseArray? **
+ * SparseArray is a dynamic array that is optimised for a sparsely populated data set. It can be used 
+ * in a similar way to a flat array but if the number of items is small the memory usage is less than
+ * a flat array. Access is slower than a flat array but should still be reasonable.
+ *
+ * Values are not appended but can be set at any index even outside the capacity which will grow as required.
+ * The length() of the array is the number of items stored. Capacity() grows in increments of 64.
+ * eg. 
+ *   sparseArray[100] = 5;
+ *   This array is now length() == 1 and capacity() == 128
+ *   sparseArray.values() == [5]
+ *
+ *   sparseArray[1000] = 99;
+ *   This array is now length() == 2 and capacity() == 1024
+ *   sparseArray.values() == [5, 99]
+ *
+ * ** How it works **
  * SparseArray keeps a record of positions of items in a sparsely populated array in a way that
  * uses less memory than a simple flat array.
  * 
@@ -63,13 +80,13 @@ import core.bitop : bsf, bsr, popcnt;
  * 8,388,608  | 3,145,712      | 2,228,208       | 1,444,848           | 1,442,808
  * 16,777,216 | 6,291,440      | 4,456,432       | 2,889,712           | 2,885,624
  */
-final class SparseArray {
+final class SparseArray(T) {
 public:
     bool isEmpty() {
-        return _numItems == 0;
+        return data.length == 0;
     }
-    ulong numItems() {
-        return _numItems; 
+    ulong length() {
+        return data.length; 
     }
     ulong capacity() {
         return bits.length * 64;
@@ -82,191 +99,103 @@ public:
                L25AndAboveCounts.length*8;
     }
 
-    this() {}
+    this() {
+        this.initialCapacity = 0;
+    }
     this(ulong capacity) {
         assert(popcnt(capacity) == 1);
-        expand(capacity-1);
+        this.initialCapacity = capacity-1;
+        clear();
     }
-    /** 
-     * Adds an index to the sparse array.
-     */
-    void add(ulong index) {
-        if(index >= bits.length*64) expand(index);
-
-        // We don't want to increase the counts more than once for the same index
-        if(isBitSet(index)) return;
-
-        // Update bits
-        setBit(index);
-
-        ulong indexDiv = index >>> 6;
+    /** auto v = array[index]; */
+    T opIndex(ulong index) {
+        return getItem(index);
+    }
+    /** v[index] = 3; */
+    void opIndexAssign(T value, ulong index) {
+        if(index >= capacity()) expand(index);
         
-        // Update the counts if there are any
-        uint offset = 0;
-        uint size   = 2;
-        uint div    = capacityDiv;
-
-        // Update L25AndAboveCounts
-        while(size < bits.length && offset < L25AndAboveCounts.length) { 
-            L25AndAboveCounts[offset + (indexDiv >>> div)]++;
-
-            offset += size;
-            size <<= 1;
-            div--;
+        if(isBitSet(index)) {
+            replaceItem(index, value);
+        } else {
+            addItem(index, value);
         }
-        // Update L9To24Counts
-        offset = 0;
-        while(size < bits.length && offset < L9To24Counts.length) { 
-            L9To24Counts[offset + (indexDiv >>> div)]++;
-
-            offset += size;
-            size <<= 1;
-            div--;
-        }
-        // Update L1To8Counts
-        offset = 0;
-        while(size < bits.length) { 
-            L1To8Counts[offset + (indexDiv >>> div)]++;
-
-            offset += size;
-            size <<= 1;
-            div--;
-        }
-        // Update L0Counts
-        if(L0Counts.length > 0) {
-            L0Counts[indexDiv]++;
-        }
-
-        _numItems++;
     }
     /**
-     * Removes an index from the sparse array.
-     * Returns true if the index was removed or false if it was not found.
+     * Removes a value from the array.
+     * Returns true if the value was removed or false if it was not found.
      */
     bool remove(ulong index) {
-        // Ignore if index is out of range or not set
-        if(index >= bits.length*64) return false;
+        if(index >= capacity()) return false;
         if(!isBitSet(index)) return false;
 
-        // Update bits
-        clearBit(index);
-
-        ulong indexDiv = index >>> 6;
-        
-        // Update the counts if there are any
-        uint offset = 0;
-        uint size   = 2;
-        uint div    = capacityDiv;
-
-        // Update L25AndAboveCounts
-        while(size < bits.length && offset < L25AndAboveCounts.length) { 
-            L25AndAboveCounts[offset + (indexDiv >>> div)]--;
-
-            offset += size;
-            size <<= 1;
-            div--;
-        }
-        // Update L9To24Counts
-        offset = 0;
-        while(size < bits.length && offset < L9To24Counts.length) { 
-            L9To24Counts[offset + (indexDiv >>> div)]--;
-
-            offset += size;
-            size <<= 1;
-            div--;
-        }
-        // Update L1To8Counts
-        offset = 0;
-        while(size < bits.length) { 
-            L1To8Counts[offset + (indexDiv >>> div)]--;
-
-            offset += size;
-            size <<= 1;
-            div--;
-        }
-        // Update L0Counts
-        if(L0Counts.length > 0) {
-            L0Counts[indexDiv]--;
-        }
-
-        _numItems--;
+        removeItem(index);
         return true;
     }
-    ulong sparseIndexOf(ulong index) {
-        // Handle out of bounds
-        if(index >= bits.length*64) return _numItems;
-
-        ulong count      = 0;
-        ulong treeOffset = 0;
-        ulong size       = 2;
-        uint shift       = capacityDiv;  
-        ulong pivot      = bits.length >>> 1;
-        ulong window     = bits.length >>> 2;
-
-        ulong indexDiv = index >>> 6; 
-        ulong indexRem = index & 63;
-        uint layer     = layers-1;
-
-        ulong getCount() {
-            auto n = (pivot >>> shift) & ~1UL; 
-            switch(layer) {
-                case 0:
-                    return L0Counts[n];
-                case 1: .. case 8:
-                    return L1To8Counts[treeOffset + n];
-                case 9: .. case 24:
-                    return L9To24Counts[treeOffset + n];
-                default:
-                    return L25AndAboveCounts[treeOffset + n];
-            }
-        }
-
-        // Calculate counts
-        while(size <= bits.length) {
-
-            if(layer == 8 || layer == 24) {
-                treeOffset = 0;
-            }
-
-            bool goRight = indexDiv >= pivot;
-
-            if(goRight) {
-                count += getCount();
-                pivot += window;
-            } else {
-                pivot -= window;
-            }
-
-            treeOffset += size;
-            size <<= 1;
-            window >>>= 1;
-            shift--;
-            layer--;
-        }
-
-        // Add bits mask count
-        ulong maskedBits = popcnt(bits[indexDiv] & (0x7fff_ffff_ffff_ffffUL >>> (63-indexRem)));
-        count += maskedBits;
-
-        return count;
-    }
+    /** Resets the array to empty */
     void clear() {
-        _numItems = 0;
         layers = 0;
         L0Counts = null;
         L1To8Counts = null;
         L9To24Counts = null;
         L25AndAboveCounts = null;
         bits = null;
+        data = null;
+
+        if(initialCapacity != 0) {
+            expand(initialCapacity);
+        }
     }
+    /** Return a new array containing the values in the sparse array */
+    T[] values() {
+        return data.dup;
+    }
+    /** Return a RandomAccessRange of a snapshot of the values in the sparse array */
+    auto range() {
+        static struct SparseArrayRange {
+            T[] values;
+            ulong f, b;
+            bool empty() { return f+b >= values.length; }
+            T front() { return values[f]; }
+            T back() { return values[($-1)-b]; }
+            void popFront() { f++; }
+            void popBack() { b++; }
+            auto save() { return this; }
+            T opIndex(size_t i) { return values[i]; }
+            ulong length() { return values.length; }
+        }
+        return SparseArrayRange(values());
+    }
+    /** foreach(T value; array) {} */
+    int opApply(int delegate(ref T value) dg) {
+        int result = 0;
+        foreach(i; 0..data.length) {
+            T value = data[i];
+            result = dg(value);
+            if(result) break;
+        }
+        return result;
+    }
+    /** foreach(ulong index, T value; array) {} */
+    int opApply(int delegate(ref ulong index, ref T value) dg) {
+        int result = 0;
+        foreach(i; 0..data.length) {
+            ulong index = i;
+            T value = data[i];
+            result = dg(index, value);
+            if(result) break;
+        }
+        return result;
+    }
+    // For debugging
     void dump() {
         writefln("┌───────────────────────────────────────────────────────────────────────────");
-        writefln("│ numItems = %s, capacity = %s, (%s bytes used)", _numItems, bits.length*64, numBytesUsed());
+        writefln("│ numItems = %s, capacity = %s, (%s bytes used)", data.length, bits.length*64, numBytesUsed());
         
         uint size = 2;
         ulong offset = 0;
 
-        writefln("│ L9..n (%s):", L25AndAboveCounts.length);
+        writefln("│ L9..n  (%s):", L25AndAboveCounts.length);
         if(L25AndAboveCounts.length > 0) {
             while(offset < L25AndAboveCounts.length) {
                 writef("│ [%2s] ", offset);
@@ -293,7 +222,7 @@ public:
             }
         }
 
-        writefln("│ L1..8 (%s):", L1To8Counts.length);
+        writefln("│ L1..8  (%s):", L1To8Counts.length);
         offset = 0;
         if(L1To8Counts.length > 0) {
             while(offset < L1To8Counts.length) {
@@ -307,7 +236,7 @@ public:
             }
         }
 
-        writefln("│ L0 (%s):", L0Counts.length);
+        writefln("│ L0     (%s):", L0Counts.length);
         if(L0Counts.length > 0) {
             writef("│ ");
             foreach(i; 0..L0Counts.length) {
@@ -326,12 +255,21 @@ public:
                 writefln("");
             } 
         }
+
+        writefln("│ DATA   (%s):", data.length);
+        if(data.length > 0) {
+            writef("│ ");
+            foreach(i; 0..data.length) {
+                writef(" %s", data[i]);
+            }
+            writefln("");
+        }
         writefln("└───────────────────────────────────────────────────────────────────────────");
     }
 private:
-    ulong _numItems;    // Number of items added to the counts tree
-    uint capacityDiv;   // bsf(capacity) - 1
-    uint layers;        // Number of layers in the counts tree
+    const ulong initialCapacity;  // the capacity specified during creation
+    uint capacityDiv;             // bsf(capacity) - 1
+    uint layers;                  // Number of layers in the counts tree
 
     // Layer counts:
     // 
@@ -375,6 +313,9 @@ private:
     // todo- We can turn this into a sparse array using the bottom row of the counts tree
     //       to indicate whether a bits block is used or not
     ulong[] bits;
+
+    // This is the real array of items
+    T[] data;
 
     bool isBitSet(ulong index) {
         return (bits[index >>> 6] & (1UL << (index & 63))) != 0;
@@ -520,5 +461,135 @@ private:
             srcLayer++;
             destSize >>>= 1;
         }
+    }
+    void updateCounts(ulong index, int add) {
+        assert(add == 1 || add == -1);
+        ulong indexDiv = index >>> 6;
+        uint offset = 0;
+        uint size   = 2;
+        uint div    = capacityDiv;
+
+        while(size < bits.length && offset < L25AndAboveCounts.length) { 
+            L25AndAboveCounts[offset + (indexDiv >>> div)] += add.as!ulong;
+
+            offset += size;
+            size <<= 1;
+            div--;
+        }
+        offset = 0;
+        while(size < bits.length && offset < L9To24Counts.length) { 
+            L9To24Counts[offset + (indexDiv >>> div)] += add.as!uint;
+
+            offset += size;
+            size <<= 1;
+            div--;
+        }
+        offset = 0;
+        while(size < bits.length) { 
+            L1To8Counts[offset + (indexDiv >>> div)] += add.as!ushort;
+
+            offset += size;
+            size <<= 1;
+            div--;
+        }
+        if(L0Counts.length > 0) {
+            L0Counts[indexDiv] += add.as!ubyte;
+        }
+    }
+    ulong sparseIndexOf(ulong index) {
+        assert(index < capacity());
+
+        ulong count      = 0;
+        ulong treeOffset = 0;
+        ulong size       = 2;
+        uint shift       = capacityDiv;  
+        ulong pivot      = bits.length >>> 1;
+        ulong window     = bits.length >>> 2;
+
+        ulong indexDiv = index >>> 6; 
+        ulong indexRem = index & 63;
+        uint layer     = layers-1;
+
+        ulong getCount() {
+            auto n = (pivot >>> shift) & ~1UL; 
+            switch(layer) {
+                case 0:
+                    return L0Counts[n];
+                case 1: .. case 8:
+                    return L1To8Counts[treeOffset + n];
+                case 9: .. case 24:
+                    return L9To24Counts[treeOffset + n];
+                default:
+                    return L25AndAboveCounts[treeOffset + n];
+            }
+        }
+
+        // Calculate counts
+        while(size <= bits.length) {
+
+            if(layer == 8 || layer == 24) {
+                treeOffset = 0;
+            }
+
+            bool goRight = indexDiv >= pivot;
+
+            if(goRight) {
+                count += getCount();
+                pivot += window;
+            } else {
+                pivot -= window;
+            }
+
+            treeOffset += size;
+            size <<= 1;
+            window >>>= 1;
+            shift--;
+            layer--;
+        }
+
+        // Add bits mask count
+        ulong maskedBits = popcnt(bits[indexDiv] & (0x7fff_ffff_ffff_ffffUL >>> (63-indexRem)));
+        count += maskedBits;
+
+        return count;
+    }
+    T getItem(ulong index, T defaultValue = T.init) {
+        if(index > capacity()) return defaultValue;
+        if(!isBitSet(index)) return defaultValue;
+
+        ulong sparseIndex = sparseIndexOf(index);
+        if(sparseIndex < data.length) return data[sparseIndex];
+
+        return defaultValue;
+    }
+    void addItem(ulong index, T value) {
+        assert(index < capacity());
+        assert(!isBitSet(index));
+
+        setBit(index);
+        updateCounts(index, 1);
+
+        // Update the data array
+        ulong sparse = sparseIndexOf(index);
+        data.insertAt(sparse, value);
+    }
+    void removeItem(ulong index) {
+        assert(index < capacity());
+        assert(isBitSet(index));
+
+        clearBit(index);
+        updateCounts(index, -1);
+
+        // Update the data array
+        ulong sparse = sparseIndexOf(index);
+        data.removeAt(sparse);
+    }
+    void replaceItem(ulong index, T value) {
+        assert(index < capacity());
+        assert(isBitSet(index));
+
+        ulong sparseIndex = sparseIndexOf(index);
+        assert(sparseIndex < data.length);
+        data[sparseIndex] = value;
     }
 }

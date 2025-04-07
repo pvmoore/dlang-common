@@ -37,6 +37,7 @@ nothrow:
         Node[2] n = find(i);
         return n[1] ? n[1].value : T.init;
     }
+    // fixme - the order of these parameters is probably wrong
     void opIndexAssign(int i, T val) {
         Node[2] n = find(i);
         if(n[1]) {

@@ -15,37 +15,39 @@ void benchSparseArray() {
 private:
 
 void run() { 
-    ulong numIndexes = 1_000_000;
+    ulong numIndexes = 50_000;
     ulong capacity = 1024*1024*4;
     uint J = 100;
 
     ulong[] indexes = new ulong[numIndexes];
+    uint[] values = new uint[numIndexes];
     foreach(i; 0..numIndexes) {
         indexes[i] = uniform(0UL, capacity);
+        values[i] = uniform(0, uint.max);
     }
 
     writef("Adding %s indexes", numIndexes);
     StopWatch watch = StopWatch(AutoStart.no);
     foreach(j; 0..J) {
 
-        auto s = new SparseArray;
+        auto s = new SparseArray!uint;
 
         watch.start();
-        foreach(x; indexes) {
-            s.add(x);
+        foreach(i; 0..indexes.length) {
+            s[indexes[i]] = values[i];
         }
         watch.stop();
     }
     writefln("        --> %.2f ms", watch.peek().total!"nsecs"/1000000.0);
-    // [1314]
+    // [4200]
 
     writef("Removing %s indexes", numIndexes);
     StopWatch watch2 = StopWatch(AutoStart.no);
     foreach(j; 0..J) {
 
-        auto s = new SparseArray;
-        foreach(x; indexes) {
-            s.add(x);
+        auto s = new SparseArray!uint;
+        foreach(i; 0..indexes.length) {
+            s[indexes[i]] = values[i];
         }
 
         watch2.start();
@@ -55,26 +57,26 @@ void run() {
         watch2.stop();
     }
     writefln("      --> %.2f ms", watch2.peek().total!"nsecs"/1000000.0);
-    // [1360]
+    // [3200]
 
-    writef("sparseIndexOf %s indexes", numIndexes);
+    writef("get %s indexes", numIndexes);
     StopWatch watch3 = StopWatch(AutoStart.no);
     ulong accum = 0;
     foreach(j; 0..J) {
 
-        auto s = new SparseArray;
-        foreach(x; indexes) {
-            s.add(x);
+        auto s = new SparseArray!uint;
+        foreach(i; 0..indexes.length) {
+            s[indexes[i]] = values[i];
         }
 
         watch3.start();
         foreach(x; indexes) {
-            accum += s.sparseIndexOf(x);
+            accum += s[x];
         }
         watch3.stop();
     }
     writefln(" --> %.2f ms", watch3.peek().total!"nsecs"/1000000.0);
-    // [4958]
+    // [272]
 
     writefln("accum = %s", accum);
 

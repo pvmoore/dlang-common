@@ -7,7 +7,7 @@ import _tests.test : RUN_SUBSET;
 
 void testUtils() {
     static if(RUN_SUBSET) {
-      
+   
     } else {
         testAsmUtils();
         testBitUtils();
@@ -269,6 +269,14 @@ void testArrayUtils() {
         assert(a == [2]);
         assert(2 == a.removeAt(0));
         assert(a == []);
+
+        uint[] b = [1,2,3,4,5];
+        assert(1 == b.removeAt(0));
+        assert(b == [2,3,4,5]);
+        assert(5 == b.removeAt(3));
+        assert(b == [2,3,4]);
+        assert(3 == b.removeAt(1));
+        assert(b == [2,4]);
     }
     {
         writefln("- removeFirstMatch");
