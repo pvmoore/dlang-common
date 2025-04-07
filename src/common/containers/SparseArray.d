@@ -52,16 +52,16 @@ import core.bitop : bsf, bsr, popcnt;
  *
  * Capacity   | Num bytes used | Using L0 ubytes | Using L1..8 ushorts | Using L9..24 uints
  * -----------|----------------|-----------------|---------------------|-------------------
- * 1,024      | 368            | 256             | 172                 |
- * 2,048      | 752            | 528             | 348                 |
- * 4,096      | 1,520          | 1,072           | 700                 |    
- * 8,192      | 3,056          | 2,160           | 1,404               |
- * 16,384     | 6,128          | 4,336           | 2,812               |
- * 65,536     | 24,560         | 17,392          | 11,272              |
- * 2,097,152  | 786,416        | 557,040         | 361,200             |
- * 4,194,304  | 1,572,848      | 1,114,096       | 722,416             |
- * 8,388,608  | 3,145,712      | 2,228,208       | 1,444,848           |
- * 16,777,216 | 6,291,440      | 4,456,432       | 2,889,712           |
+ * 1,024      | 368            | 256             | 172                 | 172
+ * 2,048      | 752            | 528             | 348                 | 348
+ * 4,096      | 1,520          | 1,072           | 700                 | 700    
+ * 8,192      | 3,056          | 2,160           | 1,404               | 1,404
+ * 16,384     | 6,128          | 4,336           | 2,812               | 2,812
+ * 65,536     | 24,560         | 17,392          | 11,272              | 11,264
+ * 2,097,152  | 786,416        | 557,040         | 361,200             | 360,696
+ * 4,194,304  | 1,572,848      | 1,114,096       | 722,416             | 721,400
+ * 8,388,608  | 3,145,712      | 2,228,208       | 1,444,848           | 1,442,808
+ * 16,777,216 | 6,291,440      | 4,456,432       | 2,889,712           | 2,885,624
  */
 final class SparseArray {
 public:
@@ -75,7 +75,11 @@ public:
         return bits.length * 64;
     }
     ulong numBytesUsed() {
-        return bits.length*8 + countsTree.length*8 + L0Counts.length*1 + L1To8Counts.length*2;
+        return bits.length*8 +  
+               L0Counts.length*1 + 
+               L1To8Counts.length*2 + 
+               L9To24Counts.length*4 +
+               L25AndAboveCounts.length*8;
     }
 
     this() {}
@@ -97,16 +101,23 @@ public:
 
         ulong indexDiv = index >>> 6;
         
-        // Update the L1..n counts if there are any
+        // Update the counts if there are any
         uint offset = 0;
         uint size   = 2;
         uint div    = capacityDiv;
 
-        // Update countsTree (L9To24Counts)
-        while(size < bits.length && offset < countsTree.length) { 
-            ulong v = indexDiv >>> div;
+        // Update L25AndAboveCounts
+        while(size < bits.length && offset < L25AndAboveCounts.length) { 
+            L25AndAboveCounts[offset + (indexDiv >>> div)]++;
 
-            countsTree[offset + v]++;
+            offset += size;
+            size <<= 1;
+            div--;
+        }
+        // Update L9To24Counts
+        offset = 0;
+        while(size < bits.length && offset < L9To24Counts.length) { 
+            L9To24Counts[offset + (indexDiv >>> div)]++;
 
             offset += size;
             size <<= 1;
@@ -115,15 +126,13 @@ public:
         // Update L1To8Counts
         offset = 0;
         while(size < bits.length) { 
-            ulong v = indexDiv >>> div;
-
-            L1To8Counts[offset + v]++;
+            L1To8Counts[offset + (indexDiv >>> div)]++;
 
             offset += size;
             size <<= 1;
             div--;
         }
-        // Update the layer0 counts if there are any
+        // Update L0Counts
         if(L0Counts.length > 0) {
             L0Counts[indexDiv]++;
         }
@@ -144,15 +153,23 @@ public:
 
         ulong indexDiv = index >>> 6;
         
-        // Update the L1..n counts if there are any
-        uint offset    = 0;
-        uint size       = 2;
-        uint div       = capacityDiv;
+        // Update the counts if there are any
+        uint offset = 0;
+        uint size   = 2;
+        uint div    = capacityDiv;
 
-        while(size < bits.length && offset < countsTree.length) { 
-            ulong v = indexDiv >>> div;
+        // Update L25AndAboveCounts
+        while(size < bits.length && offset < L25AndAboveCounts.length) { 
+            L25AndAboveCounts[offset + (indexDiv >>> div)]--;
 
-            countsTree[offset+v]--;
+            offset += size;
+            size <<= 1;
+            div--;
+        }
+        // Update L9To24Counts
+        offset = 0;
+        while(size < bits.length && offset < L9To24Counts.length) { 
+            L9To24Counts[offset + (indexDiv >>> div)]--;
 
             offset += size;
             size <<= 1;
@@ -161,15 +178,13 @@ public:
         // Update L1To8Counts
         offset = 0;
         while(size < bits.length) { 
-            ulong v = indexDiv >>> div;
-
-            L1To8Counts[offset + v]--;
+            L1To8Counts[offset + (indexDiv >>> div)]--;
 
             offset += size;
             size <<= 1;
             div--;
         }
-        // Update the layer0 counts if there are any
+        // Update L0Counts
         if(L0Counts.length > 0) {
             L0Counts[indexDiv]--;
         }
@@ -200,13 +215,13 @@ public:
                 case 1: .. case 8:
                     return L1To8Counts[treeOffset + n];
                 case 9: .. case 24:
-                    goto default;
+                    return L9To24Counts[treeOffset + n];
                 default:
-                    return countsTree[treeOffset + n];
+                    return L25AndAboveCounts[treeOffset + n];
             }
         }
 
-        // Calculate count from countsTree
+        // Calculate counts
         while(size <= bits.length) {
 
             if(layer == 8 || layer == 24) {
@@ -238,23 +253,39 @@ public:
     void clear() {
         _numItems = 0;
         layers = 0;
-        countsTree = null;
         L0Counts = null;
         L1To8Counts = null;
+        L9To24Counts = null;
+        L25AndAboveCounts = null;
         bits = null;
     }
     void dump() {
         writefln("┌───────────────────────────────────────────────────────────────────────────");
         writefln("│ numItems = %s, capacity = %s, (%s bytes used)", _numItems, bits.length*64, numBytesUsed());
         
-        writefln("│ L9..n (%s):", countsTree.length);
         uint size = 2;
         ulong offset = 0;
-        if(countsTree.length > 0) {
-            while(offset < countsTree.length) {
+
+        writefln("│ L9..n (%s):", L25AndAboveCounts.length);
+        if(L25AndAboveCounts.length > 0) {
+            while(offset < L25AndAboveCounts.length) {
                 writef("│ [%2s] ", offset);
                 foreach(i; offset..offset+size) {
-                    writef(" %s", countsTree[i]);
+                    writef(" %s", L25AndAboveCounts[i]);
+                }
+                writefln("");
+                offset += size;
+                size <<= 1;
+            }
+        }
+
+        writefln("│ L9..24 (%s):", L9To24Counts.length);
+        offset = 0;
+        if(L9To24Counts.length > 0) {
+            while(offset < L9To24Counts.length) {
+                writef("│ [%2s] ", offset);
+                foreach(i; offset..offset+size) {
+                    writef(" %s", L9To24Counts[i]);
                 }
                 writefln("");
                 offset += size;
@@ -300,47 +331,42 @@ public:
 private:
     ulong _numItems;    // Number of items added to the counts tree
     uint capacityDiv;   // bsf(capacity) - 1
-    uint layers;
+    uint layers;        // Number of layers in the counts tree
 
-    // todo - this tree can be a ubyte[] and accessed using a ptr of the required size to save space
-    // The bottom layer maximum is always 128 which can be ubytes
-    // For 8 layers above that ushorts are enough to hold the counts
-    // Layer maximum counts:
+    // Layer counts:
     // 
-    // Layer [32] = 137438953472 ulong (64*2147483648)
-    // Layer [31] = 68719476736 ulong  (64*1073741824)
-    // Layer [28] = 34359738368 ulong (64*536870912) 
-    // Layer [27] = 17179869184 ulong (64*268435456)
-    // Layer [26] = 8589934592 ulong (64*134217728) 
-    // Layer [25] = 4294967296 ulong (64*67108864)
-    ulong[] countsTree;
+    // These are split into four separate arrays to reduce memory usage since we can take advantage
+    // of the knowledge of the maximum possible count at each layer.
+    // 
+    // Layer [25] = 4294967296 ulong 
+    ulong[] L25AndAboveCounts;
 
-    // Layer [24] = 2147483648 uint (64*33554432)
-    // Layer [23] = 1073741824 uint (64*16777216) 
-    // Layer [22] = 536870912 uint (64*8388608)
-    // Layer [21] = 268435456 uint (64*4194304)
-    // Layer [20] = 134217728 uint (64*2097152)
-    // Layer [19] = 67108864 uint (64*1048576)
-    // Layer [18] = 33554432 uint (64*524288)  
-    // Layer [17] = 16777216 uint (64*262144)
-    // Layer [16] = 8388608 uint (64*131072)
-    // Layer [15] = 4194304 uint (64*65536)
-    // Layer [14] = 2097152 uint (64*32768)
-    // Layer [13] = 1048576 uint (64*16384)
-    // Layer [12] = 524288 uint  (64*8192)
-    // Layer [11] = 262144 uint  (64*4096)
-    // Layer [10] = 131072 uint  (64*2048)
-    // Layer [9]  = 65536 uint   (64*1024)
-    //uint[] L9To24Counts;
+    // Layer [24] = 2147483648 uint 
+    // Layer [23] = 1073741824 uint 
+    // Layer [22] = 536870912 uint
+    // Layer [21] = 268435456 uint 
+    // Layer [20] = 134217728 uint 
+    // Layer [19] = 67108864 uint
+    // Layer [18] = 33554432 uint  
+    // Layer [17] = 16777216 uint 
+    // Layer [16] = 8388608 uint 
+    // Layer [15] = 4194304 uint 
+    // Layer [14] = 2097152 uint 
+    // Layer [13] = 1048576 uint 
+    // Layer [12] = 524288 uint 
+    // Layer [11] = 262144 uint  
+    // Layer [10] = 131072 uint  
+    // Layer [9]  = 65536 uint   
+    uint[] L9To24Counts;
 
-    // Layer [8] = max 32768 (64*512)
-    // Layer [7] = max 16384 (64*256
-    // Layer [6] = max 8192  (64*128)     
-    // Layer [5] = max 4096  (64*64)
-    // Layer [4] = max 2048  (64*32)
-    // Layer [3] = max 1024  (64*16)
-    // Layer [2] = max 512   (64*8)
-    // Layer [1] = max 256   (64*4)
+    // Layer [8] = max 32768 
+    // Layer [7] = max 16384 
+    // Layer [6] = max 8192      
+    // Layer [5] = max 4096  
+    // Layer [4] = max 2048  
+    // Layer [3] = max 1024  
+    // Layer [2] = max 512   
+    // Layer [1] = max 256  
     ushort[] L1To8Counts;
 
     // Layer [0] = max 128 (64*2)
@@ -391,30 +417,24 @@ private:
         this.layers = L0CountsLength == 0 ? 0 : 1;
 
         ulong L1To8CountsLength = 0;
-        ulong countsLength = 0;
+        ulong L9To24CountsLength = 0;
+        ulong L25AndAboveLength = 0;
         ulong size = L0CountsLength/2;
         while(size >= 2) {
-            if(layers <= 8) {
+            if(layers >= 9 && layers <= 24) {
+                L9To24CountsLength += size;
+            } else if(layers <= 8) {
                 L1To8CountsLength += size;
             } else {
-                countsLength += size;
+                L25AndAboveLength += size;
             }
             size >>>= 1;
             layers++;
         }
 
-        // writefln("capacity    = %s", capacity);
-        // writefln("bits        = %s", bits.length);
-        // writefln("layers      = %s", layers);
-        // writefln("L0Counts    = %s", L0CountsLength);
-        // writefln("L1To8Counts = %s", L1To8CountsLength);
-        // writefln("counts      = %s", countsLength);
-
-        // Create the L1To8Counts tree
         this.L1To8Counts = new ushort[L1To8CountsLength];
-
-        // Create the L9To24Counts tree
-        this.countsTree = new ulong[countsLength];
+        this.L9To24Counts = new uint[L9To24CountsLength];
+        this.L25AndAboveCounts = new ulong[L25AndAboveLength];
 
         // Propagate the old counts up the tree 
         if(propagateRequired) {
@@ -460,29 +480,40 @@ private:
                     break;
                 }
                 case 8: {
-                    // L1To8Counts to layer9To24Counts 
-                    dest = countsTree.length - destSize;
+                    // L1To8Counts to L9To24Counts 
+                    src  = dest;
+                    assert(src == 0);
+                    dest = L9To24Counts.length - destSize;
                     foreach(i; 0..destSize) {
-                        countsTree[dest + i] = L1To8Counts[i*2] + L1To8Counts[i*2 + 1];
+                        L9To24Counts[dest + i] = L1To8Counts[src + i*2] + L1To8Counts[src + i*2 + 1];
                     }
                     break;
                 }
-                case 9: .. case 24: {
-                    // countsTree to countsTree 
+                case 9: .. case 23: {
+                    // L9To24Counts to L9To24Counts 
                     src  = dest;
                     dest -= destSize;
                     foreach(i; 0..destSize) {
-                        countsTree[dest + i] = countsTree[src + i*2] + countsTree[src + i*2 + 1];
+                        L9To24Counts[dest + i] = L9To24Counts[src + i*2] + L9To24Counts[src + i*2 + 1];
                     }
                     break;
                 }
-                case 25:
-                    // 
-                    todo();
+                case 24:
+                    // L9To24Counts to L25AndAboveCounts 
+                    src  = dest;
+                    assert(src == 0);
+                    dest -= destSize;
+                    foreach(i; 0..destSize) {
+                        L25AndAboveCounts[dest + i] = L9To24Counts[src + i*2] + L9To24Counts[src + i*2 + 1];
+                    }
                     break;
                 default: {
-                    // 
-                    todo();
+                    // L25AndAboveCounts to L25AndAboveCounts 
+                    src  = dest;
+                    dest -= destSize;
+                    foreach(i; 0..destSize) {
+                        L25AndAboveCounts[dest + i] = L25AndAboveCounts[src + i*2] + L25AndAboveCounts[src + i*2 + 1];
+                    }
                     break;
                 }
             }

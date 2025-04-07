@@ -27,7 +27,6 @@ import common;
 import _tests.test_allocators;
 import _tests.test_async;
 import _tests.test_betterc;
-import _tests.test_containers;
 import _tests.test_io;
 import _tests.test_parser;
 import _tests.test_threads;
@@ -35,6 +34,7 @@ import _tests.test_utils;
 import _tests.test_wasm;
 import _tests.test_web;
 import _tests.bench.bench;
+import _tests.containers.test_containers;
 
 enum RUN_SUBSET = true;
 

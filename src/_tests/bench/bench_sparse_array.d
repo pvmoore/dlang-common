@@ -55,7 +55,7 @@ void run() {
         watch2.stop();
     }
     writefln("      --> %.2f ms", watch2.peek().total!"nsecs"/1000000.0);
-    // [1294]
+    // [1360]
 
     writef("sparseIndexOf %s indexes", numIndexes);
     StopWatch watch3 = StopWatch(AutoStart.no);
