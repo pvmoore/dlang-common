@@ -52,7 +52,7 @@ void run() {
 
         watch2.start();
         foreach(x; indexes) {
-            s.remove(x);
+            s.removeAt(x);
         }
         watch2.stop();
     }

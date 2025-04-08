@@ -131,7 +131,7 @@ void testSparseArray() {
         assert(s[100] == 0); // T.init
     }
     {
-        writefln(" remove()");
+        writefln(" removeAt()");
         auto s = new SparseArray!uint();
         s[50] = 3;
         s[700] = 4;
@@ -139,12 +139,45 @@ void testSparseArray() {
         assert(s.values() == [3, 4, 5]);
         assert(s.capacity() == 1024);
 
-        s.remove(700);
+        s.removeAt(700);
 
         assert(s.length() == 2);
         assert(s.capacity() == 1024);
         assert(s.values() == [3, 5]);
         s.dump();
+    }
+    {
+        writefln(" isPresent()");
+        auto s = new SparseArray!uint();
+        s[50] = 3;
+        s[700] = 4;
+        assert(s.isPresent(50));
+        assert(s.isPresent(700));
+        assert(!s.isPresent(1000));
+    }
+    {
+        writefln(" computeIfPresent()");
+        auto s = new SparseArray!uint();
+        s[50] = 3;
+        s[700] = 4;
+
+        // Update index 50 which is present, return true to keep the index in the array
+        assert(s.computeIfPresent(50, (ulong u, uint* v) { *v += 10; return true; }) == true);
+        assert(s[50] == 13);
+
+        // Update index 700 which is present, return false to remove the index from the array
+        assert(s.computeIfPresent(700, (ulong u, uint* v) { *v += 10; return false; }) == false);
+        assert(!s.isPresent(700));
+        assert(s.length()==1);
+        assert(s.values() == [13]);
+
+        // Update index 1000 which is not present
+        assert(s.computeIfPresent(1000, (ulong u, uint* v) { assert(false); return true; }) == false);
+        assert(!s.isPresent(1000));
+
+        s.dump();
+
+        //if(1f < 2f) return;
     }
 
     {
@@ -173,7 +206,7 @@ void testSparseArray() {
         s.dump();
         assert(s.values() == [3, 4, 2, 1, 5]);
 
-        // s.remove(100);
+        // s.removeAt(100);
         // assert(s.numItems() == 4);
         // s.dump();
 
@@ -240,7 +273,7 @@ void testSparseArray() {
         s.dump();
         assert(s.values() == [3, 4, 2, 1, 5, 7, 0, 11, 90, 15, 100, 19, 88, 55]);
 
-        s.remove(10);
+        s.removeAt(10);
         assert(s.length() == 13);
         assert(s.capacity() == 131072);
         s.dump();
@@ -326,10 +359,10 @@ void testSparseArray() {
                 }
                 assert(s.length() == numItems);
             }
-            void remove(ulong index) {
-                //writefln(" - remove(%s)", index);
+            void removeAt(ulong index) {
+                //writefln(" - removeAt(%s)", index);
 
-                bool r = s.remove(index);
+                bool r = s.removeAt(index);
 
                 assert(r == array[index]);
                 if(array[index]) {
@@ -384,12 +417,12 @@ void testSparseArray() {
                     // Remove a purely random index
                     ulong index = uniform(0, capacity, rng);
                     assert(index < capacity);
-                    remove(index);
+                    removeAt(index);
 
                     // Remove a random index that is in the array
                     if(numItems > 0) {
                         index = selectRandomIndex();
-                        remove(index);
+                        removeAt(index);
                     }
                     numRemoves++;
                 }

@@ -67,18 +67,19 @@ import core.bitop : bsf, bsr, popcnt;
  *         00000000          // row 2
  *         0000000000000000] // row 3 (length = capacity/64)
  *
- * Capacity   | Num bytes used | Using L0 ubytes | Using L1..8 ushorts | Using L9..24 uints
- * -----------|----------------|-----------------|---------------------|-------------------
- * 1,024      | 368            | 256             | 172                 | 172
- * 2,048      | 752            | 528             | 348                 | 348
- * 4,096      | 1,520          | 1,072           | 700                 | 700    
- * 8,192      | 3,056          | 2,160           | 1,404               | 1,404
- * 16,384     | 6,128          | 4,336           | 2,812               | 2,812
- * 65,536     | 24,560         | 17,392          | 11,272              | 11,264
- * 2,097,152  | 786,416        | 557,040         | 361,200             | 360,696
- * 4,194,304  | 1,572,848      | 1,114,096       | 722,416             | 721,400
- * 8,388,608  | 3,145,712      | 2,228,208       | 1,444,848           | 1,442,808
- * 16,777,216 | 6,291,440      | 4,456,432       | 2,889,712           | 2,885,624
+ * Capacity   | Num bytes | Using L0  | Using L1..8  | Using L9..24 | Sparse bits
+ *            | used      | ubytes    | ushorts      | uints        |    
+ * -----------|-----------|-----------|--------------|--------------|-------------
+ * 1,024      | 368       | 256       | 172          | 172          |
+ * 2,048      | 752       | 528       | 348          | 348          |
+ * 4,096      | 1,520     | 1,072     | 700          | 700          |
+ * 8,192      | 3,056     | 2,160     | 1,404        | 1,404        |
+ * 16,384     | 6,128     | 4,336     | 2,812        | 2,812        |   
+ * 65,536     | 24,560    | 17,392    | 11,272       | 11,264       |
+ * 2,097,152  | 786,416   | 557,040   | 361,200      | 360,696      |
+ * 4,194,304  | 1,572,848 | 1,114,096 | 722,416      | 721,400      |
+ * 8,388,608  | 3,145,712 | 2,228,208 | 1,444,848    | 1,442,808    |
+ * 16,777,216 | 6,291,440 | 4,456,432 | 2,889,712    | 2,885,624    |
  */
 final class SparseArray(T) {
 public:
@@ -115,7 +116,7 @@ public:
     void opIndexAssign(T value, ulong index) {
         if(index >= capacity()) expand(index);
         
-        if(isBitSet(index)) {
+        if(isPresent(index)) {
             replaceItem(index, value);
         } else {
             addItem(index, value);
@@ -125,12 +126,63 @@ public:
      * Removes a value from the array.
      * Returns true if the value was removed or false if it was not found.
      */
-    bool remove(ulong index) {
+    bool removeAt(ulong index) {
         if(index >= capacity()) return false;
-        if(!isBitSet(index)) return false;
+        if(!isPresent(index)) return false;
 
         removeItem(index);
         return true;
+    }
+    /** Returns true if the index is present in the array */
+    bool isPresent(ulong index) {
+        return isBitSet(index);
+    }
+    /** 
+     * Update an index,Value in the map, applying the mapping function.
+     * 
+     * params:
+     *    index:      The index to update if it is present in the array
+     *    updateFunc: Function to call if the index is found. Modify the value as required
+     *                then return true to update the value in the array or false to remove it  
+     *
+     * returns: true if the index is present in the array at the end 
+     */
+    bool computeIfPresent(ulong index, bool delegate(ulong, T*) updateFunc) {
+        if(isPresent(index)) {
+            ulong sparseIndex = sparseIndexOf(index);
+            if(updateFunc(index, &data[sparseIndex])) {
+                return true;
+            } else {
+                // Remove the index
+                clearBit(index);
+                updateCounts(index, -1);
+                data.removeAt(sparseIndex);
+            }
+        }
+        return false;
+    }
+    /** 
+     * Add or replace an index,Value in the map, applying one of the two mapping functions.
+     *
+     * params:
+     *    createFunc: Function to call if the index is not found. Modify the value as required and
+     *                then return true to add the value to the map.
+     *                Note that the value ptr is not the canonical ptr to the value and should not be copied
+     * 
+     *    updateFunc: Function to call if the index is found. Modify the value as required
+     *                then return true to update the value in the map or false to remove it
+     *
+     * Returns true if the index is in the array after the function exits
+     */
+    bool compute(ulong index, bool delegate(ulong, T*) createFunc, bool delegate(ulong, T*) updateFunc) {
+        todo();
+        if(isPresent(index)) {
+
+        } else {
+
+        }
+        
+        return false;
     }
     /** Resets the array to empty */
     void clear() {
@@ -555,7 +607,7 @@ private:
     }
     T getItem(ulong index, T defaultValue = T.init) {
         if(index > capacity()) return defaultValue;
-        if(!isBitSet(index)) return defaultValue;
+        if(!isPresent(index)) return defaultValue;
 
         ulong sparseIndex = sparseIndexOf(index);
         if(sparseIndex < data.length) return data[sparseIndex];
@@ -564,7 +616,7 @@ private:
     }
     void addItem(ulong index, T value) {
         assert(index < capacity());
-        assert(!isBitSet(index));
+        assert(!isPresent(index));
 
         setBit(index);
         updateCounts(index, 1);
@@ -575,7 +627,7 @@ private:
     }
     void removeItem(ulong index) {
         assert(index < capacity());
-        assert(isBitSet(index));
+        assert(isPresent(index));
 
         clearBit(index);
         updateCounts(index, -1);
@@ -586,7 +638,7 @@ private:
     }
     void replaceItem(ulong index, T value) {
         assert(index < capacity());
-        assert(isBitSet(index));
+        assert(isPresent(index));
 
         ulong sparseIndex = sparseIndexOf(index);
         assert(sparseIndex < data.length);
