@@ -9,6 +9,41 @@ void testSparseArray() {
     writefln(" Testing SparseArray");
     writefln("----------------------------------------------------------------");
 
+     {
+        auto s = new SparseArray!uint();
+     
+        // capacity = 64, layers = 0
+        s[10] = 3;
+        assert(s.length() == 1);
+        assert(s.capacity() == 64);
+        assert(s.values() == [3]);
+
+        // capacity = 128, layers = 1
+        s[65] = 4;
+        s[100] = 2;
+        assert(s.length() == 3);
+        assert(s.capacity() == 128);
+        assert(s.values() == [3, 4, 2]);
+        s.dump();
+
+        // capacity = 256, layers = 2
+        s[130] = 1;
+        s[150] = 5;
+        assert(s.length() == 5);
+        assert(s.capacity() == 256);
+        s.dump();
+        assert(s.values() == [3, 4, 2, 1, 5]);
+
+        s[500] = 7;
+        assert(s.values() == [3, 4, 2, 1, 5, 7]);
+        s.dump();
+
+        s[1030] = 9;
+        assert(s.values() == [3, 4, 2, 1, 5, 7, 9]);
+        s.dump();
+
+        //if(1f < 2f) return;
+    }
     {
         writefln(" Default Initialisation");
         auto s = new SparseArray!uint();
@@ -35,6 +70,7 @@ void testSparseArray() {
         assert(s.length() == 1);
         assert(s.capacity() == 64);
         assert(s.values() == [3]);
+        s.dump();
 
         s[50] = 4;
         assert(s.length() == 2);
@@ -65,6 +101,38 @@ void testSparseArray() {
         assert(s.capacity() == 128);
         assert(s.values() == [99, 3, 4, 6, 5, 70]);
         s.dump();
+
+        //if(1f < 2f) return;
+    }
+    {
+        writefln(" opIndexOpAssign()");
+        auto s = new SparseArray!uint();
+
+        // Index is present
+        s[10] += 3;
+        s[10] += 3;
+        assert(s.length() == 1);
+        assert(s.capacity() == 64);
+        assert(s.values() == [6]);
+
+        s[10] |= 1;
+        assert(s.length() == 1);
+        assert(s.capacity() == 64);
+        assert(s.values() == [7]);
+
+        s[10] &= ~1;
+        assert(s.length() == 1);
+        assert(s.capacity() == 64);
+        assert(s.values() == [6]);
+
+        // index is not present
+        s[100] += 3;
+        assert(s.length() == 2);
+        assert(s.capacity() == 128);
+        assert(s.values() == [6, 3]);
+        s.dump();
+
+        //if(1f < 2f) return;
     }
     {
         writefln(" opIndexAssign() replace");
@@ -176,6 +244,14 @@ void testSparseArray() {
         assert(!s.isPresent(1000));
 
         s.dump();
+
+        auto s2 = new SparseArray!uint();
+        s2[60] = 2;
+        s2[80] = 1;
+        s2[128] = 3;
+        s2[256] = 4;
+        s2[512] = 5;
+        s2[1024] = 6;
 
         //if(1f < 2f) return;
     }
