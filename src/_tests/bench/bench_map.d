@@ -196,7 +196,6 @@ void executeTasks(T)(ulong numKeys) {
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 interface Map(T) {
     string name();
-    string colour();
     void insert(T key, uint value);
     void remove(T key);
     uint* find(T key);
@@ -208,9 +207,6 @@ final class BuiltinMap(T) : Map!T {
 
     string name() {
         return "BuiltinMap ..............";
-    }
-    string colour() {
-        return Ansi.BLUE_BOLD;
     }
     void insert(T key, uint value) {
         map[key] = value;
@@ -241,9 +237,6 @@ final class UnorderedMapWrapper(T, uint HASH) : Map!T {
 
     string name() {
         return "UnorderedMap!%s (%s, %.2f)".format(HASH, capacity, loadFactor);
-    }
-    string colour() {
-        return Ansi.GREEN_BOLD;
     }
     void insert(T key, uint value) {
         map.insert(key, value);

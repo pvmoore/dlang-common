@@ -25,24 +25,17 @@ import core.bitop : bsf, bsr, popcnt;
  * uses less memory than a simple flat array.
  * 
  * It does this by using a smaller array of bit flags to mark the positions of items. This bit array
- * is itself not fully created unless required (WIP). 
+ * is itself not fully created unless required (ie. it uses a SparseArray internally). 
  *
- * When calling sparseIndexOf() the bit array is used to find the index of the item in the flat array.
+ * When looking up an item the bit array is used to find the index of the item in the flat array.
  * Another structure is used to keep a running count of the number of items in the sparse array in order
  * to make lookup more efficient. 
  *
- * Example:
- *
- * A SparseArray of capacity 1024 can hold up to 1024 item indexes. It is optimised to hold only a few
- * items so filling it up too much would be less efficient than just using a flat array. 
- * The indexes are used to lookup the actual item in a separate flat array which can be 
- * much smaller.
- *
- * ulong index = SparseArray.sparseIndexOf(1000);
- * auto item = items[index];
- *
  * ** Counts Tree **
- *
+ * A tally of counts are kept when adding/removing indexes from the array. These counts are not
+ * strictly required because the bits alone are enough to find the index. The counts are used to
+ * speed up the lookup. 
+ * 
  * The counts are stored in an implied tree structure.
  *
  * 16 counts example:
@@ -66,20 +59,6 @@ import core.bitop : bsf, bsr, popcnt;
  *         0000              // row 1
  *         00000000          // row 2
  *         0000000000000000] // row 3 (length = capacity/64)
- *
- * Capacity   | Num bytes | Using L0  | Using L1..8  | Using L9..24 | Sparse bits
- *            | used      | ubytes    | ushorts      | uints        |    
- * -----------|-----------|-----------|--------------|--------------|-------------
- * 1,024      | 368       | 256       | 172          | 172          | 52
- * 2,048      | 752       | 528       | 348          | 348          | 100
- * 4,096      | 1,520     | 1,072     | 700          | 700          | 196
- * 8,192      | 3,056     | 2,160     | 1,404        | 1,404        | 390
- * 16,384     | 6,128     | 4,336     | 2,812        | 2,812        | 780   
- * 65,536     | 24,560    | 17,392    | 11,272       | 11,264       | 3,124
- * 2,097,152  | 786,416   | 557,040   | 361,200      | 360,696      | 100,112
- * 4,194,304  | 1,572,848 | 1,114,096 | 722,416      | 721,400      | 200,236
- * 8,388,608  | 3,145,712 | 2,228,208 | 1,444,848    | 1,442,808    | 400,484
- * 16,777,216 | 6,291,440 | 4,456,432 | 2,889,712    | 2,885,624    | 800,980
  */
 final class SparseArray(T) {
 public:
@@ -147,6 +126,13 @@ public:
         removeItem(index);
         return true;
     }
+    /** 
+     * The pointer returned from this call is not guaranteed to be valid after the array
+     * is modified.
+     */
+    T* getPtr(ulong index) {
+        return getItemPtr(index);
+    }
     /** Returns true if the index is present in the array */
     bool isPresent(ulong index) {
         return bits.isBitSet(index);
@@ -188,16 +174,10 @@ public:
      *
      * Returns true if the index is in the array after the function exits
      */
-    bool compute(ulong index, bool delegate(ulong, T*) createFunc, bool delegate(ulong, T*) updateFunc) {
-        todo();
-        if(isPresent(index)) {
-
-        } else {
-
-        }
-        
-        return false;
-    }
+    // bool compute(ulong index, bool delegate(ulong, T*) createFunc, bool delegate(ulong, T*) updateFunc) {
+    //     todo();
+    //     return false;
+    // }
     /** Resets the array to empty */
     void clear() {
         layers = 0;
@@ -428,7 +408,7 @@ private:
         void realloc(ulong newLength) {
             assert(newLength > _length);
             bool copyBits = _length==1;
-            
+
             _length = newLength;
 
             if(_length == 1) {
