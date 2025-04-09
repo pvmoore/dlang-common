@@ -361,66 +361,103 @@ private:
     // Bits
     Bits bits;
 
+    //──────────────────────────────────────────────────────────────────────────────────────────────────
+    // Enable SparseArray bits instead of a simple bits array.
+    // This saves more memory but at the cost of speed 
+    enum bool SPARSE_BITS = true;
+
     static struct Bits { 
     private:
-        ulong bits;
-        SparseArray!ulong sparseBits;
-        ulong _length;
+        static if(SPARSE_BITS) {
+            ulong bits;
+            SparseArray!ulong sparseBits;
+            ulong _length;
+        } else {
+            ulong[] bits;
+        }
     public:
-        ulong numBytesUsed() {
-            return _length == 0 ? 0 : _length == 1 ? 8 : sparseBits.numBytesUsed();
-        }
-        ulong get64(ulong index) {
-            if(_length==1) {
-                assert(index == 0);
-                return bits;
-            } 
-            return sparseBits[index];
-        }
-        ulong length() {
-            return _length;
-        }
-        bool isBitSet(ulong index) {
-            ulong b = length == 1 ? bits : sparseBits is null ? 0 : sparseBits[index >>> 6];
-            return (b & (1UL << (index & 63))) != 0;
-        }
-        void setBit(ulong index) {
-            if(_length == 1) {
-                assert(index < 64);
-                bits |= 1UL << (index & 63);
-            } else {
-                sparseBits[index >>> 6] |= 1UL << (index & 63);
+        static if(SPARSE_BITS) {
+            ulong length() {
+                return _length;
             }
-        }
-        void clearBit(ulong index) {
-            if(_length == 1) {
-                assert(index < 64);
-                bits &= ~(1UL << (index & 63));
-            } else {
-                sparseBits[index >>> 6] &= ~(1UL << (index & 63));
+            ulong numBytesUsed() {
+                return _length == 0 ? 0 : _length == 1 ? 8 : sparseBits.numBytesUsed();
             }
-        }
-        void clear() { 
-            bits = 0; 
-            _length = 0;
-            if(sparseBits) sparseBits.clear();
-        }
-        void realloc(ulong newLength) {
-            assert(newLength > _length);
-            bool copyBits = _length==1;
+            ulong get64(ulong index) {
+                if(_length==1) {
+                    assert(index == 0);
+                    return bits;
+                } 
+                return sparseBits[index];
+            }
+            bool isBitSet(ulong index) {
+                ulong b = length == 1 ? bits : sparseBits is null ? 0 : sparseBits[index >>> 6];
+                return (b & (1UL << (index & 63))) != 0;
+            }
+            void setBit(ulong index) {
+                if(_length == 1) {
+                    assert(index < 64);
+                    bits |= 1UL << (index & 63);
+                } else {
+                    sparseBits[index >>> 6] |= 1UL << (index & 63);
+                }
+            }
+            void clearBit(ulong index) {
+                if(_length == 1) {
+                    assert(index < 64);
+                    bits &= ~(1UL << (index & 63));
+                } else {
+                    sparseBits[index >>> 6] &= ~(1UL << (index & 63));
+                }
+            }
+            void clear() { 
+                bits = 0; 
+                _length = 0;
+                if(sparseBits) sparseBits.clear();
+            }
+            void realloc(ulong newLength) {
+                assert(newLength > _length);
+                bool copyBits = _length==1;
 
-            _length = newLength;
+                _length = newLength;
 
-            if(_length == 1) {
-                bits = 0;
-            } else if(sparseBits is null) {
-                sparseBits = new SparseArray!ulong(newLength);
-                if(copyBits) sparseBits[0] = bits;
-            } else {
-                if(copyBits) sparseBits[0] = bits;
+                if(_length == 1) {
+                    bits = 0;
+                } else if(sparseBits is null) {
+                    sparseBits = new SparseArray!ulong(newLength);
+                    if(copyBits) sparseBits[0] = bits;
+                } else {
+                    if(copyBits) sparseBits[0] = bits;
+                }
+            }
+        } else { // !SPARSE_BITS
+            ulong length() {
+                return bits.length;
+            }
+            ulong numBytesUsed() {
+                return bits.length * 8;
+            }
+            ulong get64(ulong index) {
+                return bits[index];
+            }
+            bool isBitSet(ulong index) {
+                return (bits[index >>> 6] & (1UL << (index & 63))) != 0;
+            }
+            void setBit(ulong index) {
+                bits[index >>> 6] |= 1UL << (index & 63);
+            }
+            void clearBit(ulong index) {
+                bits[index >>> 6] &= ~(1UL << (index & 63));
+            }
+            void clear() { 
+                bits = null; 
+            }
+            void realloc(ulong newLength) {
+                bits.length = newLength;
             }
         }
     }
+    //──────────────────────────────────────────────────────────────────────────────────────────────────
 
     /** Expand tree to hold the given index+1. Minimum capacity is 64 */
     void expand(ulong requiredIndex) {

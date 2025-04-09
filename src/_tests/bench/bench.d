@@ -29,8 +29,8 @@ void runBenchmarks() {
     version(LDC) {
         writefln("Running benchmarks (LDC)");
 
-        benchMap();
-        //benchSparseArray();
+        //benchMap();
+        benchSparseArray();
 
         //testStringAppending();
         // testSimd();
