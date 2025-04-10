@@ -188,14 +188,15 @@ private:
     void resetMutableReferences() {
 
         if(tempMutableReferences) {
-            foreach(k; tempMutableReferences.values()) {
+            foreach(k; tempMutableReferences.keys()) {
                 if(!mutableReferences.contains(k)) {
                     references.remove(k);
                 }
             }
         }
 
-        tempMutableReferences = new Set!string().add(mutableReferences);
+        tempMutableReferences = new Set!string();
+        tempMutableReferences.add(mutableReferences);
     }
 
     void parse(EPNode!T parent) {

@@ -3,43 +3,51 @@ module common.containers.UniqueList;
 import common.containers;
 import utils = common.utils;
 import std.stdio;
+import std.format : format;
 
-final class UniqueList(T) : Set!T {
+final class UniqueList(T) {
 private:
     T[] list;
+    Set!T set;
 public:
-    override T[] values() { return list; }
+    this() {
+        this.set = new Set!T();
+    }
 
-    override UniqueList!T add(T value) {
-        auto len = length();
-        super.add(value);
-        if(len<length) {
+    T[] values() { return list; }
+    ulong length() { return list.length; }
+    bool isEmpty() { return list.length == 0; }
+
+    auto add(T value) {
+        auto beforeSize = set.size();
+        set.add(value);
+        if(set.size() > beforeSize) {
             list ~= value;
         }
         return this;
     }
-    override UniqueList!T add(T[] values) {
-        super.add(values);
+    auto add(T[] values) {
+        foreach(v; values) {
+            add(v);
+        }
         return this;
     }
-    override bool remove(T value) {
-        utils.remove(list, value);
-        return super.remove(value);
+    bool remove(T value) {
+        if(set.remove(value)) {
+            utils.remove(list, value);
+            return true;
+        }
+        return false;
     }
-    override UniqueList!T clear() {
+    bool contains(T value) {
+        return set.contains(value);
+    }
+    auto clear() {
         list.length = 0;
-        super.clear();
+        set.clear();
         return this;
     }
-    override size_t toHash() const @safe pure nothrow {
-        return list.hashOf();
-    }
-    override bool opEquals(Object o) const {
-        UniqueList!T other = cast(UniqueList!T)o;
-        if(o is this) return true;
-        return o !is null && list == other.list;
-    }
-    bool opEquals(T[] array) {
-        return list.length == array.length && list == array;
+    override string toString() const {
+        return "%s".format(list);
     }
 }

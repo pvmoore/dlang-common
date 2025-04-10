@@ -35,6 +35,7 @@ import _tests.test_wasm;
 import _tests.test_web;
 import _tests.bench.bench;
 import _tests.containers.test_containers;
+import _tests.containers.test_set;
 
 enum RUN_SUBSET = true;
 

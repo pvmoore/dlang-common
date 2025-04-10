@@ -1,20 +1,18 @@
-module _tests.bench.bench_map;
+module _tests.bench.bench_set;
 
 import common;
 import common.containers;
 import _tests.bench.bench;
 
-void benchMap() {
+void benchSet() {
     writefln("================================================================");
-    writefln(" Benchmarking Maps");
+    writefln(" Benchmarking Sets");
     writefln("================================================================");
 
     enum numKeys = 10_000;
 
     executeBenchmarks(getBenchmarks!uint(numKeys));
-    // executeBenchmarks!ulong(getBenchmarks!uint(numKeys));
-    // executeBenchmarks!float(getBenchmarks!uint(numKeys));
-    // executeBenchmarks!string(getBenchmarks!uint(numKeys));
+
 }
 
 private:
@@ -25,35 +23,34 @@ Benchmark!T[] getBenchmarks(T)(ulong numKeys) {
         Benchmark!T("Insert duplicate", new InsertKeys!T(createDuplicateKeys!T(numKeys))),
         Benchmark!T("Remove unique",    new RemoveKeys!T(createUniqueKeys!T(numKeys))),
         Benchmark!T("Remove duplicate", new RemoveKeys!T(createDuplicateKeys!T(numKeys))),
-        Benchmark!T("Find unique",      new FindKeys!T(createUniqueKeys!T(numKeys))),
-        Benchmark!T("Find duplicate",   new FindKeys!T(createDuplicateKeys!T(numKeys))),
+        Benchmark!T("Contains unique",    new ContainsKeys!T(createUniqueKeys!T(numKeys))),
+        Benchmark!T("Contains duplicate", new ContainsKeys!T(createDuplicateKeys!T(numKeys))),
     ];
 }
-
 //──────────────────────────────────────────────────────────────────────────────────────────────────
-interface MapSubject(T) : BenchmarkSubject!T {
+interface SetSubject(T) : BenchmarkSubject!T {
     string name();
 
-    void insert(T key, uint value);
+    void add(T key);
     bool remove(T key);
-    uint* find(T key);
+    bool contains(T key);
     ulong size();
     void reset();
 }
-final class BuiltinMap(T) : MapSubject!T {
-    uint[T] map;
+final class BuiltinSet(T) : SetSubject!T {
+    bool[T] map;
 
     string name() {
-        return "BuiltinMap ..............";
+        return "BuiltinSet ......";
     }
-    void insert(T key, uint value) {
-        map[key] = value;
+    void add(T key) {
+        map[key] = true;
     }
     bool remove(T key) {
         return map.remove(key);
     }
-    uint* find(T key) {
-        return key in map;
+    bool contains(T key) {
+        return (key in map) !is null;
     }
     ulong size() {
         return map.length;
@@ -62,10 +59,10 @@ final class BuiltinMap(T) : MapSubject!T {
         map = null;
     }
 }
-final class UnorderedMapWrapper(T, uint HASH) : MapSubject!T {
+final class SetWrapper(T) : SetSubject!T {
     ulong capacity;
     float loadFactor;
-    UnorderedMap!(T, uint, HASH) map;
+    Set!(T) set;
 
     this(ulong capacity, float loadFactor) {
         this.capacity = capacity;
@@ -74,67 +71,68 @@ final class UnorderedMapWrapper(T, uint HASH) : MapSubject!T {
     }
 
     string name() {
-        return "UnorderedMap!%s (%s, %.2f)".format(HASH, capacity, loadFactor);
+        return "Set(%s, %.2f) ...".format(capacity, loadFactor);
     }
-    void insert(T key, uint value) {
-        map.insert(key, value);
+    void add(T key) {
+        set.add(key);
     }
     bool remove(T key) {
-        return map.remove(key);
+        return set.remove(key);
     }
-    uint* find(T key) {
-        return map.getPtr(key);
+    bool contains(T key) {
+        return set.contains(key);
     }
     ulong size() {
-        return map.size();
+        return set.size();
     }
     void reset() {
-        map = new UnorderedMap!(T, uint, HASH)(capacity, loadFactor);
+        set = new Set!T(capacity, loadFactor);
     }
 }
 //──────────────────────────────────────────────────────────────────────────────────────────────────
-abstract class MapTask(T) : BenchmarkTask!T {
+abstract class SetTask(T) : BenchmarkTask!T {
 public:
     this(T[] keys) {
         this.keys = keys;
     }
     override void prepare(BenchmarkSubject!T subject) {
-        this.map = subject.as!(MapSubject!T);
-        map.reset();
+        this.set = subject.as!(SetSubject!T);
+        set.reset();
     }
     final void insertKeys() {
         foreach(key; keys) {
-            map.insert(key, 1);
+            set.add(key);
         }
     }
     final BenchmarkSubject!T[] getSubjects() {
-        // HASH = 0 uses the UnorderedMap hash0 function
-        // HASH = 3 uses the UnorderedMap hash3 function
         return [
-            cast(BenchmarkSubject!T)new BuiltinMap!T(),
-            new UnorderedMapWrapper!(T, 0)(16, 0.9),
-            new UnorderedMapWrapper!(T, 3)(16, 0.9), 
-            new UnorderedMapWrapper!(T, 0)(16, 0.8),
-            new UnorderedMapWrapper!(T, 3)(16, 0.8),
-            new UnorderedMapWrapper!(T, 0)(16, 0.75),
-            new UnorderedMapWrapper!(T, 3)(16, 0.75),
-            new UnorderedMapWrapper!(T, 3)(1024, 0.75),  
-            new UnorderedMapWrapper!(T, 0)(16, 0.6),
-            new UnorderedMapWrapper!(T, 3)(16, 0.6),
-            new UnorderedMapWrapper!(T, 0)(16, 0.5),
-            new UnorderedMapWrapper!(T, 3)(16, 0.5),
-            new UnorderedMapWrapper!(T, 3)(16, 0.25),
+            cast(BenchmarkSubject!T)new BuiltinSet!T(),
+            new SetWrapper!T(16, 0.75),
+            new SetWrapper!T(16, 0.5),
+            new SetWrapper!T(16, 0.25),
+            // new UnorderedMapWrapper!(T, 0)(16, 0.9),
+            // new UnorderedMapWrapper!(T, 3)(16, 0.9), 
+            // new UnorderedMapWrapper!(T, 0)(16, 0.8),
+            // new UnorderedMapWrapper!(T, 3)(16, 0.8),
+            // new UnorderedMapWrapper!(T, 0)(16, 0.75),
+            // new UnorderedMapWrapper!(T, 3)(16, 0.75),
+            // new UnorderedMapWrapper!(T, 3)(1024, 0.75),  
+            // new UnorderedMapWrapper!(T, 0)(16, 0.6),
+            // new UnorderedMapWrapper!(T, 3)(16, 0.6),
+            // new UnorderedMapWrapper!(T, 0)(16, 0.5),
+            // new UnorderedMapWrapper!(T, 3)(16, 0.5),
+            // new UnorderedMapWrapper!(T, 3)(16, 0.25),
         ];
     }
     final string getFinalResult() {
         return "%s".format(count);
     }
 protected:
-    MapSubject!T map;
-    T[] keys;   
-    ulong count;
+    SetSubject!T set;
+    T[] keys;  
+    ulong count; 
 }
-final class InsertKeys(T) : MapTask!T {
+final class InsertKeys(T) : SetTask!T {
     this(T[] keys) {
         super(keys);
     }
@@ -143,12 +141,11 @@ final class InsertKeys(T) : MapTask!T {
     }
     override void execute() {
         foreach(key; keys) {
-            map.insert(key, 1);
-            count++;
+            set.add(key);
         }
     }
 }
-final class RemoveKeys(T) : MapTask!T {
+final class RemoveKeys(T) : SetTask!T {
     this(T[] keys) {
         super(keys);
     }
@@ -158,11 +155,11 @@ final class RemoveKeys(T) : MapTask!T {
     }
     override void execute() {
         foreach(key; keys) {
-            count += map.remove(key) ? 1 : 0;
+            count += set.remove(key) ? 1 : 0;
         }
     }
 }
-final class FindKeys(T) : MapTask!T {
+final class ContainsKeys(T) : SetTask!T {
     this(T[] keys) {
         super(keys);
     }
@@ -172,7 +169,7 @@ final class FindKeys(T) : MapTask!T {
     }
     override void execute() {
         foreach(key; keys) {
-            count += map.find(key) !is null ? 1 : 0;
+            count += set.contains(key);
         }
     }
 }

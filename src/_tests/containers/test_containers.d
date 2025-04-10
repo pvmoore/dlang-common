@@ -1,17 +1,15 @@
 module _tests.containers.test_containers;
 
-import std.stdio  : writef, writefln;
-import std.format : format;
-import std.random : uniform, uniform01, Mt19937, unpredictableSeed;
-
 import common.containers;
+import _tests.containers.test_set;
 import _tests.containers.test_sparse_array;
+import _tests.containers.test_unique_list;
 import _tests.containers.test_unordered_map;
-import _tests.test : RUN_SUBSET;
+import _tests.test;
 
 void testContainers() {
     static if(RUN_SUBSET) {
-        testSparseArray();
+        testSet();
     } else {
         testCircularBuffer();
         testList();
@@ -431,90 +429,7 @@ void testQueue() {
         assert(queue.valuesDup() == [1,2,3]);
     }
 }
-void testSet() {
-    writefln("--== Testing Set ==--");
 
-    {
-        auto s = new Set!int;
-        assert(s.empty && s.length==0);
-
-        s.add(2).add(4);
-        assert(!s.empty && s.length==2);
-        assert(s.contains(2) && s.contains(4));
-
-        s.add(2).add(3);
-        assert(!s.empty && s.length==3);
-        assert(s.contains(2) && s.contains(3) && s.contains(4));
-
-        assert(s.remove(2)==true);
-        assert(s.length==2);
-
-        assert(s.remove(1)==false);
-        assert(s.length==2);
-
-        assert(s.values==[3,4] || s.values==[4,3]);
-    }
-
-    { // ==
-        auto s1 = new Set!int;
-        auto s2 = new Set!int;
-        auto s3 = new Set!float;
-
-        assert(s1==s2);
-        assert(s1!=s3);
-
-        s1.add([1,20,30,40,500]);
-        s2.add([500,40,30,20,1]);
-        writefln("s1 = %s", s1.values);
-        writefln("s2 = %s", s2.values);
-        assert(s1==s2);
-        s1.add(2);
-        assert(s1!=s2);
-        s2.add(2);
-        assert(s1==s2);
-    }
-}
-void testUniqueList() {
-    writefln("--== Testing UniqueList ==--");
-
-    {   // Set functionality
-        auto s = new UniqueList!int;
-        assert(s.empty && s.length==0);
-
-        s.add(2).add(4);
-        assert(!s.empty && s.length==2);
-        assert(s.contains(2) && s.contains(4));
-
-        s.add(2).add(3);
-        assert(!s.empty && s.length==3);
-        assert(s.contains(2) && s.contains(3) && s.contains(4));
-
-        assert(s.remove(2)==true);
-        assert(s.length==2);
-
-        assert(s.remove(1)==false);
-        assert(s.length==2);
-
-        assert(s.values()==[4,3], "%s".format(s.values()));
-
-        s.clear();
-        assert(s.empty && s.length==0);
-    }
-    {
-        auto s = new UniqueList!int;
-        s.add(1).add(2).add(3).add(4);
-
-        writefln("%s", s);
-        assert(s == [1,2,3,4]);
-
-        s.clear();
-        s.add(4);
-        s.add([3,2,1]);
-
-        writefln("%s", s);
-        assert(s == [4,3,2,1]);
-    }
-}
 void testStack() {
     writefln("--== Testing Stack ==--");
     auto stack = new Stack!uint(10);

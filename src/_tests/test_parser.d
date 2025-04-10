@@ -9,12 +9,12 @@ import std.stdio;
 void testParser() {
     writefln("========--\nTesting ExpressionParser\n==--");
 
-    // testSimple();
-    // testSimpleWithRefs();
-    // testSimpleWithRefTokens();
-    // testUnableToResolveRefTokens();
-    // testUnableToResolve();
-    // testBadSyntax();
+    testSimple();
+    testSimpleWithRefs();
+    testSimpleWithRefTokens();
+    testUnableToResolveRefTokens();
+    testUnableToResolve();
+    testBadSyntax();
     testWithMutableRefTokens();
 }
 
