@@ -1,13 +1,13 @@
 module _tests.test_utils;
 
-import std : writefln, writeln, format;
+import std : writefln, writeln, format, iota;
 
 import common.all;
 import _tests.test : RUN_SUBSET;
 
 void testUtils() {
     static if(RUN_SUBSET) {
-   
+    
     } else {
         testAsmUtils();
         testBitUtils();
@@ -321,34 +321,72 @@ void testArrayUtils() {
 void testAsyncUtils() {
     writefln("Testing async_utils ...");
 
-    auto t = new Thread( () {
-        writefln("\tT1 thread ID   = %s", Thread.getThis.id);
-    } );
-    t.start();
-
-    Thread.sleep(dur!"msecs"(500));
-
-    writefln("\tMain thread ID = %s", Thread.getThis.id);
-    writefln("\tChecking ...");
-
-    auto t2 = new Thread( () {
-        writefln("\tT2 thread ID   = %s", Thread.getThis.id);
-
-        /// This is bad
-        //ast.check();
-
-    } );
-    t2.start();
-    t2.join();
-    t.join();
-
     {
-        bool b = true;
-        assert(atomicIsTrue(b));
-        atomicSet(b, false);
-        assert(!atomicIsTrue(b));
-        atomicSet(b, true);
-        assert(atomicIsTrue(b));
+        auto t = new Thread( () {
+            writefln("\tT1 thread ID   = %s", Thread.getThis.id);
+        } );
+        t.start();
+
+        Thread.sleep(dur!"msecs"(500));
+
+        writefln("\tMain thread ID = %s", Thread.getThis.id);
+        writefln("\tChecking ...");
+
+        auto t2 = new Thread( () {
+            writefln("\tT2 thread ID   = %s", Thread.getThis.id);
+
+            /// This is bad
+            //ast.check();
+
+        } );
+        t2.start();
+        t2.join();
+        t.join();
+    }
+    {
+        Atomic!bool b0;
+        auto b1 = Atomic!bool();
+        auto b2 = Atomic!bool(true);
+        assert(!b0.get());
+        assert(!b1.get());
+        assert(b2.get());
+
+        b0.set(true);
+        b1.set(true);
+        b2.set(false);
+
+        assert(b0.get());
+        assert(b1.get());
+        assert(!b2.get());
+
+        b0.setAndRelease(false);
+        assert(!b0.get());
+        assert(!b0.getAndAcquire());
+
+        b0.compareAndSet(false, true);
+        assert(b0.get());
+
+        b0.compareAndSet(true, false);
+        assert(!b0.get());
+    }
+    {
+        auto a = Atomic!uint(0);
+        auto threads = iota(0, 10).map!(it=>new Thread(() { 
+
+            Thread.sleep(dur!"msecs"(10));
+
+            foreach(i; 0..10) {
+                // inefficient increment to test compareAndSet functionality
+                while(!a.compareAndSet(a.value, a.value+1)) {}
+            }
+        })).array;
+        
+        threads.each!((t) { t.start(); });
+
+        threads.each!((t) { t.join(); });
+        writefln("a.get() = %s", a.get());
+
+        assert(a.get() == 10*10);
     }
 
     { // uint cas32(void* ptr, uint expected, uint newValue)

@@ -1,7 +1,7 @@
 module common.utils.async_utils;
 
 import core.thread  : Thread, ThreadID;
-import core.atomic  : atomicOp, atomicLoad, atomicStore, cas;
+import core.atomic  : atomicOp, atomicLoad, atomicStore, cas, MemoryOrder;
 
 // struct AssertSingleThreaded {
 // private:
@@ -243,9 +243,50 @@ version(LDC) {
 
 } // LDC
 
-bool atomicIsTrue(ref bool b) {
-    return atomicLoad(b);
-}
-void atomicSet(ref bool b, bool value) {
-    atomicStore(b, value);
+align(4)
+struct Atomic(T) {
+    T value;
+
+    this(T v) {
+        value = v;
+    }
+
+    /**
+     * Atomically set value to v. Ordering of other loads and stores is not guaranteed.
+     */
+    void set(T v) {
+        atomicStore!(MemoryOrder.raw)(value, v);
+    }
+    /**
+     * Atomically set value to v. 
+     * Memory operations declared before this are guaranteed to be ordered before the store.
+     * This is expected to be used in conjunction with getAndAcquire to ensure ordering of non-atomic
+     * memory operations.
+     */
+    void setAndRelease(T v) {
+        atomicStore!(MemoryOrder.rel)(value, v);
+    }
+    /**
+     * Atomically get value. Ordering of other loads and stores is not guaranteed.
+     */
+    T get() {
+        return atomicLoad!(MemoryOrder.raw)(value);
+    }
+    /**
+     * Atomically get value. 
+     * Memory operations declared after this are guaranteed to be ordered after the load.
+     * This is expected to be used in conjunction with setAndRelease to ensure ordering of non-atomic
+     * memory operations.
+     */
+    T getAndAcquire() {
+        return atomicLoad!(MemoryOrder.acq)(value);
+    }
+
+    T opBinary(string op, T v)() {
+        return atomicOp!op(value, v);
+    }
+
+    bool compareAndSet(T expected, T newValue) {
+        return cas!(MemoryOrder.raw, MemoryOrder.raw)(&value, expected, newValue);
+    }
 }

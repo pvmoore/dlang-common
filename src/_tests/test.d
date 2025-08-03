@@ -37,7 +37,7 @@ import _tests.bench.bench;
 import _tests.containers.test_containers;
 import _tests.containers.test_set;
 
-enum RUN_SUBSET = true;
+enum RUN_SUBSET = false;
 
 extern(C) void asm_test();
 
@@ -65,7 +65,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testContainers();
+   
     } else {
 
         asm_test();
