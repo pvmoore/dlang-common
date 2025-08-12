@@ -81,6 +81,16 @@ public:
         add(format(fmt, args));
         return this;
     }
+    /** 
+     * Move the current end of the string back by 'count' characters.
+     * Returns the characters removed.
+     */
+    string sub(int count) {
+        if(count > array.length) count = array.length.as!int;
+        string s = array[$-count..$].as!string;
+        array.length -= count;
+        return s;
+    }
 
     T opIndex(ulong i) const {
         return array[i];
@@ -117,7 +127,7 @@ public:
         array.insertAt(index, ch);
         return this;
     }
-    auto remove(ulong index) {
+    auto removeAt(ulong index) {
         array.removeAt(index);
         return this;
     }

@@ -65,7 +65,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-   
+       
     } else {
 
         asm_test();
@@ -249,6 +249,34 @@ void testStringBuffer() {
         writefln("%s", buf.toString());
         assert(buf=="10 true");
     }
+    { // sub(int)
+        auto buf = new StringBuffer("abcdef");
+        buf.add("one").add("two").add("three");
+        writefln("len = %s", buf.length());
+        assert(buf.toString() == "abcdefonetwothree");
+        assert(buf.length()==17);
+
+        assert("three" == buf.sub(5));
+        assert(buf.toString() == "abcdefonetwo");
+        assert(buf.length()==12);
+
+        assert("two" == buf.sub(3));
+        assert(buf.toString() == "abcdefone");
+        assert(buf.length()==9);
+
+        assert("one" == buf.sub(3));
+        assert(buf.toString() == "abcdef");
+        assert(buf.length()==6);
+
+        assert("def" == buf.sub(3));
+        assert(buf.toString() == "abc");
+        assert(buf.length()==3);
+
+        assert("abc" == buf.sub(100));
+        assert(buf.toString() == "");
+        assert(buf.length()==0);
+
+    }
     { // equality
         auto buf  = new StringBuffer("abcd");
         auto buf2 = new StringBuffer("abcd");
@@ -297,9 +325,9 @@ void testStringBuffer() {
     }
     {   // remove
         auto buf = new StringBuffer("abcdef");
-        buf.remove(0);
+        buf.removeAt(0);
         assert(buf=="bcdef");
-        buf.remove(4);
+        buf.removeAt(4);
         assert(buf=="bcde");
     }
     {   // slice, sliceDup
