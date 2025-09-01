@@ -11,15 +11,15 @@ import common.all;
  */
 struct bool3 {
 private:
-    enum : int {
+    enum : byte {
         UNKNOWN = -1,
         FALSE   = 0,
         TRUE    = 1
     }
-    int value = UNKNOWN;
+    byte value = UNKNOWN;
 nothrow:
 pragma(inline,true):
-    this(int v) { value = v; }
+    this(byte v) { value = v; }
 public:
     this(bool b) { value = b ? TRUE : FALSE; }
     static bool3 unknown() { return bool3(UNKNOWN); }
