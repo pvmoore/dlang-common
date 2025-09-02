@@ -22,8 +22,8 @@ IQueue!T makeMPMCQueue(T)(uint cap) { return new Queue!(T,ThreadingModel.MPMC)(c
 
 final class Queue(T,ThreadingModel TM) : IQueue!T {
 private:
-    const uint mask;
     T[] array;
+    const uint mask;
     align(16) shared Positions pos;
 
     static struct Positions {
@@ -48,7 +48,9 @@ public:
         auto p = atomicLoad(pos);
         return p.w-p.r;
     }
-    bool empty() { return length==0; }
+    bool empty() { 
+        return length==0; 
+    }
 
     IQueue!T push(T value) {
         static if(IS_SINGLE_PRODUCER) {
@@ -75,25 +77,6 @@ public:
             value = array[p.r&mask];
 
         }while(!cas(&pos.r, p.r, p.r+1));
-
-        // This might be faster but doesn't work on LDC in release mode:
-        // (possibly due to undefined behaviour)
-        
-        // ulong p1;
-        // ulong p2 = p1-1;
-
-        // while(true) {
-        //     auto old = cas64(cast(void*)&pos, p1, p2);
-        //     if((old & 0xffffffff) == (old >>> 32)) break;
-        //     if(old==p1) {
-        //         value = array[p1&mask];
-        //         break;
-        //     }
-
-        //     p1 = old;
-        //     p2 = old;
-        //     p2++;
-        // }
 
         return value;
     }

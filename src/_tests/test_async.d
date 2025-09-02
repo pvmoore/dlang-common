@@ -12,6 +12,7 @@ import std.algorithm.sorting   : sort;
 import common;
 import common.containers;
 import common.io;
+import common.utils;
 
 void runAsyncTests() {
     writefln("Running async tests");
@@ -21,7 +22,7 @@ void runAsyncTests() {
     testAsyncArray();
 }
 // ======================================================
-class AsyncWorkerBase {
+abstract class AsyncWorkerBase {
     Thread _thread;
     Semaphore _semaphore;
     bool _running = true;
@@ -33,7 +34,7 @@ class AsyncWorkerBase {
         this._thread = new Thread(&run);
         _thread.start();
     }
-    void run() {
+    final void run() {
         while(true) {
             atomicStore(_isWaiting, true);
             _semaphore.wait();
@@ -44,15 +45,17 @@ class AsyncWorkerBase {
             atomicOp!"-="(workItems, 1);
         }
     }
-    bool isWaiting() { return atomicLoad(_isWaiting); }
-    void doSomeWork(int count) {
+    final bool isWaiting() { 
+        return atomicLoad(_isWaiting); 
+    }
+    final void doSomeWork(int count) {
         atomicOp!"+="(workItems, count);
 
         for(auto i=0; i<count; i++) {
             _semaphore.notify();
         }
     }
-    void await() {
+    final void await() {
         while(_running && atomicLoad(workItems)>0) {
             Thread.sleep(dur!"msecs"(10));
         }
@@ -122,19 +125,20 @@ void testAsyncQueue() {
     }
 
     void testPushPop(IQueue!int q, int numProducers, int numConsumers) {
+        writefln("Testing push() and pop() with %s producers and %s consumers", numProducers, numConsumers);
         Producer[] producers;
         PopConsumer[] consumers;
-        const INITIAL    = 400_000;
-        const BATCHES    = 1000;
+        const INITIAL = 400_000;
+        const BATCHES = 1000;
 
-        assert(INITIAL%numProducers==0);
-        assert(INITIAL%numConsumers==0);
-        assert(400%numProducers==0);
-        assert(400%numConsumers==0);
+        throwIfNot(INITIAL%numProducers==0);
+        throwIfNot(INITIAL%numConsumers==0);
+        throwIfNot(400%numProducers==0);
+        throwIfNot(400%numConsumers==0);
         int producerBatchSize = 400 / numProducers;
         int consumerBatchSize = 400 / numConsumers;
 
-        // inital rubbish
+        // initial rubbish
         for(auto i=0; i<INITIAL; i++) {
             q.push(-1);
         }
@@ -156,8 +160,8 @@ void testAsyncQueue() {
         writef("waiting ... ");
         flushConsole();
 
-        producers.each!(it=>it.await);
-        consumers.each!(it=>it.await);
+        producers.each!(it=>it.await());
+        consumers.each!(it=>it.await());
 
         writefln("done");
 
@@ -170,24 +174,25 @@ void testAsyncQueue() {
         popped     = popped[INITIAL..$];
         numPopped -= INITIAL;
 
-        assert(q.length==0);
-        assert(total1==total2);
-        assert(numPopped==total1);
+        throwIfNot(q.length==0);
+        throwIfNot(total1==total2);
+        throwIfNot(numPopped==total1);
 
         for(int i=0; i<numPopped; i++) {
-            assert(popped[i] == i/numProducers);
+            throwIfNot(popped[i] == i/numProducers);
         }
     }
     void testDrain(IQueue!int q, int numProducers, int numConsumers) {
+        writefln("Testing drain() with %s producers and %s consumers", numProducers, numConsumers);
         Producer[] producers;
         DrainConsumer[] consumers;
         const INITIAL    = 1_000_000;
         const BATCHES    = 1000;
 
-        assert(INITIAL%numProducers==0);
-        assert(INITIAL%numConsumers==0);
-        assert(400%numProducers==0);
-        assert(400%numConsumers==0);
+        throwIfNot(INITIAL%numProducers==0);
+        throwIfNot(INITIAL%numConsumers==0);
+        throwIfNot(400%numProducers==0);
+        throwIfNot(400%numConsumers==0);
         int producerBatchSize = 400 / numProducers;
         int consumerBatchSize = 80 / numConsumers;
 
@@ -231,27 +236,39 @@ void testAsyncQueue() {
     //    writefln("numPopped=%s", numPopped);
     //    writefln("length=%s", q.length);
 
-        assert(q.length==0);
-        assert(total1==total2);
-        assert(numPopped==total1);
+        throwIfNot(q.length==0);
+        throwIfNot(total1==total2);
+        throwIfNot(numPopped==total1);
 
         for(int i=0; i<numPopped; i++) {
-            assert(popped[i] == i/numProducers);
+            throwIfNot(popped[i] == i/numProducers);
         }
         writefln("Assertions PASSED");
     }
 
-    writefln("Testing push() and pop()");
+    debug {
+        enum doBenchmark = false;
+    } else {
+        enum doBenchmark = true;
+        import std.datetime.stopwatch : StopWatch;
+        StopWatch w; w.start();
+    }
+
+    enum C = 16; // cores
     testPushPop(makeSPSCQueue!int(1024*1024), 1, 1);
-    testPushPop(makeSPMCQueue!int(1024*1024), 1, 4);
-    testPushPop(makeMPSCQueue!int(1024*1024), 4, 1);
-    testPushPop(makeMPMCQueue!int(1024*1024), 4, 4);
+    testPushPop(makeSPMCQueue!int(1024*1024), 1, C);
+    testPushPop(makeMPSCQueue!int(1024*1024), C, 1);
+    testPushPop(makeMPMCQueue!int(1024*1024), C, C);
 
-    writefln("Testing drain()");
     testDrain(makeSPSCQueue!int(1024*1024*16), 1, 1);
-    testDrain(makeSPMCQueue!int(1024*1024*16), 1, 4);
-    testDrain(makeMPSCQueue!int(1024*1024*16), 4, 1);
-    testDrain(makeMPMCQueue!int(1024*1024*16), 4, 4);
+    testDrain(makeSPMCQueue!int(1024*1024*16), 1, C);
+    testDrain(makeMPSCQueue!int(1024*1024*16), C, 1);
+    testDrain(makeMPMCQueue!int(1024*1024*16), C, C);
 
-
+    static if(doBenchmark) {
+        w.stop();
+        writefln("╔═════════════════════════════════════════════════════════════════════");
+        writefln("║ Took %.2f millis", w.peek().total!"nsecs"/1_000_000.0);
+        writefln("╚═════════════════════════════════════════════════════════════════════");
+    }
 }
