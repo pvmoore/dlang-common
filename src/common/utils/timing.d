@@ -73,11 +73,11 @@ private:
     void recurse(ulong runtime, uint i) {
 
         ulong min(ulong a, ulong b) {
-                return a<b ? a : b;
-            }
+            return a<b ? a : b;
+        }
         ulong max(ulong a, ulong b) {
-                return a>b ? a : b;
-            }
+            return a>b ? a : b;
+        }
 
         if(counts[i]<period) {
             totals[i] += runtime;
@@ -86,12 +86,11 @@ private:
             lowests[i]  = min(lowests[i], totals[i]);
             highests[i] = max(highests[i], totals[i]);
 
-            ulong average = totals[i]/counts[i];
-
             totals[i] = runtime;
             counts[i] = 1;
 
             if(i+1<depth) {
+                ulong average = totals[i]/counts[i];
                 recurse(average, i+1);
             }
         }
