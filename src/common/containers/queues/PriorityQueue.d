@@ -1,4 +1,4 @@
-module common.containers.PriorityQueue;
+module common.containers.queues.PriorityQueue;
 
 import common.all;
 import common.containers;

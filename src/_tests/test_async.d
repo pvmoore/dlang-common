@@ -5,9 +5,14 @@ import core.thread;
 import core.atomic;
 import core.time;
 import core.sync.semaphore;
+import core.sync.condition;
+import core.sync.mutex;
 import std.array;
 import std.algorithm.iteration : map, sum, each;
 import std.algorithm.sorting   : sort;
+import std.typecons : Tuple, tuple;
+
+import std.datetime.stopwatch : StopWatch, AutoStart;
 
 import common;
 import common.containers;
@@ -214,13 +219,8 @@ void testAsyncQueue() {
         }
         consumers.each!(it=>it.doSomeWork((INITIAL/5)/numConsumers));
 
-        writef("waiting ... ");
-        flushConsole();
-
         producers.each!(it=>it.await);
         consumers.each!(it=>it.await);
-
-        writefln("done");
 
         auto total1    = 5*BATCHES*numConsumers*consumerBatchSize;
         auto total2    = BATCHES*numProducers*producerBatchSize;
@@ -246,29 +246,160 @@ void testAsyncQueue() {
         writefln("Assertions PASSED");
     }
 
+    void testDrain2(string Q) {
+        writefln("Testing drain2()");
+
+        struct EventMsg {
+            ulong id;
+            ulong payload;
+        }
+
+        IQueue!EventMsg q;
+
+        if(Q=="MutexQueue") {
+            q = new MutexQueue!EventMsg(1024*1024);
+        } else if(Q=="SynchronizedQueue") {
+            q = new SynchronizedQueue!EventMsg(1024*1024);
+        } else {
+            q = makeMPMCQueue!EventMsg(1024*1024);
+        }
+
+        enum N = 100_000;
+        enum P = 5;
+        uint numReceived;
+        Semaphore semaphore = new Semaphore();
+        uint semaphoreWaits;
+
+        uint fails1;
+        uint fails2;
+
+        semaphore.notify();
+
+        Thread consumer = new Thread(() {
+            while(true) {
+
+                semaphoreWaits++;
+                semaphore.wait();
+
+                while(true) {
+                    EventMsg[4] sink;
+                    auto count = q.drain(sink);
+
+                    if(count==0) {
+                        break;
+                    }
+
+                    foreach(i; 0..count) {
+                        auto msg = sink[i];
+
+                        if(msg.id == 0) fails1++;
+                        if(msg.payload ==0) fails2++;
+
+                        numReceived++;
+                    }
+                    if(numReceived == N*P) return;
+                }
+            }
+        });
+        consumer.isDaemon(true);
+        consumer.start();
+
+        Thread[] producers;
+
+        foreach(i; 0..P-1) {
+            Thread producer = new Thread(() {
+                for(auto i=0; i<N/1000; i++) {
+                    foreach(j; 0..1000) {
+                        q.push(EventMsg(1, i+2));
+                    }
+                    semaphore.notify();
+                    Thread.sleep(dur!"msecs"(1));
+                }
+            });
+            producer.isDaemon(true);
+            producer.start();
+            producers ~= producer;
+        }
+
+        for(auto i=0; i<N/1000; i++) {
+            foreach(j; 0..1000) {
+                q.push(EventMsg(1, i+2));
+            }
+            semaphore.notify();
+            Thread.sleep(dur!"msecs"(1));
+        }
+
+        producers.each!(p=>p.join());
+        consumer.join();
+
+        debug {
+            writefln("numReceived = %s", numReceived);
+            writefln("semaphoreWaits = %s", semaphoreWaits);
+            writefln("fails1 = %s", fails1);
+            writefln("fails2 = %s", fails2);
+
+            assert(fails1 == 0, "fails1 should be 0");
+            assert(fails2 == 0, "fails2 should be 0");
+        }
+    }
+
     debug {
         enum doBenchmark = false;
     } else {
         enum doBenchmark = true;
-        import std.datetime.stopwatch : StopWatch;
-        StopWatch w; w.start();
     }
+    
+    long[string] timings;
 
     enum C = 16; // cores
-    testPushPop(makeSPSCQueue!int(1024*1024), 1, 1);
-    testPushPop(makeSPMCQueue!int(1024*1024), 1, C);
-    testPushPop(makeMPSCQueue!int(1024*1024), C, 1);
-    testPushPop(makeMPMCQueue!int(1024*1024), C, C);
 
-    testDrain(makeSPSCQueue!int(1024*1024*16), 1, 1);
-    testDrain(makeSPMCQueue!int(1024*1024*16), 1, C);
-    testDrain(makeMPSCQueue!int(1024*1024*16), C, 1);
-    testDrain(makeMPMCQueue!int(1024*1024*16), C, C);
+    foreach(iter; 0..1)
+    foreach(Q; ["MutexQueue", "SynchronizedQueue", "AsyncQueue"]) {
+        StopWatch w = StopWatch(AutoStart.yes);
+        if(Q=="MutexQueue") {
+            testPushPop(new MutexQueue!int(1024*1024), 1, 1);
+            testPushPop(new MutexQueue!int(1024*1024), 1, C);
+            testPushPop(new MutexQueue!int(1024*1024), C, 1);
+            testPushPop(new MutexQueue!int(1024*1024), C, C);
+
+            testDrain(new MutexQueue!int(1024*1024*16), 1, 1);
+            testDrain(new MutexQueue!int(1024*1024*16), 1, C);
+            testDrain(new MutexQueue!int(1024*1024*16), C, 1);
+            testDrain(new MutexQueue!int(1024*1024*16), C, C);
+        } else if(Q=="SynchronizedQueue") {
+            testPushPop(new SynchronizedQueue!int(1024*1024), C, C);
+            testPushPop(new SynchronizedQueue!int(1024*1024), 1, C);
+            testPushPop(new SynchronizedQueue!int(1024*1024), C, 1);
+            testPushPop(new SynchronizedQueue!int(1024*1024), C, C);
+
+            testDrain(new SynchronizedQueue!int(1024*1024*16), C, C);
+            testDrain(new SynchronizedQueue!int(1024*1024*16), 1, C);
+            testDrain(new SynchronizedQueue!int(1024*1024*16), C, 1);
+            testDrain(new SynchronizedQueue!int(1024*1024*16), C, C);
+        } else {
+            testPushPop(makeSPSCQueue!int(1024*1024), 1, 1);
+            testPushPop(makeSPMCQueue!int(1024*1024), 1, C);
+            testPushPop(makeMPSCQueue!int(1024*1024), C, 1);
+            testPushPop(makeMPMCQueue!int(1024*1024), C, C);
+
+            testDrain(makeSPSCQueue!int(1024*1024*16), 1, 1);
+            testDrain(makeSPMCQueue!int(1024*1024*16), 1, C);
+            testDrain(makeMPSCQueue!int(1024*1024*16), C, 1);
+            testDrain(makeMPMCQueue!int(1024*1024*16), C, C);
+        }
+
+        testDrain2(Q);
+
+        w.stop();
+        timings[Q] += w.peek().total!"nsecs";
+    }
 
     static if(doBenchmark) {
-        w.stop();
-        writefln("╔═════════════════════════════════════════════════════════════════════");
-        writefln("║ Took %.2f millis", w.peek().total!"nsecs"/1_000_000.0);
-        writefln("╚═════════════════════════════════════════════════════════════════════");
+        foreach(e; timings.byKeyValue()) {
+            writefln("╔═════════════════════════════════════════════════════════════════════");
+            writefln("║ " ~ ansiWrap(e.key, Ansi.BLUE));
+            writefln("║ Took %.2f millis", e.value/1_000_000.0);
+            writefln("╚═════════════════════════════════════════════════════════════════════");
+        }
     }
 }

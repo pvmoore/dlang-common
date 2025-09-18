@@ -1,9 +1,15 @@
-module common.containers.async_queue;
+module common.containers.queues.async_queue;
 
 import common.all;
 import common.containers;
 
 public:
+
+/**
+ * Note that there is a Heisenbug in this class that has been showing up around the use of Semaphore
+ * notify/wait. I tried fixing by adding memory fences but it didn't help. It turns out that this queue
+ * is not any faster than MutexQueue anyway so I would recommend using that instead.
+ */
 
 enum ThreadingModel {
     SPSC,   // single producer single consumer
@@ -22,9 +28,9 @@ IQueue!T makeMPMCQueue(T)(uint cap) { return new Queue!(T,ThreadingModel.MPMC)(c
 
 final class Queue(T,ThreadingModel TM) : IQueue!T {
 private:
-    T[] array;
-    const uint mask;
+    align(16) T[] array;
     align(16) shared Positions pos;
+    const uint mask;
 
     static struct Positions {
         int r;
