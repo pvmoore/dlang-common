@@ -20,13 +20,13 @@ enum ThreadingModel {
 
 //==========================================================
 
-IQueue!T makeSPSCQueue(T)(uint cap) { return new Queue!(T,ThreadingModel.SPSC)(cap); }
-IQueue!T makeMPSCQueue(T)(uint cap) { return new Queue!(T,ThreadingModel.MPSC)(cap); }
-IQueue!T makeSPMCQueue(T)(uint cap) { return new Queue!(T,ThreadingModel.SPMC)(cap); }
-IQueue!T makeMPMCQueue(T)(uint cap) { return new Queue!(T,ThreadingModel.MPMC)(cap); }
+IQueue!T makeSPSCQueue(T)(uint cap) { return new AsyncQueue!(T,ThreadingModel.SPSC)(cap); }
+IQueue!T makeMPSCQueue(T)(uint cap) { return new AsyncQueue!(T,ThreadingModel.MPSC)(cap); }
+IQueue!T makeSPMCQueue(T)(uint cap) { return new AsyncQueue!(T,ThreadingModel.SPMC)(cap); }
+IQueue!T makeMPMCQueue(T)(uint cap) { return new AsyncQueue!(T,ThreadingModel.MPMC)(cap); }
 
 
-final class Queue(T,ThreadingModel TM) : IQueue!T {
+final class AsyncQueue(T,ThreadingModel TM) : IQueue!T {
 private:
     align(16) T[] array;
     align(16) shared Positions pos;

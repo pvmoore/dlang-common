@@ -306,16 +306,16 @@ void benchmarkAsyncQueue() {
     }
 
     ulong t1 = timeIt(1,1,
-        new Queue!(int,ThreadingModel.SPSC)(1024*1024*4)
+        new AsyncQueue!(int,ThreadingModel.SPSC)(1024*1024*4)
     );
     ulong t2 = timeIt(2,1,
-        new Queue!(int,ThreadingModel.MPSC)(1024*1024*4)
+        new AsyncQueue!(int,ThreadingModel.MPSC)(1024*1024*4)
     );
     ulong t3 = timeIt(1,2,
-        new Queue!(int,ThreadingModel.SPMC)(1024*1024*4)
+        new AsyncQueue!(int,ThreadingModel.SPMC)(1024*1024*4)
     );
     ulong t4 = timeIt(2,2,
-        new Queue!(int,ThreadingModel.MPMC)(1024*1024*4)
+        new AsyncQueue!(int,ThreadingModel.MPMC)(1024*1024*4)
     );
 
     writefln("Single producer single consumer queue: %.2f millis", t1/1000000.0);

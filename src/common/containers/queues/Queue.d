@@ -33,7 +33,7 @@ public:
     int length() {
         return pos.w-pos.r;
     }
-    bool empty() { return length==0; }
+    bool empty() { return length()==0; }
 
     IQueue!T push(T value) {
         int p = pos.w++;
@@ -46,6 +46,7 @@ public:
         return this;
     }
     T pop() {
+        if(empty()) return T.init;
         int p = pos.r++;
         return array[p&mask];
     }

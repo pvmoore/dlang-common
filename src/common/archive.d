@@ -25,6 +25,7 @@ public:
     void close() {
         write();
     }
+    /** Add data to the archive using deflate compression */
     auto add(string name, ubyte[] data, string comment = null) {
 
         auto member              = new ArchiveMember();
@@ -38,8 +39,25 @@ public:
 
         return this;
     }
+    /** Add data to the archive using deflate compression */
     auto add(string name, void* data, ulong numBytes, string comment = null) {
         return add(name, (cast(ubyte*)data)[0..numBytes], comment);
+    }
+    /** Store raw data without compression */
+    auto store(T)(string name, T[] data, string comment) {
+
+        ubyte[] bytes = data.ptr.as!(ubyte*)[0..data.length*T.sizeof];
+
+        auto member              = new ArchiveMember();
+        member.name              = name;
+        member.expandedData      = bytes;
+        member.comment           = comment;
+        member.compressionMethod = CompressionMethod.none;
+        archive.addMember(member);
+
+        members[name] = member;
+
+        return this;
     }
     auto remove(string name) {
         auto ptr = name in members;
