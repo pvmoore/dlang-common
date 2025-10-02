@@ -94,6 +94,9 @@ public:
         if(m.name is null) return null;
         return m.comment;
     }
+    string[] getAllFilenames() {
+        return members.keys();
+    }
 private:
     void open() {
         if(From!"std.file".exists(filename)) {
