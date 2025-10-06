@@ -1,64 +1,57 @@
 module common.containers.Stack;
 
-import common.all;
+import std.format : format;
 
-final class Stack(T) {
-private:
-    T[] array;
-    int pos;
+final class Stack(T, U = uint) {
 public:
-    override string toString() {
-        return "%s".format(array[0..pos]);
-    }
-    this(uint startLength = 8) {
-        array.length = startLength;
-    }
-    uint length() const { return pos; }
-    bool empty() const { return pos==0; }
+    U length() const { return pos; }
+    bool isEmpty() const { return pos==0; }
 
-    bool opEquals(T[] other) const {
-        return pos==other.length && array[0..pos] == other;
+    this(uint reserveCapacity = 0) {
+        if(reserveCapacity > 0) {
+            array.reserve(reserveCapacity);
+        }
     }
-    bool opEquals(Stack!T other) const {
-        return opEquals(other.array[0..other.pos]);
-    }
-    T[] opSlice() {
-        return array[0..pos];
-    }
-
-    auto push(T v) {
+    void push(T value) {
         expand();
-        array[pos++] = v;
-        return this;
+        array[pos++] = value;
     }
     T pop() {
         if(pos==0) return T.init;
-        return array[--pos];
+        T value = array[--pos];
+        return value;
     }
-    T peek(int offset = 0) {
-        int i = pos-(offset+1);
-        if(i < 0 || i >= array.length) return T.init;
-        return array[i];
+    T peek(U offset = 0) {
+        if(offset >= pos) return T.init;
+        return array[pos-offset-1];
     }
-    auto clear() {
+    void clear(bool release = false) {
         pos = 0;
-        return this;
-    }
-    auto pack() {
-        array.length = pos;
-        return this;
+        if(release) array = null;
     }
     bool contains(T value) const {
-        for(auto i=0; i<pos; i++) {
+        foreach(i; 0..pos) {
             if(array[i]==value) return true;
         }
         return false;
     }
+    T[] opSlice() {
+        return array[0..pos];
+    }
+    override string toString() {
+        return "%s".format(array[0..pos]);
+    }
 private:
-    pragma(inline,true)
+    T[] array;
+    U pos;
+
     void expand() {
         if(pos==array.length) {
-            array.length = (array.length+1)*2;
+            if(array.length == 0) {
+                array.length = 8;
+            } else {
+                array.length = array.length*2;
+            }
         }
     }
 }

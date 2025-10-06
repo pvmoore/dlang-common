@@ -9,7 +9,7 @@ import _tests.test;
 
 void testContainers() {
     static if(RUN_SUBSET) {
-        testSet();
+        testStack();
     } else {
         testCircularBuffer();
         testList();
@@ -432,53 +432,73 @@ void testQueue() {
 
 void testStack() {
     writefln("--== Testing Stack ==--");
-    auto stack = new Stack!uint(10);
-    assert(stack==[] && stack.length==0 && stack.empty);
-    writefln("%s", stack);
+    debug {
+        auto stack = new Stack!uint;
+        assert(stack[]==[] && stack.length()==0 && stack.isEmpty());
+        writefln("%s", stack);
 
-    stack.push(13);
-    assert(stack==[13] && stack.length==1 && !stack.empty);
-    writefln("%s", stack);
+        stack.push(13);
+        assert(stack[]==[13] && stack.length()==1 && !stack.isEmpty());
+        writefln("%s", stack);
 
-    stack.push(17);
-    assert(stack==[13,17] && stack.length==2 && !stack.empty);
-    assert(stack[]==[13,17]);
-    writefln("%s", stack);
+        stack.push(17);
+        assert(stack[]==[13,17] && stack.length()==2 && !stack.isEmpty());
+        assert(stack[]==[13,17]);
+        writefln("%s", stack);
 
-    assert(stack.pop()==17);
-    assert(stack==[13] && stack.length==1 && !stack.empty);
-    writefln("%s", stack);
+        assert(stack.pop()==17);
+        assert(stack[]==[13] && stack.length()==1 && !stack.isEmpty());
+        writefln("%s", stack);
 
-    assert(stack.pop()==13 && stack.length==0 && stack.empty);
-    assert(stack[]==[]);
+        assert(stack.pop()==13 && stack.length()==0 && stack.isEmpty());
+        assert(stack[]==[]);
 
-    { // peek
-        auto s = new Stack!int;
-        assert(s.peek()==0);
-        assert(s.peek(-1)==0);
-        assert(s.peek(1)==0);
+        { // peek
+            auto s = new Stack!int;
+            assert(s.peek()==0);
+            assert(s.peek(-1)==0);
+            assert(s.peek(1)==0);
 
-        s.push(1);
-        assert(s.peek()==1);
-        assert(s.peek(0)==1);
+            s.push(1);
+            assert(s.peek()==1);
+            assert(s.peek(0)==1);
 
-        s.push(2);
-        assert(s.peek()==2);
-        assert(s.peek(0)==2);
-        assert(s.peek(1)==1);
+            s.push(2);
+            assert(s.peek()==2);
+            assert(s.peek(0)==2);
+            assert(s.peek(1)==1);
 
-        s.push(3);
-        assert(s.peek()==3);
-        assert(s.peek(0)==3);
-        assert(s.peek(1)==2);
-        assert(s.peek(2)==1);
+            s.push(3);
+            assert(s.peek()==3);
+            assert(s.peek(0)==3);
+            assert(s.peek(1)==2);
+            assert(s.peek(2)==1);
 
-        s.pop();
-        assert(s.peek()==2);
-        s.pop();
-        assert(s.peek()==1);
-        s.pop();
-        assert(s.peek()==0);
+            s.pop();
+            assert(s.peek()==2);
+            s.pop();
+            assert(s.peek()==1);
+            s.pop();
+            assert(s.peek()==0);
+        }
+
+    } else {
+        writefln("╔═════════════════════════════════════════════════════════════════════");
+        writefln("║ Benchmark results");
+        writefln("╚═════════════════════════════════════════════════════════════════════");
+        StopWatch watch = StopWatch(AutoStart.yes);
+        
+        auto s = new Stack!int();
+        for(auto i=0; i<1_000_000; i++) {
+            s.push(i);
+        }
+        for(auto i=0; i<1_000_000; i++) {
+            s.pop();
+        }
+        watch.stop();
+        writefln("Took %s millis", watch.peek().total!"nsecs"/1000000.0);
+
+        
     }
 }
 void testTreeList() {
