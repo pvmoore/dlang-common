@@ -51,7 +51,7 @@ void testUnorderedMap() {
 
             // This will be called by the map to test equality (eg. ==)
             // otherwise bitwise equality will be used
-            bool opEquals(S2 o) {
+            bool opEquals(S2 o) const {
                 return a==o.a && b==o.b; 
             }
         }

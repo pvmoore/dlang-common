@@ -18,13 +18,13 @@ public:
         this.slots.length = capacity;
         this.flags.length = capacity / 32 + 1;
     }
-    bool isEmpty() {
+    bool isEmpty() const {
         return numKeys == 0;
     }
-    ulong size() {
+    ulong size() const {
         return numKeys;
     }
-    ulong capacity() {
+    ulong capacity() const {
         return slots.length;
     }
     void clear() {
@@ -118,7 +118,7 @@ public:
 
         return true;
     }
-    bool contains(K key) {
+    bool contains(K key) const {
         static if(isObject!K) assert(key !is null);
         return findSlotForKey(key) != -1;
     }
@@ -126,7 +126,7 @@ public:
      *  Returns true if the key is in the map.
      *  bool v = map[key]
      */
-    bool opIndex(K key) {
+    bool opIndex(K key) const {
         return contains(key);
     }
     /** 
@@ -187,7 +187,7 @@ public:
     /** 
      * Return a new array containing all keys in the map (in undefined order)
      */
-    K[] keys() {
+    K[] keys() const {
         K[] result;
         foreach(slot; 0..slots.length.as!uint) {
             if(isOccupied(slot)) {
@@ -199,7 +199,7 @@ public:
     /** 
      * Return a range of keys (in undefined order).
      */
-    auto byKey() {
+    auto byKey() const {
         static struct SetRange {
             K[] keys;
             uint i;
@@ -209,10 +209,10 @@ public:
         }
         return SetRange(keys()); 
     }
-    override string toString() {
+    override string toString() const {
         return "Set!%s(size:%s)".format(K.stringof, size());
     }
-    void dump() {
+    void dump() const {
         foreach(slot; 0..slots.length.as!uint) {
             string f = "%s".format(isOccupied(slot) ? "O" : "-");
             string s = isOccupied(slot) ? "%s".format(slots[slot]) : "";
@@ -231,7 +231,7 @@ private:
     K[] slots;              // Keys
     uint[] flags;           // Occupancy flags 
 
-    bool isOccupied(uint slot) {
+    bool isOccupied(uint slot) const {
         uint u = slot >>> 5;
         uint r = slot & 31;
         return ((flags[u] >>> r) & 1) == 1;
@@ -247,13 +247,13 @@ private:
         flags[u] &= ~(1 << r);
     }
     /** Get the next slot, wrapping around if necessary */
-    uint nextSlot(uint slot) {
+    uint nextSlot(uint slot) const {
         return (slot+1) & mask;
     }
-    uint getSlot(K key) {
+    uint getSlot(K key) const {
         return (getHash(key) & mask).as!uint;
     }
-    ulong getHash(K key) {
+    ulong getHash(K key) const {
         // Call toHash if K implements it
         static if(__traits(compiles, key.toHash())) {
             ulong hash = key.toHash();
@@ -282,7 +282,7 @@ private:
      * Find the slot for a given key
      * Returns -1 if not found
      */
-    long findSlotForKey(K key) {
+    long findSlotForKey(K key) const {
         uint slot = getSlot(key);
 
         while(isOccupied(slot) && slots[slot] != key) {

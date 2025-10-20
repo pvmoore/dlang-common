@@ -9,7 +9,7 @@ import _tests.test;
 
 void testContainers() {
     static if(RUN_SUBSET) {
-        testStack();
+        testSet();
     } else {
         testCircularBuffer();
         testList();

@@ -5,6 +5,9 @@ import utils = common.utils;
 import std.stdio;
 import std.format : format;
 
+/**
+ * Ordered list of unique items. Uses Set internally to ensure uniqueness.
+ */
 final class UniqueList(T) {
 private:
     T[] list;
@@ -14,13 +17,15 @@ public:
         this.set = new Set!T();
     }
 
-    T[] values() { return list; }
-    ulong length() { return list.length; }
-    bool isEmpty() { return list.length == 0; }
+    /** Returns the underlying array */
+    T[] values()   { return list; }
+    ulong length() const { return list.length; }
+    bool isEmpty() const { return list.length == 0; }
 
     auto add(T value) {
         auto beforeSize = set.size();
         set.add(value);
+        // Only add to the list if we don't already have it
         if(set.size() > beforeSize) {
             list ~= value;
         }
@@ -32,6 +37,7 @@ public:
         }
         return this;
     }
+    /** Remove value from the list and return true if it was removed otherwise false if it wasn't in the list */
     bool remove(T value) {
         if(set.remove(value)) {
             utils.remove(list, value);
@@ -39,7 +45,7 @@ public:
         }
         return false;
     }
-    bool contains(T value) {
+    bool contains(T value) const {
         return set.contains(value);
     }
     auto clear() {
