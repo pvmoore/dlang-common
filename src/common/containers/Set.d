@@ -187,7 +187,7 @@ public:
     /** 
      * Return a new array containing all keys in the map (in undefined order)
      */
-    K[] keys() const {
+    K[] keys() {
         K[] result;
         foreach(slot; 0..slots.length.as!uint) {
             if(isOccupied(slot)) {
@@ -199,7 +199,7 @@ public:
     /** 
      * Return a range of keys (in undefined order).
      */
-    auto byKey() const {
+    auto byKey() {
         static struct SetRange {
             K[] keys;
             uint i;
@@ -212,7 +212,7 @@ public:
     override string toString() const {
         return "Set!%s(size:%s)".format(K.stringof, size());
     }
-    void dump() const {
+    void dump() {
         foreach(slot; 0..slots.length.as!uint) {
             string f = "%s".format(isOccupied(slot) ? "O" : "-");
             string s = isOccupied(slot) ? "%s".format(slots[slot]) : "";
