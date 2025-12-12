@@ -25,6 +25,7 @@ import std.algorithm.mutation  : reverse;
 import common;
 
 import _tests.test_allocators;
+import _tests.test_asm;
 import _tests.test_async;
 import _tests.test_betterc;
 import _tests.test_io;
@@ -37,7 +38,7 @@ import _tests.bench.bench;
 import _tests.containers.test_containers;
 import _tests.containers.test_set;
 
-enum RUN_SUBSET = true;
+enum RUN_SUBSET = false;
 
 extern(C) void asm_test();
 
@@ -65,11 +66,12 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testContainers();
+        testAsm();
     } else {
 
         asm_test();
 
+        testAsm();
         testAllocators();
         testBetterc();
         testBool3();

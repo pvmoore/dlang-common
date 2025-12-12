@@ -64,6 +64,21 @@
             "problemMatcher": []
         },
         {
+            "label": "**** Test (LDC Release with debug info) ****",
+            "type": "shell",
+            "windows": {
+                "command": "scripts/run_build.bat ldc2 release_with_debuginfo test"
+            },
+            "group": {
+                "kind": "build"
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
+            },
+            "problemMatcher": []
+        },
+        {
             "label": "**** Benchmark (LDC) Release ****",
             "type": "shell",
             "windows": {

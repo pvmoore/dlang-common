@@ -7,6 +7,9 @@ buildType "debug" {
 buildType "release" {
 	buildOptions "releaseMode" "optimize" "inline" "noBoundsCheck"
 }
+buildType "release_with_debuginfo" {
+	buildOptions "releaseMode" "debugInfo" "optimize" "inline" "noBoundsCheck"
+}
 
 configuration "test" {
 	targetType "executable"

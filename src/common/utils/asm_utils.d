@@ -28,6 +28,18 @@ import common.utils.string_utils : repeat;
  * Clobbered:
  *      RAX, RCX, RDX, R8, R9, R10, R11, XMM0-5, and the upper portions of YMM0-15 and ZMM0-15
  *      On AVX512VL: the ZMM, YMM, and XMM registers 16-31
+ *
+ * ──────────────────────────────────────────────────────────────────────────────────────────────────
+ * Linux calling convention:
+ * https://wiki.osdev.org/System_V_ABI#x86-64
+ *
+ * LDC x86-64 on linux:
+ *      RDI|XMM0, RSI|XMM1, RDX|XMM2, RCX|XMM3, R8|XMM4, R9|XMM5, stack|XMM6, stack|XMM7, stack|stack
+ *
+ * Return value:
+ *      RAX (integer)
+ *      XMM0 (float,double)
+ *
  */
 version(LDC) {
     // https://wiki.dlang.org/LDC_inline_assembly_expressions
