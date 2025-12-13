@@ -63,10 +63,10 @@ void testAsm() {
         foreach(s; strings) {
 
             // 51ms
-            //result += memnspn_asm1(s.ptr.as!(ubyte*), original.ptr.as!(ubyte*), original.length);
+            result += memnspn_asm1(s.ptr.as!(ubyte*), original.ptr.as!(ubyte*), original.length);
 
             // 27ms
-            result += memnspn(s.ptr.as!(ubyte*), original.ptr.as!(ubyte*), original.length);
+            //result += memnspn(s.ptr.as!(ubyte*), original.ptr.as!(ubyte*), original.length);
         }
     }
     w.stop();
@@ -133,10 +133,32 @@ ulong memnspn_asm1(ubyte* str1, ubyte* str2, ulong count) nothrow @nogc /*@naked
 0:
                 sub %rcx, %r8
                 mov %r8, %rax
-1:                
+1:              
                 `, 
-                "={rax},{rsi},{rdi},{rcx}", 
+                "={rax},{rsi},{rdi},{rcx},~{rsi},~{rdi},~{rcx},~{r8},~{flags}", 
                 str1, str2, count);
+
+                // a = al/ah/ax/eax/rax
+                // r = register operand
+                // q = register that can be accessed as 8bit low (eg AL)
+                // Q = register that can be accessed as 16bit high (eg AH)
+                // y = 64bit mmx register
+                // v = xmm|ymm register
+                // i = immediate integer operand
+                // m = memory operand
+                // * = indirect memory operand (eg *m)
+                // I = integer constant [0..31]
+                // J = integer constant [0..63]
+                // O = integer constant [0..127]
+                // K = integer constant [0..255]
+                // N = unsigned integer constant [0..255]
+                // e = signed 32bit integer constant
+                // Z = unsigned 32bit integer constant 
+                // =& = early clobber (eg =&r)
+
+                // = output modifier
+                // + input/output modifier
+                // ~ clobber modifier
         } 
     } 
     return 0;
