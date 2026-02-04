@@ -44,20 +44,6 @@ bool onlyContains(T)(T[] array, T value) nothrow {
 	return true;
 }
 
-// bool equals(T)(T[] array, T value) {
-//     for(auto i=0; i<array.length; i++) {
-//         if(array[i] != value) return false;
-//     }
-//     return true;
-// }
-// bool equals(T)(T[] array, T[] values) {
-//     if(array.length != values.length) return false;
-//     for(auto i=0; i<array.length; i++) {
-//         if(array[i] != values[i]) return false;
-//     }
-//     return true;
-// }
-
 int indexOf(T)(T[] array, T value) if(!isSomeChar!T) {
     foreach(i, v; array) if(v==value) return cast(int)i;
     return -1;
@@ -123,7 +109,11 @@ T remove(T)(ref T[] array, T value, T defaultValue = T.init) {
     return defaultValue;
 }
 
-/** auto v = array.removeAt(i) */
+/** 
+ * Remove and return the element at 'index' in the array.
+ *
+ * auto v = array.removeAt(i) 
+ */
 T removeAt(T)(ref T[] array, ulong index) {
 	assert(index < array.length);
 
@@ -140,6 +130,18 @@ T removeAt(T)(ref T[] array, ulong index) {
 	array.length = array.length - 1;
 	return element;
 }
+/** 
+ * Remove and return the element at 'index' in the array. The last element is moved to the vacated slot.
+ * This is faster than removeAt() but changes the order of the array.
+ */
+T unorderedRemoveAt(T)(ref T[] array, ulong index) {
+	assert(index < array.length);
+
+	T element = array[index];
+	array[index] = array[$-1];
+	array.length--;
+	return element;
+} 
 
 T removeFirstMatch(T)(ref T[] array, bool delegate(T value) pred, T defaultValue = T.init) {
 	foreach(i, v; array) {

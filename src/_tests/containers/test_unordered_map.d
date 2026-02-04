@@ -256,12 +256,16 @@ void testUnorderedMap() {
     }
     
     foreach(i; 0..10) {
-        fuzzTestUnorderedMap(5000);
+        fuzzTestUnorderedMap(i.as!uint, 5000);
     }
+
+    writefln("================================================================");
+    writefln("Done");
+    writefln("================================================================");
 }
-void fuzzTestUnorderedMap(uint iterations) {
+void fuzzTestUnorderedMap(uint iteration, uint iterations) {
     writefln("----------------------------------------------------------------");
-    writefln(" Fuzz Testing UnorderedMap (%s iterations)", iterations);
+    writefln(" [%s] Fuzz Testing UnorderedMap (%s iterations)", iteration+1, iterations);
     writefln("----------------------------------------------------------------");
 
     Mt19937 rng;

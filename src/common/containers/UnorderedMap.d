@@ -9,9 +9,10 @@ private import common.containers.containers_internal;
  *
  * Faster than the built-in associative array in my testing.
  *
- * HASH: Ignore this template parameter. This sets the hash function to use for benchmarking.
+ * OPTION: Ignore this template parameter. This sets options for benchmarking.
  */
-final class UnorderedMap(K, V, uint HASH = 0) {
+final class UnorderedMap(K, V, uint OPTION = 0) {
+    static assert(OPTION == 0 || OPTION == 1);
 public:
     this(ulong capacity = 16, float loadFactor = 0.75) {
         throwIf(!isPowerOf2(capacity), "capacity must be a power of 2");
@@ -319,7 +320,7 @@ private:
     // because it is faster to access them in this data oriented way rather than putting them
     // all into an array of structs
     K[] slots;              // slots.length is current capacity
-    uint[] flags;           // Bit flags for keySlots. 1 = occupied, 0 = free
+    uint[] flags;           // Bit flags for key slots. 1 = occupied, 0 = free
     ulong[] pageIndex;      // (page<<32 | index) for each slot value
 
     // These are related to value storage
@@ -405,13 +406,26 @@ private:
      */
     long findSlotForKey(K key) const {
         uint slot = getSlot(key);
+        ulong keyHash = getHash(key);
 
-        while(isOccupied(slot) && slots[slot] != key) {
-            slot = nextSlot(slot);
+        static if(OPTION == 0) {
+            // Use opEquals to check each slot until we find the key or an unoccupied slot
+            while(isOccupied(slot) && slots[slot] != key) {
+                slot = nextSlot(slot);
+            }
+        } else static if(OPTION == 1) {
+            // Check slot hash before checking key equality (this may be slower if the hash function is slower than opEquals)
+            while(isOccupied(slot) && !slotContainsKey(key, keyHash, slot)) {
+                slot = nextSlot(slot);
+            }
         }
+
         return isOccupied(slot) ? slot : -1L;
     }
-    ulong getHash(K key) const {
+    bool slotContainsKey(K key, ulong keyHash, uint slot) const {
+        return keyHash == getHash(slots[slot]) && slots[slot] == key;
+    }
+    ulong getHash(inout K key) const {
         // Call toHash if K implements it
         static if(__traits(compiles, key.toHash())) {
             ulong hash = key.toHash();
@@ -459,6 +473,7 @@ private:
 
         foreach(oldSlot; 0..oldSlots.length) {
             if(f & bit) {
+                // this slot is occupied
                 uint newSlot = getSlot(oldSlots[oldSlot]);
                 while(isOccupied(newSlot)) newSlot = nextSlot(newSlot);
 

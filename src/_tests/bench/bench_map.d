@@ -14,7 +14,7 @@ void benchMap() {
     executeBenchmarks(getBenchmarks!uint(numKeys));
     // executeBenchmarks!ulong(getBenchmarks!uint(numKeys));
     // executeBenchmarks!float(getBenchmarks!uint(numKeys));
-    // executeBenchmarks!string(getBenchmarks!uint(numKeys));
+    executeBenchmarks!string(getBenchmarks!string(numKeys));
 }
 
 private:
@@ -62,10 +62,10 @@ final class BuiltinMap(T) : MapSubject!T {
         map = null;
     }
 }
-final class UnorderedMapWrapper(T, uint HASH) : MapSubject!T {
+final class UnorderedMapWrapper(T, uint OPTION) : MapSubject!T {
     ulong capacity;
     float loadFactor;
-    UnorderedMap!(T, uint, HASH) map;
+    UnorderedMap!(T, uint, OPTION) map;
 
     this(ulong capacity, float loadFactor) {
         this.capacity = capacity;
@@ -74,7 +74,7 @@ final class UnorderedMapWrapper(T, uint HASH) : MapSubject!T {
     }
 
     string name() {
-        return "UnorderedMap!%s (%s, %.2f)".format(HASH, capacity, loadFactor);
+        return "UnorderedMap!%s (%s, %.2f)".format(OPTION, capacity, loadFactor);
     }
     void insert(T key, uint value) {
         map.insert(key, value);
@@ -89,7 +89,7 @@ final class UnorderedMapWrapper(T, uint HASH) : MapSubject!T {
         return map.size();
     }
     void reset() {
-        map = new UnorderedMap!(T, uint, HASH)(capacity, loadFactor);
+        map = new UnorderedMap!(T, uint, OPTION)(capacity, loadFactor);
     }
 }
 //──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -113,17 +113,25 @@ public:
         return [
             cast(BenchmarkSubject!T)new BuiltinMap!T(),
             new UnorderedMapWrapper!(T, 0)(16, 0.9),
-            new UnorderedMapWrapper!(T, 3)(16, 0.9), 
+            new UnorderedMapWrapper!(T, 1)(16, 0.9), 
+
             new UnorderedMapWrapper!(T, 0)(16, 0.8),
-            new UnorderedMapWrapper!(T, 3)(16, 0.8),
+            new UnorderedMapWrapper!(T, 1)(16, 0.8),
+
             new UnorderedMapWrapper!(T, 0)(16, 0.75),
-            new UnorderedMapWrapper!(T, 3)(16, 0.75),
-            new UnorderedMapWrapper!(T, 3)(1024, 0.75),  
+            new UnorderedMapWrapper!(T, 1)(16, 0.75),
+
+            new UnorderedMapWrapper!(T, 0)(1024, 0.75),  
+            new UnorderedMapWrapper!(T, 1)(1024, 0.75),  
+
             new UnorderedMapWrapper!(T, 0)(16, 0.6),
-            new UnorderedMapWrapper!(T, 3)(16, 0.6),
+            new UnorderedMapWrapper!(T, 1)(16, 0.6),
+
             new UnorderedMapWrapper!(T, 0)(16, 0.5),
-            new UnorderedMapWrapper!(T, 3)(16, 0.5),
-            new UnorderedMapWrapper!(T, 3)(16, 0.25),
+            new UnorderedMapWrapper!(T, 1)(16, 0.5),
+
+            new UnorderedMapWrapper!(T, 0)(16, 0.25),
+            new UnorderedMapWrapper!(T, 1)(16, 0.25),
         ];
     }
     final string getFinalResult() {

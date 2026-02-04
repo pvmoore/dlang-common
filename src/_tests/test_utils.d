@@ -7,7 +7,7 @@ import _tests.test : RUN_SUBSET;
 
 void testUtils() {
     static if(RUN_SUBSET) {
-    
+        testArrayUtils();
     } else {
         testAsmUtils();
         testBitUtils();
@@ -129,7 +129,9 @@ void testMapUtils() {
 }
 
 void testArrayUtils() {
-    writefln("--== Testing array_utils ==--");
+    writefln("=============================");
+    writefln(" Testing array_utils");
+    writefln("=============================");
 
     {
         writefln("- first()");
@@ -277,6 +279,18 @@ void testArrayUtils() {
         assert(b == [2,3,4]);
         assert(3 == b.removeAt(1));
         assert(b == [2,4]);
+    }
+    {
+        writefln("- unorderedRemoveAt");
+        ubyte[] a = [1,2,3,4];
+        assert(1 == a.unorderedRemoveAt(0));
+        assert(a == [4,2,3]);
+        assert(2 == a.unorderedRemoveAt(1));
+        assert(a == [4,3]);
+        assert(3 == a.unorderedRemoveAt(1));
+        assert(a == [4]);
+        assert(4 == a.unorderedRemoveAt(0));
+        assert(a == []);
     }
     {
         writefln("- removeFirstMatch");
