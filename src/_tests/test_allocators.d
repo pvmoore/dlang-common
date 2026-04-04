@@ -12,10 +12,11 @@ import _tests.test;
 void testAllocators() {
     writefln("--== Testing Allocators ==--");
     static if(RUN_SUBSET) {
-       
+        testContiguousFreeList();
     } else {
         testFreeList();
         testStaticFreeList();
+        testContiguousFreeList();
         testBasicAllocator();
         testArenaAllocator();
         testStructStorage();
@@ -343,6 +344,266 @@ void testStaticFreeList() {
         _fuzzit!100(0.25);
         _fuzzit!100(0.5);
         _fuzzit!100(0.75);
+    }
+}
+void testContiguousFreeList() {
+    writefln("==========================");
+    writefln(" Test ContiguousFreeList");
+    writefln("==========================");
+
+    char[8] data;
+    ContiguousFreeList list;
+
+    void delegate(uint from, uint to) callback = (from, to) {
+        data[to]   = data[from];
+        data[from] = 'X';
+    };
+
+    char[] getOrderedData(char[] d, ContiguousFreeList.Handle[] handles, char initValue = 0) {
+        char[] s = new char[d.length]; s[] = initValue;
+        foreach(n, h; handles) {
+            s[n] = d[list.getIndex(h)];
+        }
+        return s;
+    }
+
+    void displayData(ContiguousFreeList.Handle[] handles, string expectedRaw) {
+        writeln(list.toString());
+        writefln("data (ordered) = [%s]", getOrderedData(data, handles, '.'));
+        writefln("data (raw)     = [%s]", data);
+        writefln("expected (raw) = [%s]", expectedRaw);
+        assert(data == expectedRaw);
+    }
+    void setData(ContiguousFreeList.Handle[] handles, char[] values) {
+        assert(handles.length == values.length);
+       foreach(i, h; handles) data[list.getIndex(h)] = values[i];
+    }
+    void assertSizeUsedFree(uint size, uint used, uint free) {
+        assert(list.size() == size);
+        assert(list.numUsed() == used);
+        assert(list.numFree() == free);
+    }
+
+    {   
+        writefln("/////////////////////////////////////////////////////////////");
+        writefln(" - construct instance");
+        data[] = '.';
+        list = new ContiguousFreeList(data.length.as!uint, (from, to) {
+            throwIf(true, "We should not be called");
+        });
+        assertSizeUsedFree(8, 0, 8);
+        displayData([], "........");
+    }
+    {
+        writefln("/////////////////////////////////////////////////////////////");
+        writefln(" - acquire 1 slot and release it");
+        writefln("/////////////////////////////////////////////////////////////");
+        data[] = '.';
+        list = new ContiguousFreeList(data.length.as!uint, callback);
+
+        auto h = list.acquire(); assertSizeUsedFree(8, 1, 7);
+        setData([h], ['a']);
+        displayData([h], "a.......");
+
+        list.release(h); assertSizeUsedFree(8, 0, 8);
+        displayData([], "X.......");
+    }
+    {
+        writefln("/////////////////////////////////////////////////////////////");
+        writefln(" - acquire 4 slots");
+        writefln("/////////////////////////////////////////////////////////////");
+        data[] = '.';
+        list = new ContiguousFreeList(data.length.as!uint, (from, to) {
+            throwIf(true, "We should not be called");
+        });
+        
+        auto h  = list.acquire(); assertSizeUsedFree(8, 1, 7);
+        auto h2 = list.acquire(); assertSizeUsedFree(8, 2, 6);
+        auto h3 = list.acquire(); assertSizeUsedFree(8, 3, 5);
+        auto h4 = list.acquire(); assertSizeUsedFree(8, 4, 4);
+
+        setData([h, h2, h3, h4], ['a', 'b', 'c', 'd']);
+        displayData([h, h2, h3, h4], "abcd....");
+    }
+    {
+        writefln("/////////////////////////////////////////////////////////////");
+        writefln(" - acquire and release");
+        writefln("/////////////////////////////////////////////////////////////");
+        data[] = '.';
+        list = new ContiguousFreeList(data.length.as!uint, callback);
+
+        auto h0  = list.acquire();
+        auto h1 = list.acquire();
+        auto h2 = list.acquire();
+        auto h3 = list.acquire();
+        setData([h0, h1, h2, h3], ['a', 'b', 'c', 'd']);
+        displayData([h0, h1, h2, h3], "abcd....");
+
+        // Release Handle(0) -> [d, b, c, X]
+        writefln(" - releasing Handle(0)");
+        list.release(h0); assertSizeUsedFree(8, 3, 5);
+        displayData([h1, h2, h3], "dbcX....");
+    }
+    {
+        writefln("/////////////////////////////////////////////////////////////");
+        writefln(" - acquire and release 2");
+        writefln("/////////////////////////////////////////////////////////////");
+        data[] = '.';
+        list = new ContiguousFreeList(data.length.as!uint, callback);
+
+        // Acquire 4 Handles [a, b, c, d]
+        auto h0 = list.acquire();
+        auto h1 = list.acquire();
+        auto h2 = list.acquire();
+        auto h3 = list.acquire();
+        setData([h0, h1, h2, h3], ['a', 'b', 'c', 'd']);
+        displayData([h0, h1, h2, h3], "abcd....");
+
+        // Release Handle(1) -> [a, d, c, X]
+        writefln(" - releasing Handle(1)");
+        list.release(h1); assertSizeUsedFree(8, 3, 5);
+        displayData([h0, h2, h3], "adcX....");
+
+        // Release Handle(2) -> [a, d, X, X]
+        writefln(" - releasing Handle(2)");
+        list.release(h2); assertSizeUsedFree(8, 2, 6);
+        displayData([h0, h3], "adXX....");
+    }
+    {
+        writefln("/////////////////////////////////////////////////////////////");
+        writefln(" - acquire and release 3");
+        writefln("/////////////////////////////////////////////////////////////");
+        data[] = '.';
+        list = new ContiguousFreeList(data.length.as!uint, callback);
+
+        // Acquire 4 Handles [a, b, c, d]
+        auto h0 = list.acquire();
+        auto h1 = list.acquire();
+        auto h2 = list.acquire();
+        auto h3 = list.acquire();
+        setData([h0, h1, h2, h3], ['a', 'b', 'c', 'd']);
+        displayData([h0, h1, h2, h3], "abcd....");
+
+        // Release Handle(0) -> [d, b, c, X]
+        writefln(" - releasing Handle(0)");
+        list.release(h0); assertSizeUsedFree(8, 3, 5);
+        displayData([h1, h2, h3], "dbcX....");
+
+        // Release Handle(1) -> [d, c, X, X]
+        writefln(" - releasing Handle(1)");
+        list.release(h1); assertSizeUsedFree(8, 2, 6);
+        displayData([h2, h3], "dcXX....");
+
+        // Release Handle(2) -> [d, X, X, X]
+        writefln(" - releasing Handle(2)");
+        list.release(h2); assertSizeUsedFree(8, 1, 7);
+        displayData([h3], "dXXX....");
+
+        // Release Handle(3) -> [X, X, X, X]
+        writefln(" - releasing Handle(3)");
+        list.release(h3); assertSizeUsedFree(8, 0, 8);
+        displayData([], "XXXX....");
+
+        // ContiguousFreeList state is now:
+        // handleToIndex : [3, 2, 1, 0]
+        // indexToHandle : [3, 2, 1, 0]
+
+        // Let's acquire 2 new handles now
+        auto h4 = list.acquire();
+        auto h5 = list.acquire();
+        writefln("h4 = %s", h4);
+        writefln("h5 = %s", h5);
+
+        setData([h4, h5], ['e', 'f']);
+        displayData([h4, h5], "efXX....");
+    }
+
+    Mt19937 rng;
+    rng.seed(unpredictableSeed());
+
+    void _fuzzTest(uint COUNT, uint LEN, float ACQUIRE_RATIO) {
+        writefln("- [count: %s, data len: %s, acquire ratio: %s]", COUNT, LEN, ACQUIRE_RATIO);
+
+        uint[] fdata = new uint[LEN];
+        void delegate(uint from, uint to) fcallback = (from, to) { fdata[to] = fdata[from]; };
+        auto flist = new ContiguousFreeList(LEN, fcallback);
+
+        uint[uint] expected; // [id] -> value
+
+        ContiguousFreeList.Handle[] handles;
+        uint maxHandles;
+        uint numAcquires;
+        uint numReleases;
+
+        foreach(i; 0..COUNT) {
+            auto r = uniform01(rng);
+            if(r < ACQUIRE_RATIO) {
+
+                if(handles.length < LEN) {
+                    auto h = flist.acquire();
+                    auto value = uniform(0, LEN, rng);
+                    fdata[flist.getIndex(h)] = value;
+                    handles ~= h;
+
+                    expected[h.id] = value;
+
+                    // writefln(" - acquire %s, set index[%s] = %s fdata = %s, handles = %s", 
+                    //     h, h.index(), fdata[h.index()], fdata[0..handles.length], handles.map!(it=>"%s".format(it.id)).join(","));
+                    numAcquires++;
+                    if(handles.length > maxHandles) maxHandles = handles.length.as!uint;
+                }
+            } else {
+                if(handles.length == 0) {
+                    // Nothing to release
+                } else if(handles.length == 1) {
+                    // Release the only handle
+                    //uint idx = handles[0].index();
+                    flist.release(handles[0]);
+
+                    expected.remove(handles[0].id);
+
+                    //writefln(" - release[%s] fdata = [], handles = []", idx);
+                    handles.length = 0;
+                    numReleases++;
+                } else {
+                    // Release a random handle
+                    auto n = uniform(0, handles.length.as!uint, rng);
+                    auto h = handles.unorderedRemoveAt(n);
+                    //uint idx = h.index();
+                    flist.release(h);
+
+                    expected.remove(h.id);
+
+                    // writefln(" - release[%s] fdata = %s, handles = %s", 
+                    //     idx, fdata[0..handles.length], handles.map!(it=>"%s".format(it.id)).join(","));
+                    numReleases++;
+                }
+            }
+        }
+        writefln("  num acquires: %s, releases: %s (%s handles at the end), max handles: %s", 
+            numAcquires, numReleases, handles.length, maxHandles);
+
+        // Assert the length
+        assert(expected.length == handles.length);
+
+        foreach(h; handles) {
+            uint actualId = h.id; 
+            uint actualValue = fdata[flist.getIndex(h)];
+            uint expectedValue = expected[actualId];
+            assert(actualValue == expectedValue);
+
+            // if(handles.length < 100) {
+            //     writefln("[id %s] = %s", actualId, actualValue);
+            // }
+        }
+    }
+
+    writefln("##############################################################");
+    writefln("Fuzz tests");
+    writefln("##############################################################");
+
+    foreach(i; 0..10) {
+        _fuzzTest(1000, 1000, 0.5 + uniform(0.0f, 0.5, rng));
     }
 }
 

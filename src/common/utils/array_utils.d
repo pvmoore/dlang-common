@@ -137,8 +137,18 @@ T removeAt(T)(ref T[] array, ulong index) {
 T unorderedRemoveAt(T)(ref T[] array, ulong index) {
 	assert(index < array.length);
 
+	import std.traits : isAssignable;
+
 	T element = array[index];
-	array[index] = array[$-1];
+
+	static if(!isAssignable!T) {
+		// Use memcpy since T is not assignable. Maybe it has const members or similar
+		import core.stdc.string : memcpy;
+		memcpy(array.ptr + index, array.ptr + array.length-1, T.sizeof);
+
+	} else {
+		array[index] = array[$-1];
+	}
 	array.length--;
 	return element;
 } 

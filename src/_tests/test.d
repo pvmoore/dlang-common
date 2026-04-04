@@ -38,7 +38,7 @@ import _tests.bench.bench;
 import _tests.containers.test_containers;
 import _tests.containers.test_set;
 
-enum RUN_SUBSET = true;
+enum RUN_SUBSET = false;
 
 extern(C) void asm_test();
 
@@ -60,13 +60,22 @@ void main(string[] args) {
     }
 }
 //──────────────────────────────────────────────────────────────────────────────────────────────────
+void assertThrow(void delegate() func) {
+    try{
+        func();
+        assert(false, "Expected an exception to be thrown but it was not");
+    }catch(Throwable t) {
+        //writefln("Thrown: %s", t.msg);
+    }
+}
+//──────────────────────────────────────────────────────────────────────────────────────────────────
 void runTests() {
     writefln("Running tests");
     scope(failure) writefln("-- FAIL");
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testUtils();
+        testAllocators();
     } else {
 
         asm_test();

@@ -26,4 +26,5 @@ import common.allocators.BasicAllocator;
 import common.allocators.FreeList;
 import common.allocators.HeapStorage;
 import common.allocators.StaticFreeList;
+import common.allocators.ContiguousFreeList;
 import common.allocators.StructStorage;
