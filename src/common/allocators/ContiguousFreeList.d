@@ -5,8 +5,8 @@ import common.all;
 /** 
  *  A free list for memory that needs to be allocated as a contiguous block for eg. GPU data.     
  *  This does not mean it is ordered, only that there will be no unallocated holes.
- *  Released slots are filled by swapping in the contents of the last slot and the ID
- *  table adjusted so that values allocated at each ID still point to the same data.
+ *  Released slots are filled by swapping in the contents of the last slot and the Handle
+ *  table adjusted so that values allocated at each Handle still point to the same data.
  *  A callback is called in most cases after release() is called so that the user can keep the data in sync.
  * 
  *  Example callback:
