@@ -3,6 +3,7 @@ module common.containers.UnorderedMap;
 import common.all;
 import common.containers;
 private import common.containers.containers_internal;
+private import std.traits : isNumeric;
 
 /**
  * Associative array using linear probing.
@@ -11,7 +12,9 @@ private import common.containers.containers_internal;
  *
  * OPTION: Ignore this template parameter. This sets options for benchmarking.
  */
-final class UnorderedMap(K, V, uint OPTION = 0) {
+final class UnorderedMap(K, V, uint OPTION = 0) 
+    if(isNumeric!K || isStruct!K || isObject!K || isSomeString!K)
+{
     static assert(OPTION == 0 || OPTION == 1);
 public:
     this(ulong capacity = 16, float loadFactor = 0.75) {
@@ -107,7 +110,7 @@ public:
     /** 
      * Returns true if the key is in the map
      */
-    bool containsKey(K key) const {
+    bool containsKey(K key) {
         static if(isObject!K) assert(key !is null);
         return findSlotForKey(key) != -1;
     }
@@ -298,7 +301,7 @@ public:
         // Here we can rehash the keys if the capacity is too large
         // Also, we can reorganise the value data which may contain empty pages 
     }
-    void dump() {
+    debug void dump() {
         foreach(slot; 0..slots.length.as!uint) { 
             V value = *getValue(slot);
             string f = "%s".format(isOccupied(slot) ? "O" : "-");
@@ -378,7 +381,7 @@ private:
         pages ~= Page(new V[length]);
     }
 
-    bool isOccupied(uint slot) const {
+    bool isOccupied(uint slot) {
         uint u = slot >>> 5;
         uint r = slot & 31;
         return ((flags[u] >>> r) & 1) == 1;
@@ -394,17 +397,17 @@ private:
         flags[u] &= ~(1 << r);
     }
     /** Get the next slot, wrapping around if necessary */
-    uint nextSlot(uint slot) const {
+    uint nextSlot(uint slot) {
         return (slot+1) & mask;
     }
-    uint getSlot(K key) const {
+    uint getSlot(K key) {
         return (getHash(key) & mask).as!uint;
     }
     /**
      * Find the slot for a given key
      * Returns -1 if not found
      */
-    long findSlotForKey(K key) const {
+    long findSlotForKey(K key) {
         uint slot = getSlot(key);
         ulong keyHash = getHash(key);
 
@@ -422,18 +425,37 @@ private:
 
         return isOccupied(slot) ? slot : -1L;
     }
-    bool slotContainsKey(K key, ulong keyHash, uint slot) const {
+    bool slotContainsKey(K key, ulong keyHash, uint slot) {
         return keyHash == getHash(slots[slot]) && slots[slot] == key;
     }
-    ulong getHash(inout K key) const {
-        // Call toHash if K implements it
-        static if(__traits(compiles, key.toHash())) {
-            ulong hash = key.toHash();
-        } else static if(is(K : ulong)) {
-            // All integer types should use this hash
-            ulong hash = hash3(key);
-        } else static if(is(K==string)) {
+    ulong getHash(K key) {
+        static if(is(K==string)) {
             ulong hash = djb2_hash(key);
+        } else static if((isStruct!K || isObject!K) && hasMethodWithName!(K,"toHash")) {
+            // Call toHash if K implements it
+            ulong hash = key.toHash();
+        } else static if(is(K : uint)) {
+            ulong hash = hash6(key);
+        } else static if(is(K : ulong)) {
+            ulong hash = hash3(key);
+        } else static if(is(K == float)) {
+            // float use the ulong hash on the raw bits
+            uint k = *((&key).as!(uint*));
+            ulong hash = hash6(k);
+        } else static if(is(K == double)) {
+            // double use the ulong hash on the raw bits
+            ulong k = *((&key).as!(ulong*));
+            ulong hash = hash3(k);   
+        } else static if(isStruct!K) {
+            static if(K.sizeof == 8) {
+                ulong k = *((&key).as!(ulong*));
+                ulong hash = hash3(k);
+            } else static if(K.sizeof == 4) {
+                uint k = *((&key).as!(uint*));
+                ulong hash = hash6(k);
+            } else {
+                ulong hash = djb2_hash(&key, K.sizeof);
+            }
         } else {
             // todo - We could hash the raw bytes of this type here instead
             TypeInfo t = typeid(typeof(key));

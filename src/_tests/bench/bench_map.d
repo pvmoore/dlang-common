@@ -2,6 +2,7 @@ module _tests.bench.bench_map;
 
 import common;
 import common.containers;
+import common.containers.containers_internal;
 import _tests.bench.bench;
 
 void benchMap() {
@@ -11,13 +12,42 @@ void benchMap() {
 
     enum numKeys = 10_000;
 
-    executeBenchmarks(getBenchmarks!uint(numKeys));
-    // executeBenchmarks!ulong(getBenchmarks!uint(numKeys));
-    // executeBenchmarks!float(getBenchmarks!uint(numKeys));
-    executeBenchmarks!string(getBenchmarks!string(numKeys));
+    // executeBenchmarks(getBenchmarks!uint(numKeys));
+    // executeBenchmarks(getBenchmarks!ulong(numKeys));
+    // executeBenchmarks(getBenchmarks!float(numKeys));
+    // executeBenchmarks(getBenchmarks!string(numKeys));
+    // executeBenchmarks(getBenchmarks!Struct4(numKeys));
+    // executeBenchmarks(getBenchmarks!Struct8(numKeys));
+    executeBenchmarks(getBenchmarks!Struct20(numKeys));
+    executeBenchmarks(getBenchmarks!StructToHash(numKeys)); 
 }
 
 private:
+
+struct Struct4 { static assert(Struct4.sizeof == 4);
+    uint a;
+}
+struct Struct8 { static assert(Struct8.sizeof == 8);
+    uint a;
+    uint b;
+}
+struct Struct20 { static assert(Struct20.sizeof == 20);
+    uint a;
+    uint b;
+    uint c;
+    uint d;
+    uint e;
+}
+struct StructToHash {
+    uint a;
+    uint b;
+    uint c;
+    uint d;
+    uint e;
+    ulong toHash() { 
+        return djb2_hash(&this, StructToHash.sizeof);
+    }
+}
 
 Benchmark!T[] getBenchmarks(T)(ulong numKeys) {
     return [
@@ -108,8 +138,6 @@ public:
         }
     }
     final BenchmarkSubject!T[] getSubjects() {
-        // HASH = 0 uses the UnorderedMap hash0 function
-        // HASH = 3 uses the UnorderedMap hash3 function
         return [
             cast(BenchmarkSubject!T)new BuiltinMap!T(),
             new UnorderedMapWrapper!(T, 0)(16, 0.9),

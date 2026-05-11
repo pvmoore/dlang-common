@@ -62,11 +62,39 @@ uint hash3a(uint a) {
    return a;
 }
 
+/** Hash a uint to a ulong by performing a djb2 hash on the two 16 bit parts */
+ulong hash6(uint key) {
+    ulong hash = 5381;
+    hash = ((hash << 5) + hash) + (key >>> 16);
+    hash = ((hash << 5) + hash) + (key & 0xffff);
+    return hash;
+}
+
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 ulong djb2_hash(string s) {
     ulong hash = 5381;
     foreach(c; s) {
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    }
+    return hash;
+}
+
+ulong djb2_hash(void* ptr, uint count) {
+    ulong hash = 5381;
+
+    uint ulen = count >> 3;
+    uint urem = count & 7;
+    ulong* uptr = ptr.as!(ulong*);
+    if(ulen > 0) {
+        foreach(c; 0..ulen) {
+            hash = ((hash << 5) + hash) + *uptr++; /* hash * 33 + c */
+        }
+    }
+    if(urem > 0) {
+        ubyte* bytes = uptr.as!(ubyte*);
+        foreach(c; 0..urem) {
+            hash = ((hash << 5) + hash) + *bytes++; /* hash * 33 + c */
+        }
     }
     return hash;
 }

@@ -184,6 +184,18 @@ auto createUniqueKeys(T : float)(ulong num) {
     randomShuffle(keys);
     return keys;
 }
+auto createUniqueKeys(T)(ulong num) if(isStruct!T && !isSomeString!T) {
+    T[] keys    = new T[num];
+    ubyte* dest = keys.ptr.as!(ubyte*);
+
+    foreach(i; 0..T.sizeof * num) {
+        // Fill each struct with random bytes
+        ubyte r = uniform(0, 256).as!ubyte;
+        *dest++ = r;
+    }
+    randomShuffle(keys);
+    return keys;
+}
 auto createUniqueKeys(T : string)(ulong num) {
     T[] keys = new T[num];
     foreach(i; 0..num) {
@@ -220,6 +232,26 @@ auto createDuplicateKeys(T : string)(ulong num) {
     T[] keys = new T[num];
     foreach(i; 0..num) {
         keys[i] = uniform(0, 100).to!string;
+    }
+    randomShuffle(keys);
+    return keys;
+}
+auto createDuplicateKeys(T)(ulong num) if(isStruct!T && !isSomeString!T) {
+    throwIf((num % 10) != 0, "num must be a multiple of 10");
+    T[] keys = new T[num];
+    auto numUnique = num / 10;
+    ubyte* dest  = keys.ptr.as!(ubyte*);
+
+    // Create numUnique structs containing random bytes
+    foreach(i; 0..T.sizeof * numUnique) {
+        ubyte r = uniform(0, 256).as!ubyte;
+        *dest++ = r;
+    }
+    // Duplicate the unique ones 10 times
+    foreach(j; 0..10) {
+        foreach(i; 0..numUnique) {
+            keys[j*numUnique + i] = keys[i];
+        }
     }
     randomShuffle(keys);
     return keys;
