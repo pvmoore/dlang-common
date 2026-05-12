@@ -67,7 +67,7 @@ void runBenchmarks() {
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 void executeBenchmarks(T)(Benchmark!T[] benchmarks) {
     foreach(d; benchmarks) {
-        writefln("%s (%s)",d.label, T.stringof);
+        writefln("%64s (%s)",d.label, T.stringof);
         uint iterations = 1000;
 
         auto subjects = d.task.getSubjects();
@@ -98,7 +98,7 @@ void executeBenchmarks(T)(Benchmark!T[] benchmarks) {
             highest = r.average > highest ? r.average : highest;
         }
         foreach(r; results) {
-            string colour = Ansi.YELLOW;
+            string colour = Ansi.WHITE;
             if(r.average == lowest) {
                 colour = Ansi.GREEN_BOLD;
             } else if(r.average == highest) {
@@ -106,7 +106,7 @@ void executeBenchmarks(T)(Benchmark!T[] benchmarks) {
             } 
             ulong diff = r.average - lowest;
             string diffStr = diff == 0 ? "" : ansiWrap(" +%.5f (+%.1f%%)".format(diff/1_000_000.0, diff*100.0/lowest), Ansi.CYAN);
-            writefln("%s%s", ansiWrap("  %s : %.5f".format(r.name, r.average/1_000_000.0), colour), diffStr);
+            writefln("%s%s", ansiWrap("  %25s : %.5f".format(r.name, r.average/1_000_000.0), colour), diffStr);
         }
     }
 }

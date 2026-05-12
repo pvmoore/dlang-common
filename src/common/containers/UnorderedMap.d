@@ -10,12 +10,10 @@ private import std.traits : isNumeric;
  *
  * Faster than the built-in associative array in my testing.
  *
- * OPTION: Ignore this template parameter. This sets options for benchmarking.
  */
-final class UnorderedMap(K, V, uint OPTION = 0) 
+final class UnorderedMap(K, V) 
     if(isNumeric!K || isStruct!K || isObject!K || isSomeString!K)
 {
-    static assert(OPTION == 0 || OPTION == 1);
 public:
     this(ulong capacity = 16, float loadFactor = 0.75) {
         throwIf(!isPowerOf2(capacity), "capacity must be a power of 2");
@@ -26,11 +24,11 @@ public:
 
         this.slots.length     = capacity;
         this.flags.length     = capacity / 32 + 1;
-        this.pageIndex.length = capacity;
+        this.valuePtrs.length = capacity;
 
         this.numKeysThreshold = calculateLoadFactorThreshold(capacity, loadFactor);
 
-        addPage();
+        allocateStorage();
     }
     bool isEmpty() const {
         return numKeys == 0;
@@ -103,7 +101,7 @@ public:
         static if(isObject!K) assert(key !is null);
         long slot = findSlotForKey(key);
         if(slot != -1) {
-            return getValue(slot.as!uint);
+            return valuePtrs[slot];
         }
         return null;
     }
@@ -144,7 +142,9 @@ public:
                     // This key can be moved into the free slot
                     setOccupied(freeSlot);
                     slots[freeSlot] = slots[slot];
-                    pageIndex[freeSlot] = pageIndex[slot];
+                    // pageIndex[freeSlot] = pageIndex[slot];
+                    valuePtrs[freeSlot] = valuePtrs[slot];
+                    valuePtrs[slot] = null;
 
                     // This slot is now the new free slot
                     setFree(slot);
@@ -198,7 +198,7 @@ public:
             return null;
         } 
         // Update the value in the map
-        V* valuePtr = getValue(slot.as!uint);
+        V* valuePtr = valuePtrs[slot];
         if(updateFunc(key, valuePtr)) {
             return valuePtr;
         }
@@ -224,7 +224,7 @@ public:
         V[] result;
         foreach(slot; 0..slots.length.as!uint) {
             if(isOccupied(slot)) {
-                result ~= *getValue(slot);
+                result ~= *valuePtrs[slot];
             }
         }
         return result;
@@ -274,8 +274,10 @@ public:
         return Range(keys(), values()); 
     }
     /** 
-     * Remove all keys from the map. Key memory is zeroed. 
-     * Value memory is not affected. Capacity is not changed
+     * Remove all keys from the map. 
+     * Key memory is zeroed. 
+     * Capacity is not changed.
+     * Previously allocated Arena memory is not affected. 
      */
     void clear() {
         numKeys = 0;
@@ -284,12 +286,11 @@ public:
         ptr[0..slots.length * K.sizeof] = 0;
         
         flags[] = 0;
-        pageIndex[] = 0;
+        valuePtrs[] = null;
 
-        // Release the pages. The value pointers will still be valid if the client holds the pointer
-        // but otherwise they will be garbage collected at some point 
-        pages.length = 0;
-        addPage();
+        // Release the existing storage. Pointers into the previous storage will still be valid if the client 
+        // holds a pointer into it but otherwise it will be garbage collected at some point 
+        allocateStorage();
     }
     /** 
      * Rehash the map to optimise memory usage or change the load factor
@@ -301,16 +302,16 @@ public:
         // Here we can rehash the keys if the capacity is too large
         // Also, we can reorganise the value data which may contain empty pages 
     }
-    debug void dump() {
+    void dump() {
         foreach(slot; 0..slots.length.as!uint) { 
-            V value = *getValue(slot);
+            V* valuePtr = valuePtrs[slot];
             string f = "%s".format(isOccupied(slot) ? "O" : "-");
-            string s = isOccupied(slot) ? "%s = %s".format(slots[slot], value) : ""; 
+            string s = isOccupied(slot) ? "%s = %s".format(slots[slot], *valuePtr) : ""; 
 
             writefln("[%2s %s] %s", slot, f, s);
         }
-        writefln("size = %s/%s, pages = %s, load = %.2f, threshold = %s", size(), slots.length, 
-            pages.length, numKeys.as!float / slots.length, numKeysThreshold);
+        writefln("size = %s/%s, load = %.2f, threshold = %s", size(), slots.length, 
+            numKeys.as!float / slots.length, numKeysThreshold);
     }
 //──────────────────────────────────────────────────────────────────────────────────────────────────
 private:
@@ -324,18 +325,41 @@ private:
     // all into an array of structs
     K[] slots;              // slots.length is current capacity
     uint[] flags;           // Bit flags for key slots. 1 = occupied, 0 = free
-    ulong[] pageIndex;      // (page<<32 | index) for each slot value
+    V*[] valuePtrs;         // Array of pointers into storage 
 
-    // These are related to value storage
-    int pagePointer;
-    Page[] pages;
-    
-    static struct Page {
-        V[] array;
+    // Value storage. This is arranged as a GC allocated array of V which is discarded and replaced with another 
+    //                array when more value storage is required. This means that the GC can manage the lifetime of
+    //                each allocated array and collect if nothing points into it. We hold a pointer in valuePtrs if 
+    //                there is a key associated with it, otherwise the client may also have a pointer to the value
+    //                if they have called getPtr().
+    //                New values are added at storageIndex. 
+    //                It might be useful to allow the user to set the page size at runtime. 
+    //                A smaller value would mean the GC is more likely to collect memory but more allocations would be required 
+    //                (and the opposite for a larger value).
+    V[] storage;
+    uint storageIndex;
+    enum STORAGE_PAGE_SIZE = 4096;
+
+    void allocateStorage() {
+        storage = uninitializedArray!(V[])(STORAGE_PAGE_SIZE);
+        storageIndex = 0;
+    }
+    V* addValue(uint slot, V value) {
+        assert(storage.length > 0);
+
+        if(storageIndex >= storage.length) {
+            allocateStorage();
+        }
+
+        storage[storageIndex] = value;
+        valuePtrs[slot] = &storage[storageIndex];
+        storageIndex++;
+
+        return valuePtrs[slot];
     }
 
     V* addKeyValue(uint slot, K key, V value) {
-        // This will also set the page and index in _slot_
+        // This will also set valuePtrs[slot] = value
         V* valuePtr = addValue(slot, value);        
 
         numKeys++;
@@ -347,38 +371,6 @@ private:
         }
 
         return valuePtr;
-    }
-    V* addValue(uint slot, V value) {
-        assert(pages.length > 0);
-
-        pagePointer++;
-        if(pagePointer >= pages[$-1].array.length) {
-            addPage();
-            pagePointer = 0;
-        }
-        ulong page = pages.length - 1;
-
-        // Update the slot page|index data
-        pageIndex[slot] = (page << 32) | pagePointer;  
-
-        V* ptr = &pages[page].array[pagePointer];
-        *ptr = value;
-        return ptr;
-    }
-    V* getValue(uint slot) {
-        ulong page = pageIndex[slot] >>> 32;
-        ulong index = pageIndex[slot] & 0xFFFF_FFFF;
-        assert(page < pages.length);
-        assert(index < pages[page].array.length);
-        return &pages[page].array[index];
-    }
-    void addPage() {
-        assert(slots.length > 0);
-        // Maximum page array length is 1M values for no particular reason
-        const maxLength = 1024*1024;
-        auto length = slots.length < maxLength ? slots.length : maxLength;
-        pagePointer = -1;
-        pages ~= Page(new V[length]);
     }
 
     bool isOccupied(uint slot) {
@@ -409,18 +401,10 @@ private:
      */
     long findSlotForKey(K key) {
         uint slot = getSlot(key);
-        ulong keyHash = getHash(key);
 
-        static if(OPTION == 0) {
-            // Use opEquals to check each slot until we find the key or an unoccupied slot
-            while(isOccupied(slot) && slots[slot] != key) {
-                slot = nextSlot(slot);
-            }
-        } else static if(OPTION == 1) {
-            // Check slot hash before checking key equality (this may be slower if the hash function is slower than opEquals)
-            while(isOccupied(slot) && !slotContainsKey(key, keyHash, slot)) {
-                slot = nextSlot(slot);
-            }
+        // Use opEquals to check each slot until we find the key or an unoccupied slot
+        while(isOccupied(slot) && slots[slot] != key) {
+            slot = nextSlot(slot);
         }
 
         return isOccupied(slot) ? slot : -1L;
@@ -480,13 +464,13 @@ private:
     void expand() {
         K[] oldSlots         = slots;
         uint[] oldFlags      = flags;
-        ulong[] oldPageIndex = pageIndex;
+        V*[] oldValuePtrs    = valuePtrs;
         auto length          = slots.length * 2;
 
         this.mask             = length - 1;
         this.slots            = new K[length];
         this.flags            = new uint[length / 32 + 1];
-        this.pageIndex        = new ulong[length];
+        this.valuePtrs        = new V*[length];
         this.numKeysThreshold = calculateLoadFactorThreshold(length, loadFactor);
 
         uint u   = 0;
@@ -501,7 +485,7 @@ private:
 
                 setOccupied(newSlot);
                 slots[newSlot]     = oldSlots[oldSlot];
-                pageIndex[newSlot] = oldPageIndex[oldSlot];
+                valuePtrs[newSlot] = oldValuePtrs[oldSlot];
             }
 
             bit <<= 1;

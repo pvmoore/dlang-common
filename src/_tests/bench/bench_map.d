@@ -12,12 +12,12 @@ void benchMap() {
 
     enum numKeys = 10_000;
 
-    // executeBenchmarks(getBenchmarks!uint(numKeys));
-    // executeBenchmarks(getBenchmarks!ulong(numKeys));
-    // executeBenchmarks(getBenchmarks!float(numKeys));
-    // executeBenchmarks(getBenchmarks!string(numKeys));
-    // executeBenchmarks(getBenchmarks!Struct4(numKeys));
-    // executeBenchmarks(getBenchmarks!Struct8(numKeys));
+    executeBenchmarks(getBenchmarks!uint(numKeys));
+    executeBenchmarks(getBenchmarks!ulong(numKeys));
+    executeBenchmarks(getBenchmarks!float(numKeys));
+    executeBenchmarks(getBenchmarks!string(numKeys));
+    executeBenchmarks(getBenchmarks!Struct4(numKeys));
+    executeBenchmarks(getBenchmarks!Struct8(numKeys));
     executeBenchmarks(getBenchmarks!Struct20(numKeys));
     executeBenchmarks(getBenchmarks!StructToHash(numKeys)); 
 }
@@ -74,7 +74,7 @@ final class BuiltinMap(T) : MapSubject!T {
     uint[T] map;
 
     string name() {
-        return "BuiltinMap ..............";
+        return "BuiltinMap";
     }
     void insert(T key, uint value) {
         map[key] = value;
@@ -92,10 +92,10 @@ final class BuiltinMap(T) : MapSubject!T {
         map = null;
     }
 }
-final class UnorderedMapWrapper(T, uint OPTION) : MapSubject!T {
+final class UnorderedMapWrapper(T) : MapSubject!T {
     ulong capacity;
     float loadFactor;
-    UnorderedMap!(T, uint, OPTION) map;
+    UnorderedMap!(T, uint) map;
 
     this(ulong capacity, float loadFactor) {
         this.capacity = capacity;
@@ -104,7 +104,7 @@ final class UnorderedMapWrapper(T, uint OPTION) : MapSubject!T {
     }
 
     string name() {
-        return "UnorderedMap!%s (%s, %.2f)".format(OPTION, capacity, loadFactor);
+        return "UnorderedMap (%s, %.2f)".format(capacity, loadFactor);
     }
     void insert(T key, uint value) {
         map.insert(key, value);
@@ -119,7 +119,7 @@ final class UnorderedMapWrapper(T, uint OPTION) : MapSubject!T {
         return map.size();
     }
     void reset() {
-        map = new UnorderedMap!(T, uint, OPTION)(capacity, loadFactor);
+        map = new UnorderedMap!(T, uint)(capacity, loadFactor);
     }
 }
 //──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -140,26 +140,13 @@ public:
     final BenchmarkSubject!T[] getSubjects() {
         return [
             cast(BenchmarkSubject!T)new BuiltinMap!T(),
-            new UnorderedMapWrapper!(T, 0)(16, 0.9),
-            new UnorderedMapWrapper!(T, 1)(16, 0.9), 
-
-            new UnorderedMapWrapper!(T, 0)(16, 0.8),
-            new UnorderedMapWrapper!(T, 1)(16, 0.8),
-
-            new UnorderedMapWrapper!(T, 0)(16, 0.75),
-            new UnorderedMapWrapper!(T, 1)(16, 0.75),
-
-            new UnorderedMapWrapper!(T, 0)(1024, 0.75),  
-            new UnorderedMapWrapper!(T, 1)(1024, 0.75),  
-
-            new UnorderedMapWrapper!(T, 0)(16, 0.6),
-            new UnorderedMapWrapper!(T, 1)(16, 0.6),
-
-            new UnorderedMapWrapper!(T, 0)(16, 0.5),
-            new UnorderedMapWrapper!(T, 1)(16, 0.5),
-
-            new UnorderedMapWrapper!(T, 0)(16, 0.25),
-            new UnorderedMapWrapper!(T, 1)(16, 0.25),
+            
+            new UnorderedMapWrapper!(T)(16, 0.75),
+            new UnorderedMapWrapper!(T)(16, 0.25),
+            new UnorderedMapWrapper!(T)(16, 0.5),
+            new UnorderedMapWrapper!(T)(16, 0.8),
+            new UnorderedMapWrapper!(T)(16, 0.9),
+            new UnorderedMapWrapper!(T)(1024, 0.75),  
         ];
     }
     final string getFinalResult() {
