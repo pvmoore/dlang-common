@@ -38,7 +38,7 @@ import _tests.bench.bench;
 import _tests.containers.test_containers;
 import _tests.containers.test_set;
 
-enum RUN_SUBSET = false;
+enum RUN_SUBSET = true;
 
 extern(C) void asm_test();
 
@@ -75,7 +75,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testContainers();
+        testOptional();
     } else {
 
         asm_test();
@@ -84,6 +84,7 @@ void runTests() {
         testAllocators();
         testBetterc();
         testBool3();
+        testOptional();
         testContainers();
         testHasher();
         testIo();
@@ -166,6 +167,96 @@ void testStructCache() {
     cache.take();
     writefln("%s", cache);
 
+}
+void testOptional() {
+    writefln("--== Testing Optional ==--");
+
+    void assertPresent(optional!int o, int value) {
+        bool call1 = false;
+        bool call2 = false;
+
+        assert(o.isPresent() == true);
+        assert(o.get() == value);
+        assert(o.orElse(1) == value);
+        o.ifPresent((it) {
+            call1 = true;
+            assert(it == value);
+        });
+        assert(value == o.orElseCompute(() { call2 = true; return 3; }));
+
+        auto a = o.map!float(it=>it * 2.0f);
+        assert(a.get() == value * 2.0f);
+
+        assert(call1);
+        assert(!call2);
+    }
+    void assertNotPresent(optional!int o) {
+        bool call1 = false;
+
+        assert(o.isPresent() == false);
+        assert(o.get() == 0);
+        assert(o.orElse(1) == 1);
+        o.ifPresent((it) {
+            assert(false, "should not get here");     
+        });
+        assert(3 == o.orElseCompute(() { call1 = true; return 3; }));
+
+        auto a = o.map!float(it=>it * 2.0f);
+        assert(a.isPresent() == false);
+
+        assert(call1);
+    }
+
+    optional!int o1;                            // empty
+    auto o2          = optional!int.empty();    // empty
+    optional!int o3  = 42;                      // present
+    auto o4          = optional!int(43);        // present
+
+    assertNotPresent(o1);
+    assertNotPresent(o2);
+    assertPresent(o3, 42);
+    assertPresent(o4, 43);
+
+    {   // firstOrElse(optional[])
+        optional!(int)[] optionals1 = [ o1, o2, o3, o4 ];
+        optional!(int)[] optionals2 = [ o1, o2 ];
+        assert(optionals1.firstOrElse(7) == 42);
+        assert(optionals2.firstOrElse(7) == 7);
+    }
+    {   // firstOrElse(pointer[])
+        class Obj {
+            int value;
+            this(int value) { this.value = value; }
+        }
+
+        Obj[] objects1 = [null, null, new Obj(5), new Obj(6)];
+        Obj[] objects2 = [null, null];
+        assert(firstOrElse(objects1, new Obj(10)).value == 5);
+        assert(firstOrElse(objects2, new Obj(10)).value == 10);
+    }
+    {   // firstOrElse(string)
+        string[] strings1 = [null, "hello"];
+        string[] strings2 = [null, null];
+
+        assert(firstOrElse(strings1, "world") == "hello");
+        assert(firstOrElse(strings2, "world") == "world");
+    }
+    {   // orElse(pointer)
+        struct S {
+            int value;
+        }
+        S* s1 = null;
+        S* s2 = new S(10);
+
+        assert(s1.orElse(s2).value == 10);
+    }
+    {   // orElse(array)
+        string a = "hello";
+        string b;
+
+        assert(a.orElse("world") == "hello");
+        assert(b.orElse("world") == "world");
+    }
 }
 void testBool3() {
     writefln("--== Testing Bool3 ==--");

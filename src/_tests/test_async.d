@@ -247,7 +247,7 @@ void testAsyncQueue() {
     }
 
     void testDrain2(string Q) {
-        writefln("Testing drain2()");
+        writefln("Testing drain2() %s", Q);
 
         struct EventMsg {
             ulong id;

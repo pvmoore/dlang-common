@@ -8,7 +8,8 @@ public import std.traits :
     isSomeFunction,
     isSomeString,
     isFloatingPoint,
-    isAssociativeArray;
+    isAssociativeArray,
+    isDelegate;
 
 import std.traits :
     InoutOf,
