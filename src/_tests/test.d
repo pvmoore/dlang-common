@@ -171,55 +171,153 @@ void testStructCache() {
 void testOptional() {
     writefln("--== Testing Optional ==--");
 
-    void assertPresent(optional!int o, int value) {
-        bool call1 = false;
-        bool call2 = false;
+    void assertPresent(T)(optional!T o, T value, T elseValue) {
+        bool call = false;
 
+        // isPresent
         assert(o.isPresent() == true);
+
+        // get
         assert(o.get() == value);
-        assert(o.orElse(1) == value);
+
+        // orElse
+        assert(o.orElse(elseValue) == value);
+
+        // ifPresent
         o.ifPresent((it) {
-            call1 = true;
+            call = true;
             assert(it == value);
         });
-        assert(value == o.orElseCompute(() { call2 = true; return 3; }));
+        assert(call);
 
-        auto a = o.map!float(it=>it * 2.0f);
-        assert(a.get() == value * 2.0f);
+        // ifNotPresent
+        o.ifNotPresent(() {
+            assert(false, "should not get here"); 
+        });
 
-        assert(call1);
-        assert(!call2);
+        // orElseCompute
+        call = false;
+        assert(value == o.orElseCompute(() { call = true; return elseValue; }));
+        assert(!call);
+
+        // map
+        auto a = o.map!float((it) { 
+            assert(it == value);
+            return 3.0f;
+        });
+        assert(a.isPresent());
+        assert(a.get() == 3.0f);
+
+        // filter
+        call = false;
+        auto b = o.filter((it) {
+            call = true;
+            return true;
+        });
+        assert(call);
+        assert(b.isPresent());
+        assert(b.get() == value);
     }
-    void assertNotPresent(optional!int o) {
-        bool call1 = false;
+    void assertNotPresent(T)(optional!T o, T elseValue) {
+        bool call = false;
 
+        static if(isNullable!T) {
+            auto initValue = null;
+        } else {
+            auto initValue = T.init;
+        }
+
+        // isPresent
         assert(o.isPresent() == false);
-        assert(o.get() == 0);
-        assert(o.orElse(1) == 1);
+
+        // get
+        assert(o.get() == initValue);
+
+        // orElse
+        assert(o.orElse(elseValue) == elseValue);
+
+        // ifPresent
         o.ifPresent((it) {
             assert(false, "should not get here");     
         });
-        assert(3 == o.orElseCompute(() { call1 = true; return 3; }));
 
-        auto a = o.map!float(it=>it * 2.0f);
+        // ifNotPresent
+        o.ifNotPresent(() {
+            call = true;       
+        });
+        assert(call);
+
+        // orElseCompute
+        call = false;
+        assert(elseValue == o.orElseCompute(() { call = true; return elseValue; }));
+        assert(call);
+
+        // map
+        auto a = o.map!float((it) { 
+            assert(false, "should not get here");
+            return 1.0f;
+        });
         assert(a.isPresent() == false);
 
-        assert(call1);
+        // filter
+        auto b = o.filter((it) {
+            assert(false, "should not get here");
+            return true;
+        });
+        assert(b.isPresent() == false);
+
     }
 
-    optional!int o1;                            // empty
-    auto o2          = optional!int.empty();    // empty
-    optional!int o3  = 42;                      // present
-    auto o4          = optional!int(43);        // present
+    {   // optional!int     // int is not a nullable type
+        optional!int o1;                            // empty
+        auto o2          = optional!int.empty();    // empty
+        optional!int o3  = 42;                      // present
+        auto o4          = optional!int(43);        // present
 
-    assertNotPresent(o1);
-    assertNotPresent(o2);
-    assertPresent(o3, 42);
-    assertPresent(o4, 43);
+        assertNotPresent(o1, 7);
+        assertNotPresent(o2, 7);
+        assertPresent(o3, 42, 7);
+        assertPresent(o4, 43, 7);
+    }
+
+    {   // optional!string      // string is a nullable type
+        optional!string o1;                             // empty
+        auto o2          = optional!string.empty();     // empty
+        optional!string o3  = "hello";                  // present
+        auto o4          = optional!string("world");    // present
+
+        assert(optional!string.sizeof == string.sizeof);
+
+        assertNotPresent(o1, "nope");
+        assertNotPresent(o2, "nope");
+        assertPresent(o3, "hello", "nope");
+        assertPresent(o4, "world", "nope");
+    }
+
+    {   // optional!class       // class is a nullable type
+        class A { 
+            int value; 
+            this(int value) { this.value = value; } 
+
+            override ulong toHash() { return value; }
+            override bool opEquals(Object other) { return value == (cast(A)other).value; }
+        }
+
+        optional!A o1;                             // empty
+        auto o2          = optional!A.empty();     // empty
+        optional!A o3  = new A(42);                // present
+        auto o4          = optional!A(new A(43));  // present
+
+        assertNotPresent(o1, new A(7));
+        assertNotPresent(o2, new A(7));
+        assertPresent(o3, new A(42), new A(7));
+        assertPresent(o4, new A(43), new A(7));
+    }
 
     {   // firstOrElse(optional[])
-        optional!(int)[] optionals1 = [ o1, o2, o3, o4 ];
-        optional!(int)[] optionals2 = [ o1, o2 ];
+
+        optional!(int)[] optionals1 = [ optional!int.empty(), optional!int.empty(), optional!int(42) ];
+        optional!(int)[] optionals2 = [ optional!int.empty(), optional!int.empty() ];
         assert(optionals1.firstOrElse(7) == 42);
         assert(optionals2.firstOrElse(7) == 7);
     }

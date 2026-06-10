@@ -17,52 +17,90 @@ import common.all;
  * });
  * 
  */
-struct optional(T)
-    if(isStruct!T || isPrimitiveType!T)
-{
+struct optional(T) {
 public:
     static optional!T empty() { optional!T o; return o; }
 
     this(T value) {
         this._value = value;
-        this._exists = true;
+        static if(!isNullable!T) {
+            this._exists = true;
+        }
     }
 
     /** return true if the value is present */
-    bool isPresent() { return _exists; }
+    bool isPresent() { 
+        static if(isNullable!T) {
+            return _value !is null;
+        } else {
+            return _exists; 
+        }
+    }
 
     /** return the value (if present) otherwise will return T.init */
     T get() { return _value; }
 
     /** return the value (if present) otherwise will return other */
     T orElse(T other) {
-        return _exists ? _value : other;
+        return isPresent() ? _value : other;
     }
 
     /** return the value (if present) otherwise will return compute() */
     T orElseCompute(T delegate() compute) {
-        return _exists ? _value : compute();        
+        return isPresent() ? _value : compute();        
     }
 
     /** call the delegate if the value is present */
     void ifPresent(void delegate(T value) functor) {
-        if(_exists) functor(_value);
+        if(isPresent()) functor(_value);
+    }
+
+    /** call the delegate if the value is not present */
+    void ifNotPresent(void delegate() functor) {
+        if(!isPresent()) functor();
+    }
+
+    /** filter value by calling the delegate (if present) otherwise return an empty optional */
+    optional!T filter(bool delegate(T value) predicate) {
+        if(isPresent() && predicate(_value)) return optional!T(_value);
+        return optional!T.empty();
     }
 
     /** map value to another optional by calling the delegate (if present) otherwise return an empty optional of the new type */
     optional!U map(U)(U delegate(T value) mapper) {
-        if(_exists) return optional!U(mapper(_value));
+        if(isPresent()) return optional!U(mapper(_value));
         return optional!U.empty();
     }
 private:
     T _value;
+    static if(!isNullable!T) {
     bool _exists;
+    }
 }
 
 /**
- * auto t = firstOrElse([o1,o2], o3);
+ * optional!int o1 = 1;
+ * optional!int o2 = 2;
+ * int o3 = 3;
+ *
+ * auto t = firstOrElse([o1, o2], o3);
  */
-T firstOrElse(T)(T[] objs, T other) if(isObject!T || isPointer!T || isSomeString!T || isDelegate!T) {
+V firstOrElse(T : optional!V, V)(T[] opts, V other)  {
+    foreach(o; opts) {
+        if(o.isPresent()) return o.get();
+    }
+    return other;
+}
+
+/**
+ * class A{} 
+ * A o1;
+ * A o2;
+ * A o3 = new A();
+ *
+ * auto t = firstOrElse([o1, o2], o3);
+ */
+T firstOrElse(T)(T[] objs, T other) if(isNullable!T) {
     foreach(o; objs) {
         if(o !is null) return o;
     }
@@ -70,20 +108,8 @@ T firstOrElse(T)(T[] objs, T other) if(isObject!T || isPointer!T || isSomeString
 }
 
 /**
- * auto t = firstOrElse([o,o1], o2);
- */
-V firstOrElse(T = optional!V, V)(T[] opts, V other) if(isStruct!V || isPrimitiveType!V) {
-    foreach(o; opts) {
-        if(o.isPresent()) return o.get();
-    }
-    return other;
-}
-
-
-
-/**
  *  auto t = obj.orElse("this");
  */
-T orElse(T)(T t, T other) if(isObject!T || isPointer!T || isSomeString!T || isDelegate!T) {
+T orElse(T)(T t, T other) if(isNullable!T) {
     return t !is null ? t : other;
 }

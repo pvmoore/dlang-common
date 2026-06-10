@@ -44,6 +44,10 @@ template isEnum(T) {
     const bool isEnum = is(T==enum);
 }
 
+template isNullable(T) {
+    const bool isNullable = isObject!T || isPointer!T || isArray!T || isDelegate!T;
+}
+
 /**
  * assert(hasProperty!(A,"foo"));
  */
