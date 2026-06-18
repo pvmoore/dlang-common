@@ -179,12 +179,26 @@ void testArrayUtils() {
         assert(!b.onlyContains(0));
     }
     { 
-        writefln("- indexOf");
+        writefln("- indexOf(T)");
         float[] a = [1,2,3];
         assert(a.indexOf(1) == 0);
         assert(a.indexOf(2) == 1);
         assert(a.indexOf(3) == 2);
         assert(a.indexOf(4) == -1);
+    }
+    {
+        writefln("- indexOf(func)");
+        float[] a = [1,2,3];
+        assert(a.indexOf((float x)=>x==1) == 0);
+        assert(a.indexOf((float x)=>x==2) == 1);
+        assert(a.indexOf((float x)=>x==3) == 2);
+        assert(a.indexOf((float x)=>x==4) == -1);
+
+        int[3] b = [1,2,3];
+        assert(b.indexOf((int x) { return x==1; }) == 0);
+        assert(b.indexOf((int x) { return x==2; }) == 1);
+        assert(b.indexOf((int x) { return x==3; }) == 2);
+        assert(b.indexOf((int x) { return x==4; }) == -1);
     }
     { 
         writefln("- insertAt(T)");

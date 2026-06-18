@@ -44,8 +44,15 @@ bool onlyContains(T)(T[] array, T value) nothrow {
 	return true;
 }
 
+/** Find the index of an element in the array. Returns -1 if the element is not found. */
 int indexOf(T)(T[] array, T value) if(!isSomeChar!T) {
     foreach(i, v; array) if(v==value) return cast(int)i;
+    return -1;
+}
+
+/** Returns the index of the first element that matches the predicate. Returns -1 if the element is not found. */
+int indexOf(T)(T[] array, bool delegate(T) predicate) if(!isSomeChar!T) {
+    foreach(i, v; array) if(predicate(v)) return cast(int)i;
     return -1;
 }
 

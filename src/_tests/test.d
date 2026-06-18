@@ -75,7 +75,7 @@ void runTests() {
     scope(success) writeln("-- OK - All standard tests finished\n");
 
     static if(RUN_SUBSET) {
-        testOptional();
+        testUtils();
     } else {
 
         asm_test();
